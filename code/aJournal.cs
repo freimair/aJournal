@@ -7,6 +7,8 @@ namespace code
 {
 	public class aJournal
 	{
+		TreeView myTreeView;
+
 		public aJournal ()
 		{
 			Gtk.Window win = new Gtk.Window ("aJournal");
@@ -22,6 +24,12 @@ namespace code
 			// with a very simple button
 			ToolButton myToolButton = new ToolButton (Gtk.Stock.About);
 			myToolbar.Insert (myToolButton, 0);
+			// and a toggle button to hide the treeview below
+			ToggleToolButton showTagTreeButton = new ToggleToolButton (Gtk.Stock.Index);
+			showTagTreeButton.TooltipText = "toggle the taglist visibility";
+			showTagTreeButton.Active = true;
+			showTagTreeButton.Clicked += ShowTagTreeButton_Clicked;
+			myToolbar.Insert (showTagTreeButton, 0);
 			// insert the toolbar into the layout
 			myHBox.Add (myToolbar);
 
@@ -30,14 +38,21 @@ namespace code
 			myHBox.Add (myVBox);
 
 			// add an empty treeview to the first column
-			TreeView myTreeView = new TreeView ();
+			myTreeView = new TreeView ();
 			myVBox.Add (myTreeView);
-
 			// add a canvas to the second column
 			Canvas myCanvas = new Canvas ();
 			myVBox.Add (myCanvas);
 
 			win.ShowAll ();
+		}
+
+		/**
+		 * callback for toggeling the tagtree visibility
+		 */
+		void ShowTagTreeButton_Clicked (object obj, EventArgs args)
+		{
+			myTreeView.Visible = ((ToggleToolButton)obj).Active;
 		}
 
 		void Window_Delete (object obj, DeleteEventArgs args)
