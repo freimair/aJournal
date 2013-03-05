@@ -9,6 +9,8 @@ namespace code
 	{
 		TreeView myTreeView;
 
+		Canvas myCanvas;
+
 		public aJournal ()
 		{
 			Gtk.Window win = new Gtk.Window ("aJournal");
@@ -40,11 +42,23 @@ namespace code
 			// add an empty treeview to the first column
 			myTreeView = new TreeView ();
 			myVBox.Add (myTreeView);
-			// add a canvas to the second column
-			Canvas myCanvas = new Canvas ();
-			myVBox.Add (myCanvas);
 
+			// add a canvas to the second column
+			myCanvas = new Canvas ();
+			// TODO find out why this somehow centers the axis origin.
+			myCanvas.SetScrollRegion (0.0, 0.0, (double)300, (double)300);
+
+			myVBox.Add (myCanvas);
 			win.ShowAll ();
+
+			// draw a filled rectangle
+			CanvasRE item = new CanvasRect (myCanvas.Root ());
+			item.FillColor = "white";
+			item.OutlineColor = "black";
+			item.X1 = 0;
+			item.Y1 = 0;
+			item.X2 = 299;
+			item.Y2 = 299;
 		}
 
 		/**
