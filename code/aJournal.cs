@@ -13,6 +13,18 @@ namespace code
 			win.SetSizeRequest(600, 600);
 			win.DeleteEvent += new DeleteEventHandler (Window_Delete);
 
+			// add row-like layout
+			VBox myHBox = new VBox (false, 0);
+			win.Add (myHBox);
+
+			// create a toolbar
+			Toolbar myToolbar = new Toolbar ();
+			// with a very simple button
+			ToolButton myToolButton = new ToolButton (Gtk.Stock.About);
+			myToolbar.Insert (myToolButton, 0);
+			// insert the toolbar into the layout
+			myHBox.Add (myToolbar);
+
 			win.ShowAll ();
 		}
 
