@@ -32,8 +32,18 @@ namespace code
 			showTagTreeButton.Active = true;
 			showTagTreeButton.Clicked += ShowTagTreeButton_Clicked;
 			myToolbar.Insert (showTagTreeButton, 0);
+			// add zoom buttons
+			ToolButton zoomInButton = new ToolButton (Gtk.Stock.ZoomIn);
+			zoomInButton.TooltipText = "zoom in";
+			zoomInButton.Clicked += ZoomInButton_Clicked;
+			myToolbar.Insert (zoomInButton, 1);
+			ToolButton zoomOutButton = new ToolButton (Gtk.Stock.ZoomOut);
+			zoomOutButton.TooltipText = "zoom out";
+			zoomOutButton.Clicked += ZoomOutButton_Clicked;
+			myToolbar.Insert (zoomOutButton, 2);
+
 			// insert the toolbar into the layout
-			myHBox.Add (myToolbar);
+			myHBox.PackStart (myToolbar, false, false, 0);
 
 			// add a column-like layout into the second row
 			HBox myVBox = new HBox (false, 0);
@@ -67,6 +77,22 @@ namespace code
 		void ShowTagTreeButton_Clicked (object obj, EventArgs args)
 		{
 			myTreeView.Visible = ((ToggleToolButton)obj).Active;
+		}
+
+		/**
+		 * callback for zooming in
+		 */
+		void ZoomInButton_Clicked (object obj, EventArgs args)
+		{
+			myCanvas.PixelsPerUnit *= (double)5 / 4;
+		}
+
+		/**
+		 * callback for zooming out
+		 */
+		void ZoomOutButton_Clicked (object obj, EventArgs args)
+		{
+			myCanvas.PixelsPerUnit *= (double)4 / 5;
 		}
 
 		void Window_Delete (object obj, DeleteEventArgs args)
