@@ -25,6 +25,18 @@ namespace code
 			// insert the toolbar into the layout
 			myHBox.Add (myToolbar);
 
+			// add a column-like layout into the second row
+			HBox myVBox = new HBox (false, 0);
+			myHBox.Add (myVBox);
+
+			// add an empty treeview to the first column
+			TreeView myTreeView = new TreeView ();
+			myVBox.Add (myTreeView);
+
+			// add a canvas to the second column
+			Canvas myCanvas = new Canvas ();
+			myVBox.Add (myCanvas);
+
 			win.ShowAll ();
 		}
 
