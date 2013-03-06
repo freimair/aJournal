@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Gnome;
 using Gtk;
 using Gdk;
@@ -10,7 +11,8 @@ namespace code
 		TreeView myTreeView;
 
 		Canvas myCanvas;
-		double startX, startY;
+		CanvasLine currentStroke;
+		ArrayList currentStrokePoints;
 
 		public aJournal ()
 		{
@@ -110,6 +112,9 @@ namespace code
 			case EventType.ButtonPress:
 				MyCanvas_MouseDown (obj, ev);
 				break;
+			case EventType.MotionNotify:
+				MyCanvas_MouseMove (obj, ev);
+				break;
 			case EventType.ButtonRelease:
 				MyCanvas_MouseUp (obj, ev);
 				break;
@@ -121,8 +126,24 @@ namespace code
 		 */
 		void MyCanvas_MouseDown (object obj, EventButton args)
 		{
-			startX = args.X;
-			startY = args.Y;
+			currentStroke = new CanvasLine (myCanvas.Root ());
+			currentStrokePoints = new ArrayList ();
+			currentStrokePoints.Add ((double)args.X);
+			currentStrokePoints.Add ((double)args.Y);
+		}
+
+		/**
+		 * callback for mouse move in canvas
+		 */
+		void MyCanvas_MouseMove (object obj, EventButton args)
+		{
+			try {
+				currentStrokePoints.Add (args.X);
+				currentStrokePoints.Add (args.Y);
+				currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+			} catch (NullReferenceException) {
+				// in case there was no line started
+			}
 		}
 
 		/**
@@ -130,8 +151,11 @@ namespace code
 		 */
 		void MyCanvas_MouseUp (object obj, EventButton args)
 		{
-			CanvasLine currentLine = new CanvasLine (myCanvas.Root ());
-			currentLine.Points = new CanvasPoints (new double[] {startX, startY, args.X, args.Y});
+			currentStrokePoints.Add (args.X);
+			currentStrokePoints.Add (args.Y);
+			currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+			currentStroke = null;
+			currentStrokePoints = null;
 		}
 
 		void Window_Delete (object obj, DeleteEventArgs args)
