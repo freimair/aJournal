@@ -127,6 +127,8 @@ namespace code
 		void MyCanvas_MouseDown (object obj, EventButton args)
 		{
 			currentStroke = new CanvasLine (myCanvas.Root ());
+			currentStroke.WidthUnits = 2;
+			currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
 			currentStrokePoints = new ArrayList ();
 			currentStrokePoints.Add ((double)args.X);
 			currentStrokePoints.Add ((double)args.Y);
@@ -156,6 +158,31 @@ namespace code
 			currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
 			currentStroke = null;
 			currentStrokePoints = null;
+		}
+
+		/**
+		 * callback for strokes in canvas
+		 */
+		void Line_Event (object obj, Gnome.CanvasEventArgs args)
+		{
+			EventButton ev = new EventButton (args.Event.Handle);
+
+			switch (ev.Type) {
+			case EventType.ButtonPress:
+				Line_MouseDown (obj, ev);
+				break;
+			}
+		}
+
+		/**
+		 * callback for mousedown of stroke
+		 */
+		void Line_MouseDown (object obj, EventButton args)
+		{
+			// right mouse button deletes the line
+			if (args.Button == 3) {
+				((CanvasLine)obj).Destroy ();
+			}
 		}
 
 		void Window_Delete (object obj, DeleteEventArgs args)
