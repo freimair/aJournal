@@ -9,7 +9,7 @@ namespace code
 	public class aJournal
 	{
 		TreeView myTreeView;
-
+		CanvasRE selection;
 		Canvas myCanvas;
 		CanvasLine currentStroke;
 		ArrayList currentStrokePoints;
@@ -126,6 +126,7 @@ namespace code
 		 */
 		void MyCanvas_MouseDown (object obj, EventButton args)
 		{
+			unselect ();
 			currentStroke = new CanvasLine (myCanvas.Root ());
 			currentStroke.WidthUnits = 2;
 			currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
@@ -179,15 +180,61 @@ namespace code
 		 */
 		void Line_MouseDown (object obj, EventButton args)
 		{
-			// right mouse button deletes the line
-			if (args.Button == 3) {
+
+			switch (args.Button) {
+			case 1: // left mouse button selects the line
+				select ((CanvasLine)obj);
+				break;
+			case 3:	// right mouse button deletes the line
 				((CanvasLine)obj).Destroy ();
+				break;
 			}
 		}
 
 		void Window_Delete (object obj, DeleteEventArgs args)
 		{
 			Application.Quit ();
+		}
+
+		/**
+		 * select one item by placing a gray box around it
+		 * TODO offer various selection methods
+		 */
+		public void select (CanvasItem item)
+		{
+			double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+			item.GetBounds (out x1, out y1, out x2, out y2);
+
+			// draw a filled rectangle to represent the selection
+			selection = new CanvasRect (myCanvas.Root ());
+
+			// lower to bottom
+			selection.LowerToBottom ();
+			// and raise just above basic rectangle
+			selection.Raise (1);
+
+			// set fill and stroke
+			selection.FillColor = "gray";
+			selection.OutlineColor = "black";
+
+			// position
+			selection.X1 = x1;
+			selection.Y1 = y1;
+			selection.X2 = x2;
+			selection.Y2 = y2;
+		}
+
+		/**
+		 * unselect all
+		 */
+		public void unselect ()
+		{
+			try {
+				selection.Destroy ();
+				selection = null;
+			} catch (NullReferenceException) {
+				// in case nothing is selected
+			}
 		}
 
 		public static int Main (string[] args)
