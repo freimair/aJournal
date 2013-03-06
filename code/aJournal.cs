@@ -10,6 +10,7 @@ namespace code
 		TreeView myTreeView;
 
 		Canvas myCanvas;
+		double startX, startY;
 
 		public aJournal ()
 		{
@@ -61,7 +62,7 @@ namespace code
 			myVBox.Add (myCanvas);
 			win.ShowAll ();
 
-			// draw a filled rectangle
+			// draw a filled rectangle to represent drawing area
 			CanvasRE item = new CanvasRect (myCanvas.Root ());
 			item.FillColor = "white";
 			item.OutlineColor = "black";
@@ -69,6 +70,9 @@ namespace code
 			item.Y1 = 0;
 			item.X2 = 299;
 			item.Y2 = 299;
+
+			// add mouse trackers
+			item.CanvasEvent += new Gnome.CanvasEventHandler (MyCanvas_Event);
 		}
 
 		/**
@@ -93,6 +97,41 @@ namespace code
 		void ZoomOutButton_Clicked (object obj, EventArgs args)
 		{
 			myCanvas.PixelsPerUnit *= (double)4 / 5;
+		}
+
+		/**
+		 * callback for handling events from canvas drawing area
+		 */
+		void MyCanvas_Event (object obj, Gnome.CanvasEventArgs args)
+		{
+			EventButton ev = new EventButton (args.Event.Handle);
+
+			switch (ev.Type) {
+			case EventType.ButtonPress:
+				MyCanvas_MouseDown (obj, ev);
+				break;
+			case EventType.ButtonRelease:
+				MyCanvas_MouseUp (obj, ev);
+				break;
+			}
+		}
+
+		/**
+		 * callback for mousedown in canvas
+		 */
+		void MyCanvas_MouseDown (object obj, EventButton args)
+		{
+			startX = args.X;
+			startY = args.Y;
+		}
+
+		/**
+		 * callback for mouseup in canvas
+		 */
+		void MyCanvas_MouseUp (object obj, EventButton args)
+		{
+			CanvasLine currentLine = new CanvasLine (myCanvas.Root ());
+			currentLine.Points = new CanvasPoints (new double[] {startX, startY, args.X, args.Y});
 		}
 
 		void Window_Delete (object obj, DeleteEventArgs args)
