@@ -13,7 +13,7 @@ namespace code
 		Canvas myCanvas;
 		CanvasLine currentStroke;
 		ArrayList currentStrokePoints;
-		const double canvasWidth = 500, canvasHeight = 500;
+		const int canvasWidth = 500, canvasHeight = 500;
 		Gtk.Window win;
 
 		public aJournal ()
@@ -61,19 +61,28 @@ namespace code
 			
 			// add canvas container
 			ScrolledWindow myScrolledNotesContainer = new ScrolledWindow ();
-			myScrolledNotesContainer.SetPolicy (Gtk.PolicyType.Always, Gtk.PolicyType.Always);
+			myScrolledNotesContainer.SetPolicy (Gtk.PolicyType.Automatic, Gtk.PolicyType.Always);
 			taglistContentLayout.Add (myScrolledNotesContainer);
 			
+			Viewport myViewport = new Viewport ();
+			myScrolledNotesContainer.Add (myViewport);
+
 			VBox myNotesContainer = new VBox (false, 0);
-			myScrolledNotesContainer.Add (myNotesContainer);
+			myViewport.Add (myNotesContainer);
 
 			// add a canvas to the second column
 			myCanvas = new Canvas ();
+			myCanvas.SetSizeRequest (canvasWidth, canvasHeight);
 			// TODO find out why this somehow centers the axis origin.
 			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
 
 			myNotesContainer.Add (myCanvas);
+
+			// indicate that there will somewhen be the option to add another notes area
+			Button addNotesButton = new Button (Gtk.Stock.Add);
+			myNotesContainer.Add (addNotesButton);
 			win.ShowAll ();
+
 			myTreeView.Visible = false;
 
 			// draw a filled rectangle to represent drawing area
@@ -87,9 +96,6 @@ namespace code
 
 			// add mouse trackers
 			item.CanvasEvent += new Gnome.CanvasEventHandler (MyCanvas_Event);
-			
-			Button addNotesButton = new Button (Gtk.Stock.Add);
-			myNotesContainer.Add (addNotesButton);
 		}
 
 		/**
