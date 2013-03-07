@@ -13,7 +13,7 @@ namespace code
 		Canvas myCanvas;
 		CanvasLine currentStroke;
 		ArrayList currentStrokePoints;
-		const int canvasWidth = 500, canvasHeight = 500;
+		const int canvasWidth = 1500, canvasHeight = 1500;
 		Gtk.Window win;
 
 		public aJournal ()
@@ -72,7 +72,6 @@ namespace code
 
 			// add a canvas to the second column
 			myCanvas = new Canvas ();
-			myCanvas.SetSizeRequest (canvasWidth, canvasHeight);
 			// TODO find out why this somehow centers the axis origin.
 			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
 
@@ -107,7 +106,13 @@ namespace code
 		{
 			int width, height;
 			win.GetSize (out width, out height);
+
+			double pixelsPerUnit = myCanvas.PixelsPerUnit;
 			myCanvas.PixelsPerUnit = ((double)width) / canvasWidth;
+
+			uint uwidth, uheight;
+			myCanvas.GetSize (out uwidth, out uheight);
+			myCanvas.SetSizeRequest ((int)Math.Round (uwidth / pixelsPerUnit * myCanvas.PixelsPerUnit), (int)Math.Round (uheight / pixelsPerUnit * myCanvas.PixelsPerUnit));
 		}
 
 		/**
