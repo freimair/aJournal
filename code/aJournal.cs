@@ -13,15 +13,18 @@ namespace code
 		Canvas myCanvas;
 		CanvasLine currentStroke;
 		ArrayList currentStrokePoints;
+		const double canvasWidth = 1500, canvasHeight = 2500;
+		Gtk.Window win;
 
 		public aJournal ()
 		{
-			Gtk.Window win = new Gtk.Window ("aJournal");
-			win.SetSizeRequest(600, 600);
+			win = new Gtk.Window ("aJournal");
+			win.SetSizeRequest (600, 600);
 			win.DeleteEvent += new DeleteEventHandler (Window_Delete);
 
 			// add row-like layout
 			VBox myHBox = new VBox (false, 0);
+			win.ResizeChecked += MyCanvas_Rezoom;
 			win.Add (myHBox);
 
 			// create a toolbar
@@ -32,7 +35,7 @@ namespace code
 			// and a toggle button to hide the treeview below
 			ToggleToolButton showTagTreeButton = new ToggleToolButton (Gtk.Stock.Index);
 			showTagTreeButton.TooltipText = "toggle the taglist visibility";
-			showTagTreeButton.Active = true;
+			showTagTreeButton.Active = false;
 			showTagTreeButton.Clicked += ShowTagTreeButton_Clicked;
 			myToolbar.Insert (showTagTreeButton, 0);
 			// add zoom buttons
@@ -59,10 +62,11 @@ namespace code
 			// add a canvas to the second column
 			myCanvas = new Canvas ();
 			// TODO find out why this somehow centers the axis origin.
-			myCanvas.SetScrollRegion (0.0, 0.0, (double)300, (double)300);
+			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
 
 			myVBox.Add (myCanvas);
 			win.ShowAll ();
+			myTreeView.Visible = false;
 
 			// draw a filled rectangle to represent drawing area
 			CanvasRE item = new CanvasRect (myCanvas.Root ());
@@ -70,11 +74,23 @@ namespace code
 			item.OutlineColor = "black";
 			item.X1 = 0;
 			item.Y1 = 0;
-			item.X2 = 299;
-			item.Y2 = 299;
+			item.X2 = canvasWidth;
+			item.Y2 = canvasHeight;
 
 			// add mouse trackers
 			item.CanvasEvent += new Gnome.CanvasEventHandler (MyCanvas_Event);
+		}
+
+		/**
+		 * callback for window resize event
+		 * 
+		 * rezoom the canvas to fill the page width
+		 */
+		void MyCanvas_Rezoom (object obj, EventArgs args)
+		{
+			int width, height;
+			win.GetSize (out width, out height);
+			myCanvas.PixelsPerUnit = ((double)width) / canvasWidth;
 		}
 
 		/**
