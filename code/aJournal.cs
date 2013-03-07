@@ -13,7 +13,7 @@ namespace code
 		Canvas myCanvas;
 		CanvasLine currentStroke;
 		ArrayList currentStrokePoints;
-		const double canvasWidth = 1500, canvasHeight = 2500;
+		const double canvasWidth = 500, canvasHeight = 500;
 		Gtk.Window win;
 
 		public aJournal ()
@@ -23,9 +23,9 @@ namespace code
 			win.DeleteEvent += new DeleteEventHandler (Window_Delete);
 
 			// add row-like layout
-			VBox myHBox = new VBox (false, 0);
+			VBox toolbarContentLayout = new VBox (false, 0);
 			win.ResizeChecked += MyCanvas_Rezoom;
-			win.Add (myHBox);
+			win.Add (toolbarContentLayout);
 
 			// create a toolbar
 			Toolbar myToolbar = new Toolbar ();
@@ -49,22 +49,30 @@ namespace code
 			myToolbar.Insert (zoomOutButton, 2);
 
 			// insert the toolbar into the layout
-			myHBox.PackStart (myToolbar, false, false, 0);
+			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
 
 			// add a column-like layout into the second row
-			HBox myVBox = new HBox (false, 0);
-			myHBox.Add (myVBox);
+			HBox taglistContentLayout = new HBox (false, 0);
+			toolbarContentLayout.Add (taglistContentLayout);
 
 			// add an empty treeview to the first column
 			myTreeView = new TreeView ();
-			myVBox.Add (myTreeView);
+			taglistContentLayout.Add (myTreeView);
+			
+			// add canvas container
+			ScrolledWindow myScrolledNotesContainer = new ScrolledWindow ();
+			myScrolledNotesContainer.SetPolicy (Gtk.PolicyType.Always, Gtk.PolicyType.Always);
+			taglistContentLayout.Add (myScrolledNotesContainer);
+			
+			VBox myNotesContainer = new VBox (false, 0);
+			myScrolledNotesContainer.Add (myNotesContainer);
 
 			// add a canvas to the second column
 			myCanvas = new Canvas ();
 			// TODO find out why this somehow centers the axis origin.
 			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
 
-			myVBox.Add (myCanvas);
+			myNotesContainer.Add (myCanvas);
 			win.ShowAll ();
 			myTreeView.Visible = false;
 
@@ -79,6 +87,9 @@ namespace code
 
 			// add mouse trackers
 			item.CanvasEvent += new Gnome.CanvasEventHandler (MyCanvas_Event);
+			
+			Button addNotesButton = new Button (Gtk.Stock.Add);
+			myNotesContainer.Add (addNotesButton);
 		}
 
 		/**
