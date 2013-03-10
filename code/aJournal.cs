@@ -24,7 +24,6 @@ namespace code
 
 			// add row-like layout
 			VBox toolbarContentLayout = new VBox (false, 0);
-			win.ResizeChecked += MyCanvas_Rezoom;
 			win.Add (toolbarContentLayout);
 
 			// create a toolbar
@@ -84,6 +83,8 @@ namespace code
 
 			myTreeView.Visible = false;
 
+			MyCanvas_Fit (400);
+
 			// draw a filled rectangle to represent drawing area
 			CanvasRE item = new CanvasRect (myCanvas.Root ());
 			item.FillColor = "white";
@@ -98,21 +99,24 @@ namespace code
 		}
 
 		/**
-		 * callback for window resize event
-		 * 
-		 * rezoom the canvas to fill the page width
+		 * change the canvas scale
 		 */
-		void MyCanvas_Rezoom (object obj, EventArgs args)
+		void MyCanvas_Scale (double factor)
 		{
-			int width, height;
-			win.GetSize (out width, out height);
+			int width = (int)Math.Round (myCanvas.PixelsPerUnit * factor * canvasWidth);
 
-			double pixelsPerUnit = myCanvas.PixelsPerUnit;
+			MyCanvas_Fit (width);
+		}
+
+		/**
+		 * fit the canvas scale to a certain width
+		 */
+		void MyCanvas_Fit (int width)
+		{
 			myCanvas.PixelsPerUnit = ((double)width) / canvasWidth;
 
-			uint uwidth, uheight;
-			myCanvas.GetSize (out uwidth, out uheight);
-			myCanvas.SetSizeRequest ((int)Math.Round (uwidth / pixelsPerUnit * myCanvas.PixelsPerUnit), (int)Math.Round (uheight / pixelsPerUnit * myCanvas.PixelsPerUnit));
+			myCanvas.SetSizeRequest (width, (int)Math.Round (canvasHeight * myCanvas.PixelsPerUnit));
+			myCanvas.UpdateNow ();
 		}
 
 		/**
@@ -128,7 +132,7 @@ namespace code
 		 */
 		void ZoomInButton_Clicked (object obj, EventArgs args)
 		{
-			myCanvas.PixelsPerUnit *= (double)5 / 4;
+			MyCanvas_Scale ((double)10 / 9);
 		}
 
 		/**
@@ -136,7 +140,7 @@ namespace code
 		 */
 		void ZoomOutButton_Clicked (object obj, EventArgs args)
 		{
-			myCanvas.PixelsPerUnit *= (double)4 / 5;
+			MyCanvas_Scale ((double)9 / 10);
 		}
 
 		/**
