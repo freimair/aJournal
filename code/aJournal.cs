@@ -46,6 +46,10 @@ namespace code
 			zoomOutButton.TooltipText = "zoom out";
 			zoomOutButton.Clicked += ZoomOutButton_Clicked;
 			myToolbar.Insert (zoomOutButton, 2);
+			ToolButton zoomFitButton = new ToolButton (Gtk.Stock.ZoomFit);
+			zoomFitButton.TooltipText = "zoom fit";
+			zoomFitButton.Clicked += ZoomFitButton_Clicked;
+			myToolbar.Insert (zoomFitButton, 3);
 
 			// insert the toolbar into the layout
 			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
@@ -141,6 +145,16 @@ namespace code
 		void ZoomOutButton_Clicked (object obj, EventArgs args)
 		{
 			MyCanvas_Scale ((double)9 / 10);
+		}
+
+		/**
+		 * callback for zooming out
+		 */
+		void ZoomFitButton_Clicked (object obj, EventArgs args)
+		{
+			uint width, height;
+			myCanvas.GetSize (out width, out height);
+			MyCanvas_Fit ((int)width);
 		}
 
 		/**
