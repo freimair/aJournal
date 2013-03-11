@@ -9,7 +9,6 @@ namespace code
 	public class aJournal
 	{
 		TreeView myTreeView;
-		CanvasRE selection;
 		Canvas myCanvas;
 		CanvasLine currentStroke;
 		ArrayList currentStrokePoints;
@@ -252,6 +251,11 @@ namespace code
 			Application.Quit ();
 		}
 
+		CanvasRE selection;
+		CanvasItem selectedItems;
+		bool move = false;
+		double lastX, lastY;
+
 		/**
 		 * select one item by placing a gray box around it
 		 * TODO offer various selection methods
@@ -260,6 +264,8 @@ namespace code
 		{
 			double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
 			item.GetBounds (out x1, out y1, out x2, out y2);
+
+			selectedItems = item;
 
 			// draw a filled rectangle to represent the selection
 			selection = new CanvasRect (myCanvas.Root ());
@@ -278,6 +284,8 @@ namespace code
 			selection.Y1 = y1;
 			selection.X2 = x2;
 			selection.Y2 = y2;
+
+			selection.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
 		}
 
 		/**
@@ -288,9 +296,68 @@ namespace code
 			try {
 				selection.Destroy ();
 				selection = null;
+				selectedItems = null;
 			} catch (NullReferenceException) {
 				// in case nothing is selected
 			}
+		}
+
+		void Selection_Event (object obj, Gnome.CanvasEventArgs args)
+		{
+			EventButton ev = new EventButton (args.Event.Handle);
+
+			switch (ev.Type) {
+			case EventType.ButtonPress:
+				Selection_MouseDown (obj, ev);
+				break;
+			case EventType.MotionNotify:
+				Selection_MouseMove (obj, ev);
+				break;
+			case EventType.ButtonRelease:
+				Selection_MouseUp (obj, ev);
+				break;
+			}
+		}
+
+		void Selection_MouseDown (object obj, EventButton args)
+		{
+
+			switch (args.Button) {
+			case 1: // left mouse button
+				move = true;
+				lastX = args.X;
+				lastY = args.Y;
+				break;
+			case 3:	// right mouse button
+				break;
+			}
+		}
+
+		void Selection_MouseUp (object obj, EventButton args)
+		{
+
+			switch (args.Button) {
+			case 1: // left mouse button
+				move = false;
+				break;
+			case 3:	// right mouse button
+				break;
+			}
+		}
+
+		void Selection_MouseMove (object obj, EventButton args)
+		{
+			if (move) {
+				// get diff
+				double diffx = args.X - lastX;
+				double diffy = args.Y - lastY;
+				lastX = args.X;
+				lastY = args.Y;
+
+				selectedItems.Move (diffx, diffy);
+				selection.Move (diffx, diffy);
+			}
+
 		}
 
 		public static int Main (string[] args)
