@@ -285,6 +285,9 @@ namespace code
 			selection.X2 = x2;
 			selection.Y2 = y2;
 
+			// enable key event recognition
+			selection.GrabFocus ();
+
 			selection.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
 		}
 
@@ -305,6 +308,7 @@ namespace code
 		void Selection_Event (object obj, Gnome.CanvasEventArgs args)
 		{
 			EventButton ev = new EventButton (args.Event.Handle);
+			EventKey key = new EventKey (args.Event.Handle);
 
 			switch (ev.Type) {
 			case EventType.ButtonPress:
@@ -315,6 +319,9 @@ namespace code
 				break;
 			case EventType.ButtonRelease:
 				Selection_MouseUp (obj, ev);
+				break;
+			case EventType.KeyPress:
+				Selection_KeyPress (obj, key);
 				break;
 			}
 		}
@@ -358,6 +365,17 @@ namespace code
 				selection.Move (diffx, diffy);
 			}
 
+		}
+
+		void Selection_KeyPress (object obj, EventKey args)
+		{
+			switch (args.Key) {
+			case Gdk.Key.Delete:
+				// delete selection
+				selectedItems.Destroy ();
+				unselect ();
+				break;
+			}
 		}
 
 		public static int Main (string[] args)
