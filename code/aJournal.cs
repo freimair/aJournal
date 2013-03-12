@@ -181,14 +181,22 @@ namespace code
 		 */
 		void MyCanvas_MouseDown (object obj, EventButton args)
 		{
+			if (1 == args.Button)
+				StartStroke (args.X, args.Y);
+//			else if (2 == args.Button)
+//				startSelection (args.X, args.Y);
+		}
+
+		void StartStroke (double x, double y)
+		{
 			unselect ();
 			currentStroke = new CanvasLine (myCanvas.Root ());
 			currentStroke.WidthUnits = 2;
 			currentStroke.FillColor = "black";
 			currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
 			currentStrokePoints = new ArrayList ();
-			currentStrokePoints.Add ((double)args.X);
-			currentStrokePoints.Add ((double)args.Y);
+			currentStrokePoints.Add (x);
+			currentStrokePoints.Add (y);
 		}
 
 		/**
@@ -196,9 +204,14 @@ namespace code
 		 */
 		void MyCanvas_MouseMove (object obj, EventButton args)
 		{
+			ContinueStroke (args.X, args.Y);
+		}
+
+		void ContinueStroke (double x, double y)
+		{
 			try {
-				currentStrokePoints.Add (args.X);
-				currentStrokePoints.Add (args.Y);
+				currentStrokePoints.Add (x);
+				currentStrokePoints.Add (y);
 				currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
 			} catch (NullReferenceException) {
 				// in case there was no line started
@@ -210,8 +223,14 @@ namespace code
 		 */
 		void MyCanvas_MouseUp (object obj, EventButton args)
 		{
-			currentStrokePoints.Add (args.X);
-			currentStrokePoints.Add (args.Y);
+			if (1 == args.Button)
+				CompleteStroke (args.X, args.Y);
+		}
+
+		void CompleteStroke (double x, double y)
+		{
+			currentStrokePoints.Add (x);
+			currentStrokePoints.Add (y);
 			currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
 			currentStroke = null;
 			currentStrokePoints = null;
