@@ -73,7 +73,7 @@ namespace code
 			myViewport.Add (myNotesContainer);
 
 			// add a canvas to the second column
-			myCanvas = new Canvas ();
+			myCanvas = Canvas.NewAa ();
 			// TODO find out why this somehow centers the axis origin.
 			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
 
@@ -184,6 +184,7 @@ namespace code
 			unselect ();
 			currentStroke = new CanvasLine (myCanvas.Root ());
 			currentStroke.WidthUnits = 2;
+			currentStroke.FillColor = "black";
 			currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
 			currentStrokePoints = new ArrayList ();
 			currentStrokePoints.Add ((double)args.X);
@@ -270,13 +271,8 @@ namespace code
 			// draw a filled rectangle to represent the selection
 			selection = new CanvasRect (myCanvas.Root ());
 
-			// lower to bottom
-			selection.LowerToBottom ();
-			// and raise just above basic rectangle
-			selection.Raise (1);
-
 			// set fill and stroke
-			selection.FillColor = "gray";
+			selection.FillColorRgba = 0x88888830; // 0xRRGGBBAA
 			selection.OutlineColor = "black";
 
 			// position
