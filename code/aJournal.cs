@@ -9,15 +9,293 @@ namespace code
 {
 	public class aJournal
 	{
+		abstract class Action
+		{
+			public abstract Action getInstance ();
+
+			public abstract void Start (double x, double y);
+
+			public abstract void Continue (double x, double y);
+
+			public abstract void Complete (double x, double y);
+
+			public abstract void Reset ();
+		}
+
+		class SelectAction : Action
+		{
+
+			bool selectionInProgress = false;
+			CanvasRE selectionRect;
+			bool move = false;
+			double lastX, lastY;
+
+			public override void Start (double x, double y)
+			{
+				selectionRect = new CanvasRect (myCanvas.Root ());
+
+				selectionRect.X1 = x;
+				selectionRect.Y1 = y;
+				selectionRect.X2 = x;
+				selectionRect.Y2 = y;
+
+				selectionRect.FillColorRgba = 0x88888830; // 0xRRGGBBAA
+				selectionRect.OutlineColor = "black";
+
+				selectionInProgress = true;
+			}
+
+			public override void Continue (double x, double y)
+			{
+				if (selectionInProgress) {
+					selectionRect.X2 = x;
+					selectionRect.Y2 = y;
+				}
+			}
+
+			public override void Complete (double x, double y)
+			{
+				Continue (x, y);
+
+				// enable key event recognition
+				selectionRect.GrabFocus ();
+
+				selectionRect.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
+
+				selectionInProgress = false;
+
+				//TODO find selected items
+				selection.SelectItemsWithin (selectionRect.X1, selectionRect.X2, selectionRect.Y1, selectionRect.Y2);
+			}
+
+			public override void Reset ()
+			{
+				try {
+					selectionRect.Destroy ();
+					selectionRect = null;
+					selection.unselect ();
+				} catch (NullReferenceException) {
+				}
+			}
+
+			void Selection_Event (object obj, Gnome.CanvasEventArgs args)
+			{
+				EventButton ev = new EventButton (args.Event.Handle);
+				EventKey key = new EventKey (args.Event.Handle);
+
+				switch (ev.Type) {
+				case EventType.ButtonPress:
+					Selection_MouseDown (obj, ev);
+					break;
+				case EventType.MotionNotify:
+					Selection_MouseMove (obj, ev);
+					break;
+				case EventType.ButtonRelease:
+					Selection_MouseUp (obj, ev);
+					break;
+				case EventType.KeyPress:
+					Selection_KeyPress (obj, key);
+					break;
+				}
+			}
+
+			void Selection_MouseDown (object obj, EventButton args)
+			{
+				switch (args.Button) {
+				case 1: // left mouse button
+					move = true;
+					lastX = args.X;
+					lastY = args.Y;
+					break;
+				case 3:	// right mouse button
+					break;
+				}
+			}
+
+			void Selection_MouseUp (object obj, EventButton args)
+			{
+				switch (args.Button) {
+				case 1: // left mouse button
+					move = false;
+					break;
+				case 3:	// right mouse button
+					break;
+				}
+			}
+
+			void Selection_MouseMove (object obj, EventButton args)
+			{
+				if (move) {
+					// get diff
+					double diffx = args.X - lastX;
+					double diffy = args.Y - lastY;
+					lastX = args.X;
+					lastY = args.Y;
+
+					foreach (CanvasItem current in selection.items)
+						current.Move (diffx, diffy);
+					selectionRect.Move (diffx, diffy);
+				}
+			}
+
+			void Selection_KeyPress (object obj, EventKey args)
+			{
+				switch (args.Key) {
+				case Gdk.Key.Delete:
+				// delete selection
+					foreach (CanvasItem current in selection.items) {
+						current.Destroy ();
+						elements.Remove (current);
+					}
+					selection.unselect ();
+					Reset ();
+					break;
+				}
+			}
+
+			public override Action getInstance ()
+			{
+				return new SelectAction ();
+			}
+		}
+
+		class Stroke : Action
+		{
+			CanvasLine currentStroke;
+			ArrayList currentStrokePoints;
+
+			public override void Start (double x, double y)
+			{
+				currentStroke = new CanvasLine (myCanvas.Root ());
+				currentStroke.WidthUnits = 2;
+				currentStroke.FillColor = "black";
+				currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
+				currentStrokePoints = new ArrayList ();
+				currentStrokePoints.Add (x);
+				currentStrokePoints.Add (y);
+			}
+
+			public override void Continue (double x, double y)
+			{
+				try {
+					currentStrokePoints.Add (x);
+					currentStrokePoints.Add (y);
+					currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+				} catch (NullReferenceException) {
+					// in case there was no line started
+				}
+			}
+
+			public override void Complete (double x, double y)
+			{
+				currentStrokePoints.Add (x);
+				currentStrokePoints.Add (y);
+				currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+
+				// add the final stroke to the list of elements
+				elements.Add (currentStroke);
+
+				currentStroke = null;
+				currentStrokePoints = null;
+			}
+
+			public override void Reset ()
+			{
+
+			}
+
+			/**
+			 * callback for strokes in canvas
+			 */
+			void Line_Event (object obj, Gnome.CanvasEventArgs args)
+			{
+				EventButton ev = new EventButton (args.Event.Handle);
+
+				switch (ev.Type) {
+				case EventType.ButtonPress:
+					Line_MouseDown (obj, ev);
+					break;
+				}
+			}
+
+			/**
+			 * callback for mousedown of stroke
+			 */
+			void Line_MouseDown (object obj, EventButton args)
+			{
+				switch (args.Button) {
+				case 1: // left mouse button selects the line
+					selection.selectItem ((CanvasLine)obj);
+					break;
+				case 3:	// right mouse button deletes the line
+					((CanvasLine)obj).Destroy ();
+					break;
+				}
+			}
+
+			public override Action getInstance ()
+			{
+				return new Stroke ();
+			}
+		}
+
+		class Selection
+		{
+			public List<CanvasItem> items = new List<CanvasItem> ();
+
+			public void SelectItemsWithin (double x1, double x2, double y1, double y2)
+			{
+				//TODO find a way to read elements back from the canvas itself
+//				foreach (CanvasItem current in myCanvas.AllChildren) {
+				foreach (CanvasItem current in elements) {
+					double cx1, cx2, cy1, cy2;
+					current.GetBounds (out cx1, out cy1, out cx2, out cy2);
+					if (x1 < cx1 && x2 > cx2 && y1 < cy1 && y2 > cy2)
+						items.Add (current);
+				}
+			}
+
+			/**
+			 * select one item by placing a gray box around it
+			 * TODO offer various selection methods
+			 */
+			public void selectItem (CanvasItem item)
+			{
+				double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+				item.GetBounds (out x1, out y1, out x2, out y2);
+
+				// use these to setup the selection rectangle
+				Action selectAction = new SelectAction ();
+				selectAction.Start (x1, y1);
+				selectAction.Complete (x2, y2);
+				// clear the selection cache because we only want one single element selected
+				items.Clear ();
+
+				items.Add (item);
+			}
+
+			/**
+			 * unselect all
+			 */
+			public void unselect ()
+			{
+				try {
+					items.Clear ();
+				} catch (NullReferenceException) {
+					// in case nothing is selected
+				}
+			}
+		}
+
 		TreeView myTreeView;
-		Canvas myCanvas;
-		CanvasLine currentStroke;
-		ArrayList currentStrokePoints;
+		static Canvas myCanvas;
 		const int canvasWidth = 1500, canvasHeight = 1500;
 		Gtk.Window win;
+		Action action;
+		static Selection selection = new Selection ();
 
 		// TODO find a way to read elements back from the canvas itself
-		List<CanvasItem> elements = new List<CanvasItem> ();
+		static List<CanvasItem> elements = new List<CanvasItem> ();
 
 		public aJournal ()
 		{
@@ -165,282 +443,35 @@ namespace code
 		 */
 		void MyCanvas_Event (object obj, Gnome.CanvasEventArgs args)
 		{
-			EventButton ev = new EventButton (args.Event.Handle);
-
-			switch (ev.Type) {
-			case EventType.ButtonPress:
-				MyCanvas_MouseDown (obj, ev);
-				break;
-			case EventType.MotionNotify:
-				MyCanvas_MouseMove (obj, ev);
-				break;
-			case EventType.ButtonRelease:
-				MyCanvas_MouseUp (obj, ev);
-				break;
-			}
-		}
-
-		/**
-		 * callback for mousedown in canvas
-		 */
-		void MyCanvas_MouseDown (object obj, EventButton args)
-		{
-			if (1 == args.Button)
-				StartStroke (args.X, args.Y);
-			else if (3 == args.Button)
-				StartSelection (args.X, args.Y);
-		}
-
-		void StartStroke (double x, double y)
-		{
-			unselect ();
-			currentStroke = new CanvasLine (myCanvas.Root ());
-			currentStroke.WidthUnits = 2;
-			currentStroke.FillColor = "black";
-			currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
-			currentStrokePoints = new ArrayList ();
-			currentStrokePoints.Add (x);
-			currentStrokePoints.Add (y);
-		}
-
-		/**
-		 * callback for mouse move in canvas
-		 */
-		void MyCanvas_MouseMove (object obj, EventButton args)
-		{
-			ContinueStroke (args.X, args.Y);
-			ContinueSelection (args.X, args.Y);
-		}
-
-		void ContinueStroke (double x, double y)
-		{
 			try {
-				currentStrokePoints.Add (x);
-				currentStrokePoints.Add (y);
-				currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+				EventButton ev = new EventButton (args.Event.Handle);
+				if (EventType.ButtonPress == ev.Type) {
+					if (null != action)
+						action.Reset ();
+					if (1 == ev.Button)
+						action = new Stroke ();
+					else if (3 == ev.Button)
+						action = new SelectAction ();
+				}
+
+				switch (ev.Type) {
+				case EventType.ButtonPress:
+					action.Start (ev.X, ev.Y);
+					break;
+				case EventType.MotionNotify:
+					action.Continue (ev.X, ev.Y);
+					break;
+				case EventType.ButtonRelease:
+					action.Complete (ev.X, ev.Y);
+					break;
+				}
 			} catch (NullReferenceException) {
-				// in case there was no line started
-			}
-		}
-
-		/**
-		 * callback for mouseup in canvas
-		 */
-		void MyCanvas_MouseUp (object obj, EventButton args)
-		{
-			if (1 == args.Button)
-				CompleteStroke (args.X, args.Y);
-			else if (3 == args.Button)
-				CompleteSelection (args.X, args.Y);
-		}
-
-		void CompleteStroke (double x, double y)
-		{
-			currentStrokePoints.Add (x);
-			currentStrokePoints.Add (y);
-			currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
-
-			// add the final stroke to the list of elements
-			elements.Add (currentStroke);
-
-			currentStroke = null;
-			currentStrokePoints = null;
-		}
-
-		/**
-		 * callback for strokes in canvas
-		 */
-		void Line_Event (object obj, Gnome.CanvasEventArgs args)
-		{
-			EventButton ev = new EventButton (args.Event.Handle);
-
-			switch (ev.Type) {
-			case EventType.ButtonPress:
-				Line_MouseDown (obj, ev);
-				break;
-			}
-		}
-
-		/**
-		 * callback for mousedown of stroke
-		 */
-		void Line_MouseDown (object obj, EventButton args)
-		{
-
-			switch (args.Button) {
-			case 1: // left mouse button selects the line
-				selectItem ((CanvasLine)obj);
-				break;
-			case 3:	// right mouse button deletes the line
-				((CanvasLine)obj).Destroy ();
-				break;
 			}
 		}
 
 		void Window_Delete (object obj, DeleteEventArgs args)
 		{
 			Application.Quit ();
-		}
-
-		bool selectionInProgress = false;
-		CanvasRE selection;
-		List<CanvasItem> selectedItems = new List<CanvasItem> ();
-		bool move = false;
-		double lastX, lastY;
-
-		void StartSelection (double x, double y)
-		{
-			unselect ();
-			selection = new CanvasRect (myCanvas.Root ());
-
-			selection.X1 = x;
-			selection.Y1 = y;
-			selection.X2 = x;
-			selection.Y2 = y;
-
-			selection.FillColorRgba = 0x88888830; // 0xRRGGBBAA
-			selection.OutlineColor = "black";
-
-			selectionInProgress = true;
-		}
-
-		void ContinueSelection (double x, double y)
-		{
-			if (selectionInProgress) {
-				selection.X2 = x;
-				selection.Y2 = y;
-			}
-		}
-
-		void CompleteSelection (double x, double y)
-		{
-			ContinueSelection (x, y);
-
-			// enable key event recognition
-			selection.GrabFocus ();
-
-			selection.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
-
-			selectionInProgress = false;
-
-			//TODO find selected items
-			//TODO find a way to read elements back from the canvas itself
-//			foreach (CanvasItem current in myCanvas.AllChildren) {
-			foreach (CanvasItem current in elements) {
-				double x1, x2, y1, y2;
-				current.GetBounds (out x1, out y1, out x2, out y2);
-				if (selection.X1 < x1 && selection.X2 > x2 && selection.Y1 < y1 && selection.Y2 > y2)
-					selectedItems.Add (current);
-			}
-		}
-
-		/**
-		 * select one item by placing a gray box around it
-		 * TODO offer various selection methods
-		 */
-		public void selectItem (CanvasItem item)
-		{
-			double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-			item.GetBounds (out x1, out y1, out x2, out y2);
-
-			// use these to setup the selection rectangle
-			StartSelection (x1, y1);
-			CompleteSelection (x2, y2);
-			// clear the selection cache because we only want one single element selected
-			selectedItems.Clear ();
-
-			selectedItems.Add (item);
-		}
-
-		/**
-		 * unselect all
-		 */
-		public void unselect ()
-		{
-			try {
-				selection.Destroy ();
-				selection = null;
-				selectedItems.Clear ();
-			} catch (NullReferenceException) {
-				// in case nothing is selected
-			}
-		}
-
-		void Selection_Event (object obj, Gnome.CanvasEventArgs args)
-		{
-			EventButton ev = new EventButton (args.Event.Handle);
-			EventKey key = new EventKey (args.Event.Handle);
-
-			switch (ev.Type) {
-			case EventType.ButtonPress:
-				Selection_MouseDown (obj, ev);
-				break;
-			case EventType.MotionNotify:
-				Selection_MouseMove (obj, ev);
-				break;
-			case EventType.ButtonRelease:
-				Selection_MouseUp (obj, ev);
-				break;
-			case EventType.KeyPress:
-				Selection_KeyPress (obj, key);
-				break;
-			}
-		}
-
-		void Selection_MouseDown (object obj, EventButton args)
-		{
-
-			switch (args.Button) {
-			case 1: // left mouse button
-				move = true;
-				lastX = args.X;
-				lastY = args.Y;
-				break;
-			case 3:	// right mouse button
-				break;
-			}
-		}
-
-		void Selection_MouseUp (object obj, EventButton args)
-		{
-
-			switch (args.Button) {
-			case 1: // left mouse button
-				move = false;
-				break;
-			case 3:	// right mouse button
-				break;
-			}
-		}
-
-		void Selection_MouseMove (object obj, EventButton args)
-		{
-			if (move) {
-				// get diff
-				double diffx = args.X - lastX;
-				double diffy = args.Y - lastY;
-				lastX = args.X;
-				lastY = args.Y;
-
-				foreach (CanvasItem current in selectedItems)
-					current.Move (diffx, diffy);
-				selection.Move (diffx, diffy);
-			}
-
-		}
-
-		void Selection_KeyPress (object obj, EventKey args)
-		{
-			switch (args.Key) {
-			case Gdk.Key.Delete:
-				// delete selection
-				foreach (CanvasItem current in selectedItems) {
-					current.Destroy ();
-					elements.Remove (current);
-				}
-				unselect ();
-				break;
-			}
 		}
 
 		public static int Main (string[] args)
