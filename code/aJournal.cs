@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Gnome;
 using Gtk;
 using Gdk;
@@ -14,6 +15,9 @@ namespace code
 		ArrayList currentStrokePoints;
 		const int canvasWidth = 1500, canvasHeight = 1500;
 		Gtk.Window win;
+
+		// TODO find a way to read elements back from the canvas itself
+		List<CanvasItem> elements = new List<CanvasItem> ();
 
 		public aJournal ()
 		{
@@ -235,6 +239,10 @@ namespace code
 			currentStrokePoints.Add (x);
 			currentStrokePoints.Add (y);
 			currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+
+			// add the final stroke to the list of elements
+			elements.Add (currentStroke);
+
 			currentStroke = null;
 			currentStrokePoints = null;
 		}
@@ -276,7 +284,7 @@ namespace code
 
 		bool selectionInProgress = false;
 		CanvasRE selection;
-		CanvasItem selectedItems;
+		List<CanvasItem> selectedItems = new List<CanvasItem> ();
 		bool move = false;
 		double lastX, lastY;
 
@@ -316,6 +324,14 @@ namespace code
 			selectionInProgress = false;
 
 			//TODO find selected items
+			//TODO find a way to read elements back from the canvas itself
+//			foreach (CanvasItem current in myCanvas.AllChildren) {
+			foreach (CanvasItem current in elements) {
+				double x1, x2, y1, y2;
+				current.GetBounds (out x1, out y1, out x2, out y2);
+				if (selection.X1 < x1 && selection.X2 > x2 && selection.Y1 < y1 && selection.Y2 > y2)
+					selectedItems.Add (current);
+			}
 		}
 
 		/**
@@ -327,7 +343,7 @@ namespace code
 			double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
 			item.GetBounds (out x1, out y1, out x2, out y2);
 
-			selectedItems = item;
+			selectedItems.Add (item);
 
 			// draw a filled rectangle to represent the selection
 			selection = new CanvasRect (myCanvas.Root ());
@@ -356,7 +372,7 @@ namespace code
 			try {
 				selection.Destroy ();
 				selection = null;
-				selectedItems = null;
+				selectedItems.Clear ();
 			} catch (NullReferenceException) {
 				// in case nothing is selected
 			}
@@ -418,7 +434,8 @@ namespace code
 				lastX = args.X;
 				lastY = args.Y;
 
-				selectedItems.Move (diffx, diffy);
+				foreach (CanvasItem current in selectedItems)
+					current.Move (diffx, diffy);
 				selection.Move (diffx, diffy);
 			}
 
@@ -429,7 +446,10 @@ namespace code
 			switch (args.Key) {
 			case Gdk.Key.Delete:
 				// delete selection
-				selectedItems.Destroy ();
+				foreach (CanvasItem current in selectedItems) {
+					current.Destroy ();
+					elements.Remove (current);
+				}
 				unselect ();
 				break;
 			}
