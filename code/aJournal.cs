@@ -183,8 +183,8 @@ namespace code
 		{
 			if (1 == args.Button)
 				StartStroke (args.X, args.Y);
-//			else if (2 == args.Button)
-//				startSelection (args.X, args.Y);
+			else if (3 == args.Button)
+				StartSelection (args.X, args.Y);
 		}
 
 		void StartStroke (double x, double y)
@@ -205,6 +205,7 @@ namespace code
 		void MyCanvas_MouseMove (object obj, EventButton args)
 		{
 			ContinueStroke (args.X, args.Y);
+			ContinueSelection (args.X, args.Y);
 		}
 
 		void ContinueStroke (double x, double y)
@@ -225,6 +226,8 @@ namespace code
 		{
 			if (1 == args.Button)
 				CompleteStroke (args.X, args.Y);
+			else if (3 == args.Button)
+				CompleteSelection (args.X, args.Y);
 		}
 
 		void CompleteStroke (double x, double y)
@@ -271,10 +274,49 @@ namespace code
 			Application.Quit ();
 		}
 
+		bool selectionInProgress = false;
 		CanvasRE selection;
 		CanvasItem selectedItems;
 		bool move = false;
 		double lastX, lastY;
+
+		void StartSelection (double x, double y)
+		{
+			unselect ();
+			selection = new CanvasRect (myCanvas.Root ());
+
+			selection.X1 = x;
+			selection.Y1 = y;
+			selection.X2 = x;
+			selection.Y2 = y;
+
+			selection.FillColorRgba = 0x88888830; // 0xRRGGBBAA
+			selection.OutlineColor = "black";
+
+			selectionInProgress = true;
+		}
+
+		void ContinueSelection (double x, double y)
+		{
+			if (selectionInProgress) {
+				selection.X2 = x;
+				selection.Y2 = y;
+			}
+		}
+
+		void CompleteSelection (double x, double y)
+		{
+			ContinueSelection (x, y);
+
+			// enable key event recognition
+			selection.GrabFocus ();
+
+			selection.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
+
+			selectionInProgress = false;
+
+			//TODO find selected items
+		}
 
 		/**
 		 * select one item by placing a gray box around it
