@@ -269,7 +269,7 @@ namespace code
 
 			switch (args.Button) {
 			case 1: // left mouse button selects the line
-				select ((CanvasLine)obj);
+				selectItem ((CanvasLine)obj);
 				break;
 			case 3:	// right mouse button deletes the line
 				((CanvasLine)obj).Destroy ();
@@ -338,30 +338,18 @@ namespace code
 		 * select one item by placing a gray box around it
 		 * TODO offer various selection methods
 		 */
-		public void select (CanvasItem item)
+		public void selectItem (CanvasItem item)
 		{
 			double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
 			item.GetBounds (out x1, out y1, out x2, out y2);
 
+			// use these to setup the selection rectangle
+			StartSelection (x1, y1);
+			CompleteSelection (x2, y2);
+			// clear the selection cache because we only want one single element selected
+			selectedItems.Clear ();
+
 			selectedItems.Add (item);
-
-			// draw a filled rectangle to represent the selection
-			selection = new CanvasRect (myCanvas.Root ());
-
-			// set fill and stroke
-			selection.FillColorRgba = 0x88888830; // 0xRRGGBBAA
-			selection.OutlineColor = "black";
-
-			// position
-			selection.X1 = x1;
-			selection.Y1 = y1;
-			selection.X2 = x2;
-			selection.Y2 = y2;
-
-			// enable key event recognition
-			selection.GrabFocus ();
-
-			selection.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
 		}
 
 		/**
