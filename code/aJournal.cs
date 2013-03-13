@@ -397,6 +397,7 @@ namespace code
 		TreeView myTreeView;
 		static List<Note> notes = new List<Note> ();
 		Gtk.Window win;
+		VBox myNotesContainer;
 
 		// TODO find a way to read elements back from the canvas itself
 		static List<CanvasItem> elements = new List<CanvasItem> ();
@@ -458,7 +459,7 @@ namespace code
 			VBox myContentContainer = new VBox (false, 0);
 			myViewport.Add (myContentContainer);
 
-			VBox myNotesContainer = new VBox (false, 0);
+			myNotesContainer = new VBox (false, 0);
 			myContentContainer.Add (myNotesContainer);
 
 			Note note = new Note ();
@@ -468,12 +469,22 @@ namespace code
 
 			// indicate that there will somewhen be the option to add another notes area
 			Button addNotesButton = new Button (Gtk.Stock.Add);
+			addNotesButton.Clicked += AddNote;
 			myContentContainer.Add (addNotesButton);
 			win.ShowAll ();
 
 			myTreeView.Visible = false;
 
 			note.Fit (400);
+		}
+
+		void AddNote (object obj, EventArgs args)
+		{
+			Note note = new Note ();
+			notes.Add (note);
+			note.Fit (400);
+			myNotesContainer.Add (note);
+			note.ShowAll ();
 		}
 
 		/**
