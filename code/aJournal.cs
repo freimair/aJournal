@@ -334,6 +334,11 @@ namespace code
 				item.CanvasEvent += new Gnome.CanvasEventHandler (Event);
 			}
 
+			public int Width ()
+			{
+				return (int)Math.Round (myCanvas.PixelsPerUnit * canvasWidth);
+			}
+
 			/**
 			 * change the canvas scale
 			 */
@@ -367,6 +372,7 @@ namespace code
 			 */
 			void Event (object obj, Gnome.CanvasEventArgs args)
 			{
+				// ((CanvasItem) obj).Canvas may get us the canvas if we ever plan to work cross canvas
 				try {
 					EventButton ev = new EventButton (args.Event.Handle);
 					if (EventType.ButtonPress == ev.Type) {
@@ -482,7 +488,7 @@ namespace code
 		{
 			Note note = new Note ();
 			notes.Add (note);
-			note.Fit (400);
+			note.Fit (notes [0].Width ());
 			myNotesContainer.Add (note);
 			note.ShowAll ();
 		}
