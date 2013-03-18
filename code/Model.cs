@@ -72,9 +72,25 @@ namespace code
 			return new List<Entry> ();
 		}
 
-		public List<Array> get ()
+		public List<int[]> get ()
 		{
-			return new List<Array> ();
+			XmlNodeList nodes = root.SelectNodes ("/svg/polyline/@points");
+
+			List<int[]> result = new List<int[]> ();
+			for (int i = 0; i < nodes.Count; i++) {
+				// parse points
+				String[] values = nodes [i].Value.Split (new char[] {' ', ','});
+
+				// create integer array for frontend
+				int[] current = new int[values.Length];
+				int j = 0;
+				foreach (String currentValue in values)
+					current [j++] = Convert.ToInt32 (currentValue);
+
+				// add it to the list of strokes
+				result.Add (current);
+			}
+			return result;
 		}
 
 		/*
@@ -169,6 +185,8 @@ namespace code
 			DUT.edit (listA, listB);
 			DUT.edit (listB, new List<int[]> ());
 			DUT.edit (new List<int[]> (), listA);
+
+			System.Console.WriteLine (listA.ToString () == DUT.get ().ToString ());
 
 			DUT.persist ();
 			return 0;
