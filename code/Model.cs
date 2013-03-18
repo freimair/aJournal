@@ -10,6 +10,17 @@ namespace code
 		XmlDocument document;
 
 		XmlNode root;
+		XmlNode tagsNode;
+
+		private Entry (String file)
+		{
+			// instantiate XmlDocument and load XML from file
+			document = new XmlDocument ();
+			document.Load (file);
+
+			root = document.GetElementsByTagName ("svg") [0];
+			tagsNode = document.GetElementsByTagName ("tags") [0];
+		}
 
 		private Entry ()
 		{
@@ -22,7 +33,7 @@ namespace code
 			XmlNode descriptionNode = document.CreateElement ("desc");
 			root.AppendChild (descriptionNode);
 
-			XmlNode tagsNode = document.CreateElement ("tags");
+			tagsNode = document.CreateElement ("tags");
 			descriptionNode.AppendChild (tagsNode);
 
 			String[] tags = new String[]{"tag1", "tag2", "tag3"};
@@ -31,35 +42,6 @@ namespace code
 				tagNode.AppendChild (document.CreateTextNode (tag));
 				tagsNode.AppendChild (tagNode);
 			}
-
-//			// instantiate XmlDocument and load XML from file
-//			XmlDocument doc = new XmlDocument ();
-//			doc.Load (@"D:\test.xml");
-//
-//// get a list of nodes - in this case, I'm selecting all <AID> nodes under
-//// the <GroupAIDs> node - change to suit your needs
-//			XmlNodeList aNodes = doc.SelectNodes ("/Equipment/DataCollections/GroupAIDs/AID");
-//
-//// loop through all AID nodes
-//			foreach (XmlNode aNode in aNodes) {
-//				// grab the "id" attribute
-//				XmlAttribute idAttribute = aNode.Attributes ["id"];
-//
-//				// check if that attribute even exists...
-//				if (idAttribute != null) {
-//					// if yes - read its current value
-//					string currentValue = idAttribute.Value;
-//
-//					// here, you can now decide what to do - for demo purposes,
-//					// I just set the ID value to a fixed value if it was empty before
-//					if (string.IsNullOrEmpty (currentValue)) {
-//						idAttribute.Value = "515";
-//					}
-//				}
-//			}
-//
-//// save the XmlDocument back to disk
-//			doc.Save (@"D:\test2.xml");
 		}
 
 		public static Entry create ()
@@ -69,7 +51,14 @@ namespace code
 
 		public static List<Entry> getEntries ()
 		{
-			return new List<Entry> ();
+			String[] files = Directory.GetFiles (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/", "*.svg");
+
+			// introduce some sort of caching functionality
+			List<Entry> result = new List<Entry> ();
+			foreach (String file in files)
+				result.Add (new Entry (file));
+
+			return result;
 		}
 
 		public List<int[]> get ()
@@ -189,6 +178,10 @@ namespace code
 			System.Console.WriteLine (listA.ToString () == DUT.get ().ToString ());
 
 			DUT.persist ();
+
+			DUT = Entry.getEntries () [0];
+			System.Console.WriteLine (listA.ToString () == DUT.get ().ToString ());
+
 			return 0;
 		}
 	}
