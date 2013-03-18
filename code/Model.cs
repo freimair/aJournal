@@ -114,10 +114,10 @@ namespace code
 		public void persist ()
 		{
 			// check if data directory exists and create if neccessary
-			if (!Directory.Exists ("/home/me/.aJournal/"))
-				Directory.CreateDirectory ("/home/me/.aJournal");
+			if (!Directory.Exists (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/"))
+				Directory.CreateDirectory (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/");
 
-			document.Save ("/home/me/.aJournal/probe.svg");
+			document.Save (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/probe.svg");
 		}
 
 		public static int Main (string[] args)
