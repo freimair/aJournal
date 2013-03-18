@@ -9,7 +9,7 @@ namespace code
 	{
 		XmlDocument document;
 
-		XmlNode root;
+		XmlNode rootNode;
 		XmlNode tagsNode;
 
 		private Entry (String file)
@@ -18,7 +18,7 @@ namespace code
 			document = new XmlDocument ();
 			document.Load (file);
 
-			root = document.GetElementsByTagName ("svg") [0];
+			rootNode = document.GetElementsByTagName ("svg") [0];
 			tagsNode = document.GetElementsByTagName ("tags") [0];
 		}
 
@@ -27,11 +27,11 @@ namespace code
 			document = new XmlDocument ();
 			document.AppendChild (document.CreateXmlDeclaration ("1.0", "utf-8", null));
 
-			root = document.CreateElement ("svg");
-			document.AppendChild (root);
+			rootNode = document.CreateElement ("svg");
+			document.AppendChild (rootNode);
 
 			XmlNode descriptionNode = document.CreateElement ("desc");
-			root.AppendChild (descriptionNode);
+			rootNode.AppendChild (descriptionNode);
 
 			tagsNode = document.CreateElement ("tags");
 			descriptionNode.AppendChild (tagsNode);
@@ -63,7 +63,7 @@ namespace code
 
 		public List<int[]> get ()
 		{
-			XmlNodeList nodes = root.SelectNodes ("/svg/polyline/@points");
+			XmlNodeList nodes = rootNode.SelectNodes ("/svg/polyline/@points");
 
 			List<int[]> result = new List<int[]> ();
 			for (int i = 0; i < nodes.Count; i++) {
@@ -104,10 +104,10 @@ namespace code
 				String pattern = "";
 				for (int i = 0; i < current.Length; i += 2)
 					pattern += current [i] + "," + current [i + 1] + " ";
-				XmlNode currentNode = root.SelectSingleNode ("/svg/polyline[@points='" + pattern.Trim () + "']");
+				XmlNode currentNode = rootNode.SelectSingleNode ("/svg/polyline[@points='" + pattern.Trim () + "']");
 
 				// remove node
-				root.RemoveChild (currentNode);
+				rootNode.RemoveChild (currentNode);
 			}
 
 			// add new polylines
@@ -132,7 +132,7 @@ namespace code
 				currentNode.Attributes.Append (strokeAttribute);
 				currentNode.Attributes.Append (strokeWidthAttribute);
 				currentNode.Attributes.Append (pointsAttribute);
-				root.AppendChild (currentNode);
+				rootNode.AppendChild (currentNode);
 			}
 		}
 
