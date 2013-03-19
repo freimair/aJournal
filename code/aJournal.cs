@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Gnome;
 using Gtk;
 using Gdk;
@@ -9,12 +10,14 @@ namespace code
 	public class aJournal
 	{
 		TreeView myTreeView;
-		CanvasRE selection;
 		Canvas myCanvas;
 		CanvasLine currentStroke;
 		ArrayList currentStrokePoints;
 		const int canvasWidth = 1500, canvasHeight = 1500;
 		Gtk.Window win;
+
+		// TODO find a way to read elements back from the canvas itself
+		List<CanvasItem> elements = new List<CanvasItem> ();
 
 		public aJournal ()
 		{
@@ -74,7 +77,7 @@ namespace code
 			myViewport.Add (myNotesContainer);
 
 			// add a canvas to the second column
-			myCanvas = new Canvas ();
+			myCanvas = Canvas.NewAa ();
 			// TODO find out why this somehow centers the axis origin.
 			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
 
@@ -182,13 +185,22 @@ namespace code
 		 */
 		void MyCanvas_MouseDown (object obj, EventButton args)
 		{
+			if (1 == args.Button)
+				StartStroke (args.X, args.Y);
+			else if (3 == args.Button)
+				StartSelection (args.X, args.Y);
+		}
+
+		void StartStroke (double x, double y)
+		{
 			unselect ();
 			currentStroke = new CanvasLine (myCanvas.Root ());
 			currentStroke.WidthUnits = 2;
+			currentStroke.FillColor = "black";
 			currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
 			currentStrokePoints = new ArrayList ();
-			currentStrokePoints.Add ((double)args.X);
-			currentStrokePoints.Add ((double)args.Y);
+			currentStrokePoints.Add (x);
+			currentStrokePoints.Add (y);
 		}
 
 		/**
@@ -196,9 +208,15 @@ namespace code
 		 */
 		void MyCanvas_MouseMove (object obj, EventButton args)
 		{
+			ContinueStroke (args.X, args.Y);
+			ContinueSelection (args.X, args.Y);
+		}
+
+		void ContinueStroke (double x, double y)
+		{
 			try {
-				currentStrokePoints.Add (args.X);
-				currentStrokePoints.Add (args.Y);
+				currentStrokePoints.Add (x);
+				currentStrokePoints.Add (y);
 				currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
 			} catch (NullReferenceException) {
 				// in case there was no line started
@@ -210,9 +228,21 @@ namespace code
 		 */
 		void MyCanvas_MouseUp (object obj, EventButton args)
 		{
-			currentStrokePoints.Add (args.X);
-			currentStrokePoints.Add (args.Y);
+			if (1 == args.Button)
+				CompleteStroke (args.X, args.Y);
+			else if (3 == args.Button)
+				CompleteSelection (args.X, args.Y);
+		}
+
+		void CompleteStroke (double x, double y)
+		{
+			currentStrokePoints.Add (x);
+			currentStrokePoints.Add (y);
 			currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+
+			// add the final stroke to the list of elements
+			elements.Add (currentStroke);
+
 			currentStroke = null;
 			currentStrokePoints = null;
 		}
@@ -239,7 +269,7 @@ namespace code
 
 			switch (args.Button) {
 			case 1: // left mouse button selects the line
-				select ((CanvasLine)obj);
+				selectItem ((CanvasLine)obj);
 				break;
 			case 3:	// right mouse button deletes the line
 				((CanvasLine)obj).Destroy ();
@@ -252,32 +282,74 @@ namespace code
 			Application.Quit ();
 		}
 
+		bool selectionInProgress = false;
+		CanvasRE selection;
+		List<CanvasItem> selectedItems = new List<CanvasItem> ();
+		bool move = false;
+		double lastX, lastY;
+
+		void StartSelection (double x, double y)
+		{
+			unselect ();
+			selection = new CanvasRect (myCanvas.Root ());
+
+			selection.X1 = x;
+			selection.Y1 = y;
+			selection.X2 = x;
+			selection.Y2 = y;
+
+			selection.FillColorRgba = 0x88888830; // 0xRRGGBBAA
+			selection.OutlineColor = "black";
+
+			selectionInProgress = true;
+		}
+
+		void ContinueSelection (double x, double y)
+		{
+			if (selectionInProgress) {
+				selection.X2 = x;
+				selection.Y2 = y;
+			}
+		}
+
+		void CompleteSelection (double x, double y)
+		{
+			ContinueSelection (x, y);
+
+			// enable key event recognition
+			selection.GrabFocus ();
+
+			selection.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
+
+			selectionInProgress = false;
+
+			//TODO find selected items
+			//TODO find a way to read elements back from the canvas itself
+//			foreach (CanvasItem current in myCanvas.AllChildren) {
+			foreach (CanvasItem current in elements) {
+				double x1, x2, y1, y2;
+				current.GetBounds (out x1, out y1, out x2, out y2);
+				if (selection.X1 < x1 && selection.X2 > x2 && selection.Y1 < y1 && selection.Y2 > y2)
+					selectedItems.Add (current);
+			}
+		}
+
 		/**
 		 * select one item by placing a gray box around it
 		 * TODO offer various selection methods
 		 */
-		public void select (CanvasItem item)
+		public void selectItem (CanvasItem item)
 		{
 			double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
 			item.GetBounds (out x1, out y1, out x2, out y2);
 
-			// draw a filled rectangle to represent the selection
-			selection = new CanvasRect (myCanvas.Root ());
+			// use these to setup the selection rectangle
+			StartSelection (x1, y1);
+			CompleteSelection (x2, y2);
+			// clear the selection cache because we only want one single element selected
+			selectedItems.Clear ();
 
-			// lower to bottom
-			selection.LowerToBottom ();
-			// and raise just above basic rectangle
-			selection.Raise (1);
-
-			// set fill and stroke
-			selection.FillColor = "gray";
-			selection.OutlineColor = "black";
-
-			// position
-			selection.X1 = x1;
-			selection.Y1 = y1;
-			selection.X2 = x2;
-			selection.Y2 = y2;
+			selectedItems.Add (item);
 		}
 
 		/**
@@ -288,8 +360,86 @@ namespace code
 			try {
 				selection.Destroy ();
 				selection = null;
+				selectedItems.Clear ();
 			} catch (NullReferenceException) {
 				// in case nothing is selected
+			}
+		}
+
+		void Selection_Event (object obj, Gnome.CanvasEventArgs args)
+		{
+			EventButton ev = new EventButton (args.Event.Handle);
+			EventKey key = new EventKey (args.Event.Handle);
+
+			switch (ev.Type) {
+			case EventType.ButtonPress:
+				Selection_MouseDown (obj, ev);
+				break;
+			case EventType.MotionNotify:
+				Selection_MouseMove (obj, ev);
+				break;
+			case EventType.ButtonRelease:
+				Selection_MouseUp (obj, ev);
+				break;
+			case EventType.KeyPress:
+				Selection_KeyPress (obj, key);
+				break;
+			}
+		}
+
+		void Selection_MouseDown (object obj, EventButton args)
+		{
+
+			switch (args.Button) {
+			case 1: // left mouse button
+				move = true;
+				lastX = args.X;
+				lastY = args.Y;
+				break;
+			case 3:	// right mouse button
+				break;
+			}
+		}
+
+		void Selection_MouseUp (object obj, EventButton args)
+		{
+
+			switch (args.Button) {
+			case 1: // left mouse button
+				move = false;
+				break;
+			case 3:	// right mouse button
+				break;
+			}
+		}
+
+		void Selection_MouseMove (object obj, EventButton args)
+		{
+			if (move) {
+				// get diff
+				double diffx = args.X - lastX;
+				double diffy = args.Y - lastY;
+				lastX = args.X;
+				lastY = args.Y;
+
+				foreach (CanvasItem current in selectedItems)
+					current.Move (diffx, diffy);
+				selection.Move (diffx, diffy);
+			}
+
+		}
+
+		void Selection_KeyPress (object obj, EventKey args)
+		{
+			switch (args.Key) {
+			case Gdk.Key.Delete:
+				// delete selection
+				foreach (CanvasItem current in selectedItems) {
+					current.Destroy ();
+					elements.Remove (current);
+				}
+				unselect ();
+				break;
 			}
 		}
 
