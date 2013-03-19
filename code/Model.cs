@@ -2,9 +2,106 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
+using System.Linq;
 
 namespace code
 {
+	public class Tag
+	{
+		static Dictionary<string, Tag> tagCache = new Dictionary<string, Tag> ();
+
+		static void updateCache ()
+		{
+			var buffer = new List<string> (tagCache.Keys);
+			foreach (string current in buffer) {
+				if (!current.Equals (tagCache [current].ToString ())) {
+					Tag tmp = tagCache [current];
+					tagCache.Remove (current);
+					tagCache.Add (tmp.ToString (), tmp);
+				}
+			}
+		}
+
+		public static Tag Create (string path)
+		{
+			try {
+				return tagCache [path];
+			} catch (KeyNotFoundException) {
+				// create
+				Tag newTag = new Tag (path.Substring (path.LastIndexOf (".") + 1));
+
+				// find parent
+				if (path.Contains ("."))
+					newTag.Parent = Create (path.Substring (0, path.LastIndexOf (".")));
+
+				tagCache.Add (path, newTag);
+				return newTag;
+			}
+		}
+
+		public static Tag RecreateFromXml (XmlNode node)
+		{
+			return Create (node.FirstChild.Value);
+		}
+
+		Tag (string name)
+		{
+			Name = name;
+		}
+
+		string name;
+
+		public string Name {
+			get { return name; }
+			set {
+				name = value;
+				updateCache ();
+			}
+		}
+
+		Tag parent;
+
+		public Tag Parent {
+			get { return parent; }
+			set {
+				parent = value;
+				updateCache ();
+			}
+		}
+
+		public XmlNode ToXml (XmlDocument document)
+		{
+			XmlNode tagNode = document.CreateElement ("tag");
+			tagNode.AppendChild (document.CreateTextNode (ToString ()));
+			return tagNode;
+		}
+
+		public override string ToString ()
+		{
+			string result = name;
+			try {
+				result = parent.ToString () + "." + result;
+			} catch (NullReferenceException) {
+			}
+			return result;
+		}
+
+//		public override bool Equals (object obj)
+//		{
+//			if (obj.GetType () != this.GetType ())
+//				return false;
+//			Tag other = (Tag)obj;
+//			if (!Name.Equals (other.Name))
+//				return false;
+//			if (Parent != null && other.Parent != null) {
+//				if (!Parent.Equals (((Tag)obj).Parent))
+//					return false;
+//			}
+//
+//			return true;
+//		}
+	}
+
 	/**
 	 * some Drawable
 	 */
@@ -88,8 +185,30 @@ namespace code
 		}
 	}
 
+	public class EntryFilter
+	{
+		List<Tag> includedTags;
+
+		public List<Tag> IncludedTags {
+			get { return includedTags; }
+		}
+
+		List<Tag> excludedTags;
+
+		public List<Tag> ExcludedTags {
+			get { return excludedTags; }
+		}
+
+		public EntryFilter ()
+		{
+			includedTags = new List<Tag> ();
+			excludedTags = new List<Tag> ();
+		}
+	}
+
 	public class Entry
 	{
+		string filename;
 		XmlDocument document;
 		XmlNode rootNode;
 		XmlNode tagsNode;
@@ -117,13 +236,6 @@ namespace code
 
 			tagsNode = document.CreateElement ("tags");
 			descriptionNode.AppendChild (tagsNode);
-
-			String[] tags = new String[]{"tag1", "tag2", "tag3"};
-			foreach (String tag in tags) {
-				XmlNode tagNode = document.CreateElement ("tag");
-				tagNode.AppendChild (document.CreateTextNode (tag));
-				tagsNode.AppendChild (tagNode);
-			}
 		}
 
 		public static Entry create ()
@@ -133,13 +245,60 @@ namespace code
 
 		public static List<Entry> getEntries ()
 		{
+			return getEntries (null);
+		}
+
+		public static List<Entry> getEntries (EntryFilter filter)
+		{
 			String[] files = Directory.GetFiles (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/", "*.svg");
 
-			// introduce some sort of caching functionality
 			List<Entry> result = new List<Entry> ();
-			foreach (String file in files)
-				result.Add (new Entry (file));
+			foreach (String file in files) {
+				Entry candiate = new Entry (file);
+				bool addCandidate = false;
 
+				try {
+					foreach (Tag current in filter.IncludedTags) {
+						if (candiate.getTags ().Contains (current)) {
+							addCandidate = true;
+							break;
+						}
+					}
+
+					foreach (Tag current in filter.ExcludedTags) {
+						if (candiate.getTags ().Contains (current)) {
+							addCandidate = false;
+							break;
+						}
+					}
+				} catch (NullReferenceException) {
+					addCandidate = true;
+				}
+
+				if (addCandidate)
+					result.Add (candiate);
+			}
+
+			return result;
+		}
+
+		public void addTag (Tag tag)
+		{
+			tagsNode.AppendChild (tag.ToXml (document));
+		}
+
+		public void removeTag (Tag tag)
+		{
+			XmlNode node = tagsNode.SelectSingleNode ("//tag[text()='" + tag.Name + "']");
+			tagsNode.RemoveChild (node);
+		}
+
+		public List<Tag> getTags ()
+		{
+			List<Tag> result = new List<Tag> ();
+			foreach (XmlNode current in tagsNode.ChildNodes) {
+				result.Add (Tag.RecreateFromXml (current));
+			}
 			return result;
 		}
 
@@ -199,7 +358,13 @@ namespace code
 			if (!Directory.Exists (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/"))
 				Directory.CreateDirectory (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/");
 
-			document.Save (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + DateTime.Now.ToString ("yyyyMMddHHmmss") + ".svg");
+			filename = DateTime.Now.ToString ("yyyyMMddHHmmss");
+			document.Save (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + filename + ".svg");
+		}
+
+		public void Delete ()
+		{
+			File.Delete (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + filename + ".svg");
 		}
 
 		static void Main (string[] args)
