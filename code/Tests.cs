@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using code;
 
-namespace code
+namespace test
 {
 	[TestFixture()]
 	public class ModelTests
@@ -67,6 +68,31 @@ namespace code
 			// check
 			Assert.AreEqual (listA.ToString (), DUT.get ().ToString (), "reloading stroke from disk failed");
 		}
+
+		[Test]
+		public void SimpleTagTest ()
+		{
+			Tag DUT = new Tag ("");
+			DUT.Name = "tag1";
+			Assert.AreEqual (DUT.Name, DUT.ToString ());
+		}
+
+		[Test]
+		public void TagTreeTest ()
+		{
+			// setup testing entities
+			string tag1name = "tag1", tag2name = "tag2", tag3name = "tag3";
+			Tag tag1 = new Tag (tag1name);
+			Tag tag2 = new Tag (tag2name);
+			Tag tag3 = new Tag (tag3name);
+
+			// assemble tree
+			tag3.Parent = tag2;
+			tag2.Parent = tag1;
+
+			Assert.AreEqual ("tag1.tag2.tag3", tag3.ToString ());
+		}
+
 	}
 }
 

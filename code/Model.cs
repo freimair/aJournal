@@ -5,6 +5,45 @@ using System.Xml;
 
 namespace code
 {
+	public class Tag
+	{
+		public Tag (string name)
+		{
+			Name = name;
+		}
+
+		string name;
+
+		public string Name {
+			get { return name; }
+			set { name = value; }
+		}
+
+		Tag parent;
+
+		public Tag Parent {
+			get { return parent; }
+			set { parent = value; }
+		}
+
+		public XmlNode ToXml (XmlDocument document)
+		{
+			XmlNode tagNode = document.CreateElement ("tag");
+			tagNode.AppendChild (document.CreateTextNode (name));
+			return tagNode;
+		}
+
+		public override string ToString ()
+		{
+			string result = name;
+			try {
+				result = parent.ToString () + "." + result;
+			} catch (NullReferenceException) {
+			}
+			return result;
+		}
+	}
+
 	/**
 	 * some Drawable
 	 */
@@ -120,9 +159,7 @@ namespace code
 
 			String[] tags = new String[]{"tag1", "tag2", "tag3"};
 			foreach (String tag in tags) {
-				XmlNode tagNode = document.CreateElement ("tag");
-				tagNode.AppendChild (document.CreateTextNode (tag));
-				tagsNode.AppendChild (tagNode);
+				tagsNode.AppendChild (new Tag (tag).ToXml (document));
 			}
 		}
 
