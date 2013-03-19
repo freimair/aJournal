@@ -182,39 +182,9 @@ namespace code
 			document.Save (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/probe.svg");
 		}
 
-		public static int Main (string[] args)
+		static void Main (string[] args)
 		{
-			Entry DUT = new Entry ();
-
-			List<Stroke> listA = new List<Stroke> ();
-			Stroke stroke = new Stroke ();
-			stroke.Points.AddRange (new int[] {0,0,100,0,100,100});
-			listA.Add (stroke);
-			stroke = new Stroke ();
-			stroke.Points.AddRange (new int[] {0,0,100,100});
-			listA.Add (stroke);
-
-			List<Stroke> listB = new List<Stroke> ();
-			stroke = new Stroke ();
-			stroke.Points.AddRange (new int[] {3,3,3,3,3,3});
-			listB.Add (stroke);
-			stroke = new Stroke ();
-			stroke.Points.AddRange (new int[] {4,4,4,4,4,4});
-			listB.Add (stroke);
-
-			DUT.edit (new List<Stroke> (), listA);
-			DUT.edit (listA, listB);
-			DUT.edit (listB, new List<Stroke> ());
-			DUT.edit (new List<Stroke> (), listA);
-
-			System.Console.WriteLine (listA.ToString () == DUT.get ().ToString ());
-
-			DUT.persist ();
-
-			DUT = Entry.getEntries () [0];
-			System.Console.WriteLine (listA.ToString () == DUT.get ().ToString ());
-
-			return 0;
+			// dummy entry point
 		}
 	}
 }
