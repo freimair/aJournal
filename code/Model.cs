@@ -148,6 +148,27 @@ namespace code
 		}
 	}
 
+	public class EntryFilter
+	{
+		List<Tag> includedTags;
+
+		public List<Tag> IncludedTags {
+			get { return includedTags; }
+		}
+
+		List<Tag> excludedTags;
+
+		public List<Tag> ExcludedTags {
+			get { return excludedTags; }
+		}
+
+		public EntryFilter ()
+		{
+			includedTags = new List<Tag> ();
+			excludedTags = new List<Tag> ();
+		}
+	}
+
 	public class Entry
 	{
 		XmlDocument document;
@@ -186,12 +207,39 @@ namespace code
 
 		public static List<Entry> getEntries ()
 		{
+			return getEntries (null);
+		}
+
+		public static List<Entry> getEntries (EntryFilter filter)
+		{
 			String[] files = Directory.GetFiles (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/", "*.svg");
 
-			// introduce some sort of caching functionality
 			List<Entry> result = new List<Entry> ();
-			foreach (String file in files)
-				result.Add (new Entry (file));
+			foreach (String file in files) {
+				Entry candiate = new Entry (file);
+				bool addCandidate = false;
+
+				try {
+					foreach (Tag current in filter.IncludedTags) {
+						if (candiate.getTags ().Contains (current)) {
+							addCandidate = true;
+							break;
+						}
+					}
+
+					foreach (Tag current in filter.ExcludedTags) {
+						if (candiate.getTags ().Contains (current)) {
+							addCandidate = false;
+							break;
+						}
+					}
+				} catch (NullReferenceException) {
+					addCandidate = true;
+				}
+
+				if (addCandidate)
+					result.Add (candiate);
+			}
 
 			return result;
 		}

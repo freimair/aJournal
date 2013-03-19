@@ -133,6 +133,45 @@ namespace test
 			// check
 			Assert.IsEmpty (entry.getTags ());
 		}
+
+		[Test]
+		public void TagFilterEntries ()
+		{
+			// setup
+			int max = 3;
+
+			// - create entries
+			List<Entry> entries = new List<Entry> ();
+			for (int i = 0; i < max; i++)
+				entries.Add (Entry.create ());
+
+			// - create tags
+			List<Tag> tags = new List<Tag> ();
+			for (int i = 0; i < max; i++)
+				tags.Add (new Tag ("tag" + (i + 1)));
+
+			// - tag entries
+			for (int i = 0; i < max; i++)
+				for (int j = i; j < max; j++)
+					entries [i].addTag (tags [j]);
+
+			// - persist
+			foreach (Entry current in entries)
+				current.persist ();
+
+			// test
+			// - create filter
+			EntryFilter filter = new EntryFilter ();
+			filter.IncludedTags.Add (tags [2]);
+			filter.ExcludedTags.Add (tags [1]);
+			List<Entry> result = Entry.getEntries (filter);
+
+			// check
+			foreach (Entry current in result) {
+				Assert.Contains (tags [2], current.getTags ());
+				Assert.IsFalse (current.getTags ().Contains (tags [1]), "entrylist contains entry with excluded tag");
+			}
+		}
 	}
 }
 
