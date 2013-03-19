@@ -108,6 +108,33 @@ namespace test
 		}
 
 		[Test]
+		public void TagTreeXmlRoundtrip ()
+		{
+			// setup
+			int max = 3;
+
+			// - create tags
+			List<Tag> tags = new List<Tag> ();
+			for (int i = 0; i < max; i++)
+				tags.Add (new Tag ("tag" + (i + 1)));
+
+			// - relate tags
+			for (int i = 0; i < max - 1; i++)
+				tags [i].Parent = tags [i + 1];
+
+			// test
+			// - to XML
+			XmlDocument doc = new XmlDocument ();
+			XmlNode xml = tags [0].ToXml (doc);
+
+			// - recreate
+			Tag recreated = Tag.RecreateFromXml (xml);
+
+			Assert.AreEqual (tags [0].ToString (), recreated.ToString ());
+			Assert.AreEqual (tags [0], recreated);
+		}
+
+		[Test]
 		public void AddingTagsToEntriesTest ()
 		{
 			Entry entry = Entry.create ();

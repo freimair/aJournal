@@ -7,16 +7,17 @@ namespace code
 {
 	public class Tag
 	{
+		
 		public static Tag RecreateFromXml (XmlNode node)
 		{
 			// TODO insert tag caching mechanism here
-			return new Tag (node);
-		}
-
-		Tag (XmlNode node)
-		{
-			// TODO insert error handling here
-			Name = node.FirstChild.Value;
+			Tag temp = null, old = null;
+			foreach (string current in node.FirstChild.Value.Split(new char[] {'.'})) {
+				old = temp;
+				temp = new Tag (current);
+				temp.Parent = old;
+			}
+			return temp;
 		}
 
 		public Tag (string name)
@@ -41,7 +42,7 @@ namespace code
 		public XmlNode ToXml (XmlDocument document)
 		{
 			XmlNode tagNode = document.CreateElement ("tag");
-			tagNode.AppendChild (document.CreateTextNode (name));
+			tagNode.AppendChild (document.CreateTextNode (ToString ()));
 			return tagNode;
 		}
 
