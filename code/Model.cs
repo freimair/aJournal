@@ -5,10 +5,72 @@ using System.Xml;
 
 namespace code
 {
+	public class Stroke
+	{
+		string color = "red";
+		int strength = 1;
+		private List<int> points;
+
+		public List<int> Points {
+			get { return points; }
+			set { points = value; }
+		}
+
+		public Stroke ()
+		{
+			points = new List<int> ();
+		}
+
+		public Stroke (XmlNode node) : this()
+		{
+			// parse points
+			String[] values = node.Value.Split (new char[] {' ', ','});
+
+			foreach (String currentValue in values)
+				points.Add (Convert.ToInt32 (currentValue));
+		}
+
+		private string GetSVGPointList ()
+		{
+			string result = "";
+			for (int i = 0; i < points.Count; i += 2)
+				result += points [i] + "," + points [i + 1] + " ";
+			return result.Trim ();
+		}
+
+		public XmlNode Find (XmlNode root)
+		{
+			return root.SelectSingleNode ("/svg/polyline[@points='" + GetSVGPointList () + "']");
+		}
+
+		public XmlNode ToXml (XmlDocument document)
+		{
+			XmlAttribute fillAttribute = document.CreateAttribute ("fill");
+			fillAttribute.Value = "none";
+
+			XmlAttribute strokeAttribute = document.CreateAttribute ("stroke");
+			strokeAttribute.Value = color;
+
+			XmlAttribute strokeWidthAttribute = document.CreateAttribute ("stroke-width");
+			strokeWidthAttribute.Value = strength.ToString ();
+
+			XmlAttribute pointsAttribute = document.CreateAttribute ("points");
+			pointsAttribute.Value = GetSVGPointList ();
+
+			XmlNode currentNode = document.CreateElement ("polyline");
+
+			currentNode.Attributes.Append (fillAttribute);
+			currentNode.Attributes.Append (strokeAttribute);
+			currentNode.Attributes.Append (strokeWidthAttribute);
+			currentNode.Attributes.Append (pointsAttribute);
+
+			return currentNode;
+		}
+	}
+
 	public class Entry
 	{
 		XmlDocument document;
-
 		XmlNode rootNode;
 		XmlNode tagsNode;
 
@@ -61,24 +123,14 @@ namespace code
 			return result;
 		}
 
-		public List<int[]> get ()
+		public List<Stroke> get ()
 		{
 			XmlNodeList nodes = rootNode.SelectNodes ("/svg/polyline/@points");
 
-			List<int[]> result = new List<int[]> ();
-			for (int i = 0; i < nodes.Count; i++) {
-				// parse points
-				String[] values = nodes [i].Value.Split (new char[] {' ', ','});
+			List<Stroke> result = new List<Stroke> ();
+			foreach (XmlNode current in nodes)
+				result.Add (new Stroke (current));
 
-				// create integer array for frontend
-				int[] current = new int[values.Length];
-				int j = 0;
-				foreach (String currentValue in values)
-					current [j++] = Convert.ToInt32 (currentValue);
-
-				// add it to the list of strokes
-				result.Add (current);
-			}
 			return result;
 		}
 
@@ -96,44 +148,15 @@ namespace code
          *          1150,375" />
          * </svg>
          */
-		public void edit (List<int[]> before, List<int[]> after)
+		public void edit (List<Stroke> before, List<Stroke> after)
 		{
 			// remove deprecated polylines
-			foreach (int[] current in before) {
-				// locate node
-				String pattern = "";
-				for (int i = 0; i < current.Length; i += 2)
-					pattern += current [i] + "," + current [i + 1] + " ";
-				XmlNode currentNode = rootNode.SelectSingleNode ("/svg/polyline[@points='" + pattern.Trim () + "']");
-
-				// remove node
-				rootNode.RemoveChild (currentNode);
-			}
+			foreach (Stroke current in before)
+				rootNode.RemoveChild (current.Find (rootNode));
 
 			// add new polylines
-			foreach (int[] current in after) {
-				XmlAttribute fillAttribute = document.CreateAttribute ("fill");
-				fillAttribute.Value = "none";
-
-				XmlAttribute strokeAttribute = document.CreateAttribute ("stroke");
-				strokeAttribute.Value = "black";
-
-				XmlAttribute strokeWidthAttribute = document.CreateAttribute ("stroke-width");
-				strokeWidthAttribute.Value = "10";
-
-				XmlAttribute pointsAttribute = document.CreateAttribute ("points");
-				for (int i = 0; i < current.Length; i += 2)
-					pointsAttribute.Value += current [i] + "," + current [i + 1] + " ";
-				pointsAttribute.Value = pointsAttribute.Value.Trim ();
-
-				XmlNode currentNode = document.CreateElement ("polyline");
-
-				currentNode.Attributes.Append (fillAttribute);
-				currentNode.Attributes.Append (strokeAttribute);
-				currentNode.Attributes.Append (strokeWidthAttribute);
-				currentNode.Attributes.Append (pointsAttribute);
-				rootNode.AppendChild (currentNode);
-			}
+			foreach (Stroke current in after)
+				rootNode.AppendChild (current.ToXml (document));
 		}
 
 		public DateTime getCreationTimestamp ()
@@ -162,18 +185,27 @@ namespace code
 		public static int Main (string[] args)
 		{
 			Entry DUT = new Entry ();
-			List<int[]> listA = new List<int[]> ();
-			listA.Add (new int[] {1,1,1,1,1,1});
-			listA.Add (new int[] {2,2,2,2,2,2});
 
-			List<int[]> listB = new List<int[]> ();
-			listB.Add (new int[] {3,3,3,3,3,3});
-			listB.Add (new int[] {4,4,4,4,4,4});
+			List<Stroke> listA = new List<Stroke> ();
+			Stroke stroke = new Stroke ();
+			stroke.Points.AddRange (new int[] {0,0,100,0,100,100});
+			listA.Add (stroke);
+			stroke = new Stroke ();
+			stroke.Points.AddRange (new int[] {0,0,100,100});
+			listA.Add (stroke);
 
-			DUT.edit (new List<int[]> (), listA);
+			List<Stroke> listB = new List<Stroke> ();
+			stroke = new Stroke ();
+			stroke.Points.AddRange (new int[] {3,3,3,3,3,3});
+			listB.Add (stroke);
+			stroke = new Stroke ();
+			stroke.Points.AddRange (new int[] {4,4,4,4,4,4});
+			listB.Add (stroke);
+
+			DUT.edit (new List<Stroke> (), listA);
 			DUT.edit (listA, listB);
-			DUT.edit (listB, new List<int[]> ());
-			DUT.edit (new List<int[]> (), listA);
+			DUT.edit (listB, new List<Stroke> ());
+			DUT.edit (new List<Stroke> (), listA);
 
 			System.Console.WriteLine (listA.ToString () == DUT.get ().ToString ());
 
