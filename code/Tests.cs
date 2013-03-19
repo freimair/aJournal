@@ -76,8 +76,7 @@ namespace test
 		[Test]
 		public void SimpleTagTest ()
 		{
-			Tag DUT = new Tag ("");
-			DUT.Name = "tag1";
+			Tag DUT = Tag.Create ("tag1");
 			Assert.AreEqual (DUT.Name, DUT.ToString ());
 		}
 
@@ -86,9 +85,9 @@ namespace test
 		{
 			// setup testing entities
 			string tag1name = "tag1", tag2name = "tag2", tag3name = "tag3";
-			Tag tag1 = new Tag (tag1name);
-			Tag tag2 = new Tag (tag2name);
-			Tag tag3 = new Tag (tag3name);
+			Tag tag1 = Tag.Create (tag1name);
+			Tag tag2 = Tag.Create (tag2name);
+			Tag tag3 = Tag.Create (tag3name);
 
 			// assemble tree
 			tag3.Parent = tag2;
@@ -100,7 +99,7 @@ namespace test
 		[Test]
 		public void TagToXmlToTagTest ()
 		{
-			Tag DUT = new Tag ("tagname");
+			Tag DUT = Tag.Create ("tagname");
 			XmlDocument doc = new XmlDocument ();
 			Tag recreated = Tag.RecreateFromXml (DUT.ToXml (doc));
 
@@ -116,7 +115,7 @@ namespace test
 			// - create tags
 			List<Tag> tags = new List<Tag> ();
 			for (int i = 0; i < max; i++)
-				tags.Add (new Tag ("tag" + (i + 1)));
+				tags.Add (Tag.Create ("tag" + (i + 1)));
 
 			// - relate tags
 			for (int i = 0; i < max - 1; i++)
@@ -139,8 +138,8 @@ namespace test
 		{
 			Entry entry = Entry.create ();
 
-			Tag tag1 = new Tag ("tag1");
-			Tag tag2 = new Tag ("tag2");
+			Tag tag1 = Tag.Create ("tag1");
+			Tag tag2 = Tag.Create ("tag2");
 
 			entry.addTag (tag1);
 			entry.addTag (tag2);
@@ -154,7 +153,7 @@ namespace test
 		{
 			// setup
 			Entry entry = Entry.create ();
-			Tag tag = new Tag ("tagname");
+			Tag tag = Tag.Create ("tagname");
 			entry.addTag (tag);
 
 			// test
@@ -178,7 +177,7 @@ namespace test
 			// - create tags
 			List<Tag> tags = new List<Tag> ();
 			for (int i = 0; i < max; i++)
-				tags.Add (new Tag ("tag" + (i + 1)));
+				tags.Add (Tag.Create ("tag" + (i + 1)));
 
 			// - tag entries
 			for (int i = 0; i < max; i++)

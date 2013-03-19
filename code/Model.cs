@@ -2,25 +2,49 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
+using System.Linq;
 
 namespace code
 {
 	public class Tag
 	{
-		
-		public static Tag RecreateFromXml (XmlNode node)
+		static Dictionary<string, Tag> tagCache = new Dictionary<string, Tag> ();
+
+		static void updateCache ()
 		{
-			// TODO insert tag caching mechanism here
-			Tag temp = null, old = null;
-			foreach (string current in node.FirstChild.Value.Split(new char[] {'.'})) {
-				old = temp;
-				temp = new Tag (current);
-				temp.Parent = old;
+			var buffer = new List<string> (tagCache.Keys);
+			foreach (string current in buffer) {
+				if (!current.Equals (tagCache [current].ToString ())) {
+					Tag tmp = tagCache [current];
+					tagCache.Remove (current);
+					tagCache.Add (tmp.ToString (), tmp);
+				}
 			}
-			return temp;
 		}
 
-		public Tag (string name)
+		public static Tag Create (string path)
+		{
+			try {
+				return tagCache [path];
+			} catch (KeyNotFoundException) {
+				// create
+				Tag newTag = new Tag (path.Substring (path.LastIndexOf (".") + 1));
+
+				// find parent
+				if (path.Contains ("."))
+					newTag.Parent = Create (path.Substring (0, path.LastIndexOf (".")));
+
+				tagCache.Add (path, newTag);
+				return newTag;
+			}
+		}
+
+		public static Tag RecreateFromXml (XmlNode node)
+		{
+			return Create (node.FirstChild.Value);
+		}
+
+		Tag (string name)
 		{
 			Name = name;
 		}
@@ -29,14 +53,20 @@ namespace code
 
 		public string Name {
 			get { return name; }
-			set { name = value; }
+			set {
+				name = value;
+				updateCache ();
+			}
 		}
 
 		Tag parent;
 
 		public Tag Parent {
 			get { return parent; }
-			set { parent = value; }
+			set {
+				parent = value;
+				updateCache ();
+			}
 		}
 
 		public XmlNode ToXml (XmlDocument document)
@@ -56,14 +86,20 @@ namespace code
 			return result;
 		}
 
-		public override bool Equals (object obj)
-		{
-			if (obj.GetType () != this.GetType ())
-				return false;
-			if (!Name.Equals (((Tag)obj).Name))
-				return false;
-			return true;
-		}
+//		public override bool Equals (object obj)
+//		{
+//			if (obj.GetType () != this.GetType ())
+//				return false;
+//			Tag other = (Tag)obj;
+//			if (!Name.Equals (other.Name))
+//				return false;
+//			if (Parent != null && other.Parent != null) {
+//				if (!Parent.Equals (((Tag)obj).Parent))
+//					return false;
+//			}
+//
+//			return true;
+//		}
 	}
 
 	/**
