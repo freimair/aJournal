@@ -5,7 +5,27 @@ using System.Xml;
 
 namespace code
 {
-	public class Stroke
+	/**
+	 * some Drawable
+	 */
+	public abstract class Drawable
+	{
+		public static Drawable RecreateFromXml (XmlNode node)
+		{
+			switch (node.Name) {
+			case "polyline":
+				return new Stroke (node);
+			default:
+				throw new Exception ("no matching drawable found");
+			}
+		}
+
+		public abstract XmlNode Find (XmlNode root);
+
+		public abstract XmlNode ToXml (XmlDocument document);
+	}
+
+	public class Stroke : Drawable
 	{
 		string color = "red";
 		int strength = 1;
@@ -24,7 +44,7 @@ namespace code
 		public Stroke (XmlNode node) : this()
 		{
 			// parse points
-			String[] values = node.Value.Split (new char[] {' ', ','});
+			String[] values = node.Attributes.GetNamedItem ("points").Value.Split (new char[] {' ', ','});
 
 			foreach (String currentValue in values)
 				points.Add (Convert.ToInt32 (currentValue));
@@ -38,12 +58,12 @@ namespace code
 			return result.Trim ();
 		}
 
-		public XmlNode Find (XmlNode root)
+		public override XmlNode Find (XmlNode root)
 		{
 			return root.SelectSingleNode ("/svg/polyline[@points='" + GetSVGPointList () + "']");
 		}
 
-		public XmlNode ToXml (XmlDocument document)
+		public override XmlNode ToXml (XmlDocument document)
 		{
 			XmlAttribute fillAttribute = document.CreateAttribute ("fill");
 			fillAttribute.Value = "none";
@@ -123,13 +143,13 @@ namespace code
 			return result;
 		}
 
-		public List<Stroke> get ()
+		public List<Drawable> get ()
 		{
-			XmlNodeList nodes = rootNode.SelectNodes ("/svg/polyline/@points");
+			XmlNodeList nodes = rootNode.SelectNodes ("/svg/polyline");
 
-			List<Stroke> result = new List<Stroke> ();
+			List<Drawable> result = new List<Drawable> ();
 			foreach (XmlNode current in nodes)
-				result.Add (new Stroke (current));
+				result.Add (Drawable.RecreateFromXml (current));
 
 			return result;
 		}
@@ -148,14 +168,14 @@ namespace code
          *          1150,375" />
          * </svg>
          */
-		public void edit (List<Stroke> before, List<Stroke> after)
+		public void edit (List<Drawable> before, List<Drawable> after)
 		{
 			// remove deprecated polylines
-			foreach (Stroke current in before)
+			foreach (Drawable current in before)
 				rootNode.RemoveChild (current.Find (rootNode));
 
 			// add new polylines
-			foreach (Stroke current in after)
+			foreach (Drawable current in after)
 				rootNode.AppendChild (current.ToXml (document));
 		}
 

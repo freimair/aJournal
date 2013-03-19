@@ -7,14 +7,14 @@ namespace code
 	[TestFixture()]
 	public class ModelTests
 	{
-		List<Stroke> listA;
-		List<Stroke> listB;
+		List<Drawable> listA;
+		List<Drawable> listB;
 
 		[SetUp]
 		protected void SetUp ()
 		{
 			// setup test data
-			listA = new List<Stroke> ();
+			listA = new List<Drawable> ();
 			Stroke stroke = new Stroke ();
 			stroke.Points.AddRange (new int[] {0,0,100,0,100,100});
 			listA.Add (stroke);
@@ -22,7 +22,7 @@ namespace code
 			stroke.Points.AddRange (new int[] {0,0,100,100});
 			listA.Add (stroke);
 
-			listB = new List<Stroke> ();
+			listB = new List<Drawable> ();
 			stroke = new Stroke ();
 			stroke.Points.AddRange (new int[] {3,3,3,3,3,3});
 			listB.Add (stroke);
@@ -39,14 +39,14 @@ namespace code
 
 			// do some edit tasks
 			// - insert
-			DUT.edit (new List<Stroke> (), listA);
+			DUT.edit (new List<Drawable> (), listA);
 			Assert.AreEqual (listA.ToString (), DUT.get ().ToString (), "adding stroke failed");
 			// - change
 			DUT.edit (listA, listB);
 			Assert.AreEqual (listB.ToString (), DUT.get ().ToString (), "altering stroke failed");
 			// - delete
-			DUT.edit (listB, new List<Stroke> ());
-			Assert.AreEqual (new List<Stroke> ().ToString (), DUT.get ().ToString (), "deleting stroke failed");
+			DUT.edit (listB, new List<Drawable> ());
+			Assert.AreEqual (new List<Drawable> ().ToString (), DUT.get ().ToString (), "deleting stroke failed");
 		}
 
 		[Test]
@@ -56,7 +56,7 @@ namespace code
 			Entry DUT = Entry.create ();
 
 			// create stroke
-			DUT.edit (new List<Stroke> (), listA);
+			DUT.edit (new List<Drawable> (), listA);
 
 			// save to disk
 			DUT.persist ();
