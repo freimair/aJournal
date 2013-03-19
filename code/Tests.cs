@@ -119,6 +119,20 @@ namespace test
 			Assert.AreEqual (tag2, entry.getTags () [1]);
 		}
 
+		[Test]
+		public void RemoveTagFromEntry ()
+		{
+			// setup
+			Entry entry = Entry.create ();
+			Tag tag = new Tag ("tagname");
+			entry.addTag (tag);
+
+			// test
+			entry.removeTag (tag);
+
+			// check
+			Assert.IsEmpty (entry.getTags ());
+		}
 	}
 }
 

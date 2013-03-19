@@ -201,6 +201,12 @@ namespace code
 			tagsNode.AppendChild (tag.ToXml (document));
 		}
 
+		public void removeTag (Tag tag)
+		{
+			XmlNode node = tagsNode.SelectSingleNode ("//tag[text()='" + tag.Name + "']");
+			tagsNode.RemoveChild (node);
+		}
+
 		public List<Tag> getTags ()
 		{
 			List<Tag> result = new List<Tag> ();
