@@ -171,6 +171,7 @@ namespace code
 
 	public class Entry
 	{
+		string filename;
 		XmlDocument document;
 		XmlNode rootNode;
 		XmlNode tagsNode;
@@ -320,7 +321,13 @@ namespace code
 			if (!Directory.Exists (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/"))
 				Directory.CreateDirectory (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/");
 
-			document.Save (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + DateTime.Now.ToString ("yyyyMMddHHmmss") + ".svg");
+			filename = DateTime.Now.ToString ("yyyyMMddHHmmss");
+			document.Save (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + filename + ".svg");
+		}
+
+		public void Delete ()
+		{
+			File.Delete (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + filename + ".svg");
 		}
 
 		static void Main (string[] args)

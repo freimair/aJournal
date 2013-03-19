@@ -68,6 +68,9 @@ namespace test
 
 			// check
 			Assert.AreEqual (listA.ToString (), DUT.get ().ToString (), "reloading stroke from disk failed");
+
+			// cleanup
+			DUT.Delete ();
 		}
 
 		[Test]
@@ -171,6 +174,18 @@ namespace test
 				Assert.Contains (tags [2], current.getTags ());
 				Assert.IsFalse (current.getTags ().Contains (tags [1]), "entrylist contains entry with excluded tag");
 			}
+
+			// cleanup
+			foreach (Entry current in entries)
+				current.Delete ();
+		}
+
+		[Test]
+		public void DeleteEntry ()
+		{
+			Entry entry = Entry.create ();
+			entry.persist ();
+			entry.Delete ();
 		}
 	}
 }
