@@ -177,11 +177,6 @@ namespace code
 
 			tagsNode = document.CreateElement ("tags");
 			descriptionNode.AppendChild (tagsNode);
-
-			String[] tags = new String[]{"tag1", "tag2", "tag3"};
-			foreach (String tag in tags) {
-				tagsNode.AppendChild (new Tag (tag).ToXml (document));
-			}
 		}
 
 		public static Entry create ()
@@ -198,6 +193,20 @@ namespace code
 			foreach (String file in files)
 				result.Add (new Entry (file));
 
+			return result;
+		}
+
+		public void addTag (Tag tag)
+		{
+			tagsNode.AppendChild (tag.ToXml (document));
+		}
+
+		public List<Tag> getTags ()
+		{
+			List<Tag> result = new List<Tag> ();
+			foreach (XmlNode current in tagsNode.ChildNodes) {
+				result.Add (Tag.RecreateFromXml (current));
+			}
 			return result;
 		}
 

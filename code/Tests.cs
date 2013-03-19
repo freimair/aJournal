@@ -104,6 +104,21 @@ namespace test
 			Assert.AreEqual (DUT, recreated);
 		}
 
+		[Test]
+		public void AddingTagsToEntriesTest ()
+		{
+			Entry entry = Entry.create ();
+
+			Tag tag1 = new Tag ("tag1");
+			Tag tag2 = new Tag ("tag2");
+
+			entry.addTag (tag1);
+			entry.addTag (tag2);
+
+			Assert.AreEqual (tag1, entry.getTags () [0]);
+			Assert.AreEqual (tag2, entry.getTags () [1]);
+		}
+
 	}
 }
 
