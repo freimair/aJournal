@@ -13,7 +13,7 @@ namespace code
 		Canvas myCanvas;
 		CanvasLine currentStroke;
 		ArrayList currentStrokePoints;
-		const double canvasWidth = 1500, canvasHeight = 2500;
+		const int canvasWidth = 1500, canvasHeight = 1500;
 		Gtk.Window win;
 
 		public aJournal ()
@@ -23,9 +23,8 @@ namespace code
 			win.DeleteEvent += new DeleteEventHandler (Window_Delete);
 
 			// add row-like layout
-			VBox myHBox = new VBox (false, 0);
-			win.ResizeChecked += MyCanvas_Rezoom;
-			win.Add (myHBox);
+			VBox toolbarContentLayout = new VBox (false, 0);
+			win.Add (toolbarContentLayout);
 
 			// create a toolbar
 			Toolbar myToolbar = new Toolbar ();
@@ -47,26 +46,48 @@ namespace code
 			zoomOutButton.TooltipText = "zoom out";
 			zoomOutButton.Clicked += ZoomOutButton_Clicked;
 			myToolbar.Insert (zoomOutButton, 2);
+			ToolButton zoomFitButton = new ToolButton (Gtk.Stock.ZoomFit);
+			zoomFitButton.TooltipText = "zoom fit";
+			zoomFitButton.Clicked += ZoomFitButton_Clicked;
+			myToolbar.Insert (zoomFitButton, 3);
 
 			// insert the toolbar into the layout
-			myHBox.PackStart (myToolbar, false, false, 0);
+			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
 
 			// add a column-like layout into the second row
-			HBox myVBox = new HBox (false, 0);
-			myHBox.Add (myVBox);
+			HBox taglistContentLayout = new HBox (false, 0);
+			toolbarContentLayout.Add (taglistContentLayout);
 
 			// add an empty treeview to the first column
 			myTreeView = new TreeView ();
-			myVBox.Add (myTreeView);
+			taglistContentLayout.Add (myTreeView);
+			
+			// add canvas container
+			ScrolledWindow myScrolledNotesContainer = new ScrolledWindow ();
+			myScrolledNotesContainer.SetPolicy (Gtk.PolicyType.Automatic, Gtk.PolicyType.Always);
+			taglistContentLayout.Add (myScrolledNotesContainer);
+			
+			Viewport myViewport = new Viewport ();
+			myScrolledNotesContainer.Add (myViewport);
+
+			VBox myNotesContainer = new VBox (false, 0);
+			myViewport.Add (myNotesContainer);
 
 			// add a canvas to the second column
 			myCanvas = new Canvas ();
 			// TODO find out why this somehow centers the axis origin.
 			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
 
-			myVBox.Add (myCanvas);
+			myNotesContainer.Add (myCanvas);
+
+			// indicate that there will somewhen be the option to add another notes area
+			Button addNotesButton = new Button (Gtk.Stock.Add);
+			myNotesContainer.Add (addNotesButton);
 			win.ShowAll ();
+
 			myTreeView.Visible = false;
+
+			MyCanvas_Fit (400);
 
 			// draw a filled rectangle to represent drawing area
 			CanvasRE item = new CanvasRect (myCanvas.Root ());
@@ -82,15 +103,24 @@ namespace code
 		}
 
 		/**
-		 * callback for window resize event
-		 * 
-		 * rezoom the canvas to fill the page width
+		 * change the canvas scale
 		 */
-		void MyCanvas_Rezoom (object obj, EventArgs args)
+		void MyCanvas_Scale (double factor)
 		{
-			int width, height;
-			win.GetSize (out width, out height);
+			int width = (int)Math.Round (myCanvas.PixelsPerUnit * factor * canvasWidth);
+
+			MyCanvas_Fit (width);
+		}
+
+		/**
+		 * fit the canvas scale to a certain width
+		 */
+		void MyCanvas_Fit (int width)
+		{
 			myCanvas.PixelsPerUnit = ((double)width) / canvasWidth;
+
+			myCanvas.SetSizeRequest (width, (int)Math.Round (canvasHeight * myCanvas.PixelsPerUnit));
+			myCanvas.UpdateNow ();
 		}
 
 		/**
@@ -106,7 +136,7 @@ namespace code
 		 */
 		void ZoomInButton_Clicked (object obj, EventArgs args)
 		{
-			myCanvas.PixelsPerUnit *= (double)5 / 4;
+			MyCanvas_Scale ((double)10 / 9);
 		}
 
 		/**
@@ -114,7 +144,17 @@ namespace code
 		 */
 		void ZoomOutButton_Clicked (object obj, EventArgs args)
 		{
-			myCanvas.PixelsPerUnit *= (double)4 / 5;
+			MyCanvas_Scale ((double)9 / 10);
+		}
+
+		/**
+		 * callback for zooming out
+		 */
+		void ZoomFitButton_Clicked (object obj, EventArgs args)
+		{
+			uint width, height;
+			myCanvas.GetSize (out width, out height);
+			MyCanvas_Fit ((int)width);
 		}
 
 		/**
