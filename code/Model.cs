@@ -7,6 +7,18 @@ namespace code
 {
 	public class Tag
 	{
+		public static Tag RecreateFromXml (XmlNode node)
+		{
+			// TODO insert tag caching mechanism here
+			return new Tag (node);
+		}
+
+		Tag (XmlNode node)
+		{
+			// TODO insert error handling here
+			Name = node.FirstChild.Value;
+		}
+
 		public Tag (string name)
 		{
 			Name = name;
@@ -41,6 +53,15 @@ namespace code
 			} catch (NullReferenceException) {
 			}
 			return result;
+		}
+
+		public override bool Equals (object obj)
+		{
+			if (obj.GetType () != this.GetType ())
+				return false;
+			if (!Name.Equals (((Tag)obj).Name))
+				return false;
+			return true;
 		}
 	}
 

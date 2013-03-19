@@ -1,4 +1,5 @@
 using System;
+using System.Xml;
 using System.Collections.Generic;
 using NUnit.Framework;
 using code;
@@ -91,6 +92,16 @@ namespace test
 			tag2.Parent = tag1;
 
 			Assert.AreEqual ("tag1.tag2.tag3", tag3.ToString ());
+		}
+
+		[Test]
+		public void TagToXmlToTagTest ()
+		{
+			Tag DUT = new Tag ("tagname");
+			XmlDocument doc = new XmlDocument ();
+			Tag recreated = Tag.RecreateFromXml (DUT.ToXml (doc));
+
+			Assert.AreEqual (DUT, recreated);
 		}
 
 	}
