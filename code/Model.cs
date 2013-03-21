@@ -4,7 +4,7 @@ using System.IO;
 using System.Xml;
 using System.Linq;
 
-namespace code
+namespace backend
 {
 	public class Tag
 	{
@@ -105,13 +105,13 @@ namespace code
 	/**
 	 * some Drawable
 	 */
-	public abstract class Drawable
+	public abstract class NoteElement
 	{
-		public static Drawable RecreateFromXml (XmlNode node)
+		public static NoteElement RecreateFromXml (XmlNode node)
 		{
 			switch (node.Name) {
 			case "polyline":
-				return new Stroke (node);
+				return new Polyline (node);
 			default:
 				throw new Exception ("no matching drawable found");
 			}
@@ -122,7 +122,7 @@ namespace code
 		public abstract XmlNode ToXml (XmlDocument document);
 	}
 
-	public class Stroke : Drawable
+	public class Polyline : NoteElement
 	{
 		string color = "red";
 		int strength = 1;
@@ -133,12 +133,12 @@ namespace code
 			set { points = value; }
 		}
 
-		public Stroke ()
+		public Polyline ()
 		{
 			points = new List<int> ();
 		}
 
-		public Stroke (XmlNode node) : this()
+		public Polyline (XmlNode node) : this()
 		{
 			// parse points
 			String[] values = node.Attributes.GetNamedItem ("points").Value.Split (new char[] {' ', ','});
@@ -185,7 +185,7 @@ namespace code
 		}
 	}
 
-	public class EntryFilter
+	public class NoteFilter
 	{
 		List<Tag> includedTags;
 
@@ -199,21 +199,21 @@ namespace code
 			get { return excludedTags; }
 		}
 
-		public EntryFilter ()
+		public NoteFilter ()
 		{
 			includedTags = new List<Tag> ();
 			excludedTags = new List<Tag> ();
 		}
 	}
 
-	public class Entry
+	public class Note
 	{
 		string filename;
 		XmlDocument document;
 		XmlNode rootNode;
 		XmlNode tagsNode;
 
-		private Entry (String file)
+		private Note (String file)
 		{
 			// instantiate XmlDocument and load XML from file
 			document = new XmlDocument ();
@@ -223,7 +223,7 @@ namespace code
 			tagsNode = document.GetElementsByTagName ("tags") [0];
 		}
 
-		private Entry ()
+		private Note ()
 		{
 			document = new XmlDocument ();
 			document.AppendChild (document.CreateXmlDeclaration ("1.0", "utf-8", null));
@@ -238,23 +238,23 @@ namespace code
 			descriptionNode.AppendChild (tagsNode);
 		}
 
-		public static Entry create ()
+		public static Note create ()
 		{
-			return new Entry ();
+			return new Note ();
 		}
 
-		public static List<Entry> getEntries ()
+		public static List<Note> getEntries ()
 		{
 			return getEntries (null);
 		}
 
-		public static List<Entry> getEntries (EntryFilter filter)
+		public static List<Note> getEntries (NoteFilter filter)
 		{
 			String[] files = Directory.GetFiles (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/", "*.svg");
 
-			List<Entry> result = new List<Entry> ();
+			List<Note> result = new List<Note> ();
 			foreach (String file in files) {
-				Entry candiate = new Entry (file);
+				Note candiate = new Note (file);
 				bool addCandidate = false;
 
 				try {
@@ -302,13 +302,13 @@ namespace code
 			return result;
 		}
 
-		public List<Drawable> get ()
+		public List<NoteElement> get ()
 		{
 			XmlNodeList nodes = rootNode.SelectNodes ("/svg/polyline");
 
-			List<Drawable> result = new List<Drawable> ();
+			List<NoteElement> result = new List<NoteElement> ();
 			foreach (XmlNode current in nodes)
-				result.Add (Drawable.RecreateFromXml (current));
+				result.Add (NoteElement.RecreateFromXml (current));
 
 			return result;
 		}
@@ -327,14 +327,14 @@ namespace code
          *          1150,375" />
          * </svg>
          */
-		public void edit (List<Drawable> before, List<Drawable> after)
+		public void edit (List<NoteElement> before, List<NoteElement> after)
 		{
 			// remove deprecated polylines
-			foreach (Drawable current in before)
+			foreach (NoteElement current in before)
 				rootNode.RemoveChild (current.Find (rootNode));
 
 			// add new polylines
-			foreach (Drawable current in after)
+			foreach (NoteElement current in after)
 				rootNode.AppendChild (current.ToXml (document));
 		}
 
