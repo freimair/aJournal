@@ -4,15 +4,87 @@ using System.Collections.Generic;
 using Gnome;
 using Gtk;
 using Gdk;
+using backend;
+using System.Linq;
 
 namespace ui_gtk_gnome
 {
+	class BoundingBox
+	{
+		public BoundingBox (double left, double top, double right, double bottom)
+		{
+			this.left = left;
+			this.right = right;
+			this.top = top;
+			this.bottom = bottom;
+		}
+
+		public double left;
+		public double right;
+		public double top;
+		public double bottom;
+	}
+
+	abstract class UiNoteElement
+	{
+		public abstract BoundingBox BoundingBox ();
+
+		public abstract void Move (double diffx, double diffy);
+
+		public abstract void Destroy ();
+	}
+
+	class UiLine : UiNoteElement
+	{
+		Polyline linemodel;
+		CanvasLine line;
+
+		public UiLine (Canvas canvas)
+		{
+			line = new CanvasLine (canvas.Root ());
+			line.WidthUnits = 2;
+			line.FillColor = "black";
+
+			linemodel = new Polyline ();
+		}
+
+		public void Add (double x, double y)
+		{
+			linemodel.Points.Add (Convert.ToInt32 (x));
+			linemodel.Points.Add (Convert.ToInt32 (y));
+
+			if (linemodel.Points.Count > 2)
+				line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
+		}
+
+		public override BoundingBox BoundingBox ()
+		{
+			double cx1, cx2, cy1, cy2;
+			line.GetBounds (out cx1, out cy1, out cx2, out cy2);
+
+			return new BoundingBox (cx1, cy1, cx2, cy2);
+		}
+
+		public override void Move (double diffx, double diffy)
+		{
+			for (int i = 0; i < linemodel.Points.Count; i += 2) {
+				linemodel.Points [i] += Convert.ToInt32 (diffx);
+				linemodel.Points [i + 1] += Convert.ToInt32 (diffy);
+			}
+
+			line.Move (diffx, diffy);
+		}
+
+		public override void Destroy ()
+		{
+			line.Destroy ();
+		}
+	}
+
 	class UiNote : VBox
 	{
 		abstract class Tool
 		{
-			public abstract Tool getInstance ();
-
 			public abstract void Start (double x, double y);
 
 			public abstract void Continue (double x, double y);
@@ -26,46 +98,21 @@ namespace ui_gtk_gnome
 		{
 			class Selection
 			{
-				Canvas myCanvas;
-
-				public Selection (Canvas canvas, List<CanvasItem> items)
+				public Selection (List<UiNoteElement> items)
 				{
-					myCanvas = canvas;
 					elements = items;
 				}
 
-				public List<CanvasItem> items = new List<CanvasItem> ();
-				public List<CanvasItem> elements;
+				public List<UiNoteElement> items = new List<UiNoteElement> ();
+				public List<UiNoteElement> elements;
 
 				public void SelectItemsWithin (double x1, double x2, double y1, double y2)
 				{
-					//TODO find a way to read elements back from the canvas itself
-					//foreach (CanvasItem current in myCanvas.AllChildren) {
-					foreach (CanvasItem current in elements) {
-						double cx1, cx2, cy1, cy2;
-						current.GetBounds (out cx1, out cy1, out cx2, out cy2);
-						if (x1 < cx1 && x2 > cx2 && y1 < cy1 && y2 > cy2)
+					foreach (UiNoteElement current in elements) {
+						BoundingBox box = current.BoundingBox ();
+						if (x1 < box.left && x2 > box.right && y1 < box.top && y2 > box.bottom)
 							items.Add (current);
 					}
-				}
-
-				/**
-				 * select one item by placing a gray box around it
-				 * TODO offer various selection methods
-				 */
-				public void selectItem (CanvasItem item)
-				{
-					double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-					item.GetBounds (out x1, out y1, out x2, out y2);
-
-					// use these to setup the selection rectangle
-					currentTool = new SelectionTool (myCanvas, elements);
-					currentTool.Start (x1, y1);
-					currentTool.Complete (x2, y2);
-					// clear the selection cache because we only want one single element selected
-					items.Clear ();
-
-					items.Add (item);
 				}
 
 				/**
@@ -86,14 +133,14 @@ namespace ui_gtk_gnome
 			bool move = false;
 			double lastX, lastY;
 			Canvas myCanvas;
-			List<CanvasItem> elements;
+			List<UiNoteElement> elements;
 			Selection selection;
 
-			public SelectionTool (Canvas canvas, List<CanvasItem> items)
+			public SelectionTool (Canvas canvas, List<UiNoteElement> items)
 			{
 				myCanvas = canvas;
 				elements = items;
-				selection = new Selection (canvas, items);
+				selection = new Selection (items);
 			}
 
 			public override void Start (double x, double y)
@@ -130,7 +177,6 @@ namespace ui_gtk_gnome
 
 				selectionInProgress = false;
 
-				//TODO find selected items
 				selection.SelectItemsWithin (selectionRect.X1, selectionRect.X2, selectionRect.Y1, selectionRect.Y2);
 			}
 
@@ -198,7 +244,7 @@ namespace ui_gtk_gnome
 					lastX = args.X;
 					lastY = args.Y;
 
-					foreach (CanvasItem current in selection.items)
+					foreach (UiNoteElement current in selection.items)
 						current.Move (diffx, diffy);
 					selectionRect.Move (diffx, diffy);
 				}
@@ -208,7 +254,7 @@ namespace ui_gtk_gnome
 			{
 				switch (args.Key) {
 				case Gdk.Key.Delete: // delete selection
-					foreach (CanvasItem current in selection.items) {
+					foreach (UiNoteElement current in selection.items) {
 						current.Destroy ();
 						elements.Remove (current);
 					}
@@ -217,21 +263,15 @@ namespace ui_gtk_gnome
 					break;
 				}
 			}
-
-			public override Tool getInstance ()
-			{
-				return new SelectionTool (myCanvas, elements);
-			}
 		}
 
 		class StrokeTool : Tool
 		{
-			CanvasLine currentStroke;
-			ArrayList currentStrokePoints;
+			UiLine currentStroke;
 			Canvas myCanvas;
-			List<CanvasItem> elements;
+			List<UiNoteElement> elements;
 
-			public StrokeTool (Canvas canvas, List<CanvasItem> items)
+			public StrokeTool (Canvas canvas, List<UiNoteElement> items)
 			{
 				myCanvas = canvas;
 				elements = items;
@@ -239,21 +279,13 @@ namespace ui_gtk_gnome
 
 			public override void Start (double x, double y)
 			{
-				currentStroke = new CanvasLine (myCanvas.Root ());
-				currentStroke.WidthUnits = 2;
-				currentStroke.FillColor = "black";
-				currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
-				currentStrokePoints = new ArrayList ();
-				currentStrokePoints.Add (x);
-				currentStrokePoints.Add (y);
+				currentStroke = new UiLine (myCanvas);
 			}
 
 			public override void Continue (double x, double y)
 			{
 				try {
-					currentStrokePoints.Add (x);
-					currentStrokePoints.Add (y);
-					currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+					currentStroke.Add (x, y);
 				} catch (NullReferenceException) {
 					// in case there was no line started
 				}
@@ -261,47 +293,17 @@ namespace ui_gtk_gnome
 
 			public override void Complete (double x, double y)
 			{
-				currentStrokePoints.Add (x);
-				currentStrokePoints.Add (y);
-				currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+				currentStroke.Add (x, y);
 
 				// add the final stroke to the list of elements
 				elements.Add (currentStroke);
 
 				currentStroke = null;
-				currentStrokePoints = null;
 			}
 
 			public override void Reset ()
 			{
 
-			}
-
-			/**
-			 * callback for strokes in canvas
-			 */
-			void Line_Event (object obj, Gnome.CanvasEventArgs args)
-			{
-				EventButton ev = new EventButton (args.Event.Handle);
-
-				switch (ev.Type) {
-				case EventType.ButtonPress:
-					Line_MouseDown (obj, ev);
-					break;
-				}
-			}
-
-			/**
-			 * callback for mousedown of stroke
-			 */
-			void Line_MouseDown (object obj, EventButton args)
-			{
-
-			}
-
-			public override Tool getInstance ()
-			{
-				return new StrokeTool (myCanvas, elements);
 			}
 		}
 
@@ -310,9 +312,7 @@ namespace ui_gtk_gnome
 
 		// static because we only want one tool active in the whole app
 		static Tool currentTool;
-
-		// TODO find a way to read elements back from the canvas itself
-		List<CanvasItem> elements = new List<CanvasItem> ();
+		List<UiNoteElement> elements = new List<UiNoteElement> ();
 
 		public UiNote ()
 		{
