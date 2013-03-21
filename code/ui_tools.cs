@@ -11,6 +11,8 @@ namespace ui_gtk_gnome
 	{
 		public abstract class Tool
 		{
+			public abstract void Init (Canvas canvas, List<UiNoteElement> items);
+
 			public abstract void Start (double x, double y);
 
 			public abstract void Continue (double x, double y);
@@ -62,7 +64,7 @@ namespace ui_gtk_gnome
 			List<UiNoteElement> elements;
 			Selection selection;
 
-			public SelectionTool (Canvas canvas, List<UiNoteElement> items)
+			public override void Init (Canvas canvas, List<UiNoteElement> items)
 			{
 				myCanvas = canvas;
 				elements = items;
@@ -197,7 +199,7 @@ namespace ui_gtk_gnome
 			Canvas myCanvas;
 			List<UiNoteElement> elements;
 
-			public StrokeTool (Canvas canvas, List<UiNoteElement> items)
+			public override void Init (Canvas canvas, List<UiNoteElement> items)
 			{
 				myCanvas = canvas;
 				elements = items;
@@ -233,44 +235,44 @@ namespace ui_gtk_gnome
 			}
 		}
 
-		public class ResizeDrawingAreaTool : Tool
-		{
-//								if (ev.Y > canvasHeight - canvasHeight * 5 / 100 && ev.Y < canvasHeight) {
-//						GdkWindow.Cursor = new Gdk.Cursor (Gdk.CursorType.DoubleArrow);
-//						currentTool = new ResizeDrawingAreaTool (myCanvas, drawingArea);
-//					} else {
-//						GdkWindow.Cursor = new Gdk.Cursor (Gdk.CursorType.Arrow);
-//						currentTool = null;
-//					}
-
-			CanvasRect myDrawingArea;
-			bool active = false;
-
-			public ResizeDrawingAreaTool (CanvasRect drawingArea)
-			{
-				myDrawingArea = drawingArea;
-			}
-
-			public override void Start (double x, double y)
-			{
-				active = true;
-			}
-
-			public override void Continue (double x, double y)
-			{
-				if (active)
-					myDrawingArea.Y2 = y;
-			}
-
-			public override void Complete (double x, double y)
-			{
-				active = false;
-			}
-
-			public override void Reset ()
-			{
-				active = false;
-			}
-		}
+//		public class ResizeDrawingAreaTool : Tool
+//		{
+////								if (ev.Y > canvasHeight - canvasHeight * 5 / 100 && ev.Y < canvasHeight) {
+////						GdkWindow.Cursor = new Gdk.Cursor (Gdk.CursorType.DoubleArrow);
+////						currentTool = new ResizeDrawingAreaTool (myCanvas, drawingArea);
+////					} else {
+////						GdkWindow.Cursor = new Gdk.Cursor (Gdk.CursorType.Arrow);
+////						currentTool = null;
+////					}
+//
+//			CanvasRect myDrawingArea;
+//			bool active = false;
+//
+//			public ResizeDrawingAreaTool (CanvasRect drawingArea)
+//			{
+//				myDrawingArea = drawingArea;
+//			}
+//
+//			public override void Start (double x, double y)
+//			{
+//				active = true;
+//			}
+//
+//			public override void Continue (double x, double y)
+//			{
+//				if (active)
+//					myDrawingArea.Y2 = y;
+//			}
+//
+//			public override void Complete (double x, double y)
+//			{
+//				active = false;
+//			}
+//
+//			public override void Reset ()
+//			{
+//				active = false;
+//			}
+//		}
 	}
 }

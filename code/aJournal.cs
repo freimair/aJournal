@@ -78,18 +78,12 @@ namespace ui_gtk_gnome
 		void Event (object obj, Gnome.CanvasEventArgs args)
 		{
 			EventButton ev = new EventButton (args.Event.Handle);
-			if (EventType.ButtonPress == ev.Type) {
-				if (null != aJournal.currentTool)
-					aJournal.currentTool.Reset ();
-				if (1 == ev.Button)
-					aJournal.currentTool = new StrokeTool (myCanvas, elements);
-				else if (3 == ev.Button)
-					aJournal.currentTool = new SelectionTool (myCanvas, elements);
-			}
 
 			try {
 				switch (ev.Type) {
 				case EventType.ButtonPress:
+					aJournal.currentTool.Init (myCanvas, elements);
+					aJournal.currentTool.Reset ();
 					aJournal.currentTool.Start (ev.X, ev.Y);
 					break;
 				case EventType.MotionNotify:
@@ -112,6 +106,7 @@ namespace ui_gtk_gnome
 		VBox myNotesContainer;
 		// static because we only want one tool active in the whole app
 		public static Tool currentTool;
+		RadioToolButton penToolButton, selectionToolButton;
 
 		public aJournal ()
 		{
@@ -148,7 +143,21 @@ namespace ui_gtk_gnome
 			zoomFitButton.Clicked += ZoomFitButton_Clicked;
 			myToolbar.Insert (zoomFitButton, 3);
 
-			// insert the toolbar into the layout
+			// add tool buttons
+			penToolButton = new RadioToolButton (new GLib.SList (IntPtr.Zero));
+			penToolButton.IconWidget = new Gtk.Image (new Pixbuf ("pencil.png"));
+			penToolButton.TooltipText = "Pen";
+			penToolButton.Clicked += SelectTool_Clicked;
+			myToolbar.Insert (penToolButton, 4);
+			// preselect pen
+			SelectTool_Clicked (penToolButton, null);
+			selectionToolButton = new RadioToolButton (penToolButton, Gtk.Stock.About);
+			selectionToolButton.IconWidget = new Gtk.Image (new Pixbuf ("rect-select.png"));
+			selectionToolButton.TooltipText = "Selection";
+			selectionToolButton.Clicked += SelectTool_Clicked;
+			myToolbar.Insert (selectionToolButton, 5);
+
+			// insert the toolbar into the layoutpen
 			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
 
 			// add a column-like layout into the second row
@@ -187,6 +196,17 @@ namespace ui_gtk_gnome
 			myTreeView.Visible = false;
 
 			note.Fit (400);
+		}
+
+		void SelectTool_Clicked (object obj, EventArgs args)
+		{
+			if (null != currentTool)
+				currentTool.Reset ();
+
+			if (obj == penToolButton)
+				currentTool = new StrokeTool ();
+			else if (obj == selectionToolButton)
+				currentTool = new SelectionTool ();
 		}
 
 		void AddNote (object obj, EventArgs args)
