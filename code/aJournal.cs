@@ -5,406 +5,406 @@ using Gnome;
 using Gtk;
 using Gdk;
 
-namespace code
+namespace ui_gtk_gnome
 {
-	public class aJournal
+	class UiNote : VBox
 	{
-		class Note : VBox
+		abstract class Tool
 		{
-			abstract class Tool
+			public abstract Tool getInstance ();
+
+			public abstract void Start (double x, double y);
+
+			public abstract void Continue (double x, double y);
+
+			public abstract void Complete (double x, double y);
+
+			public abstract void Reset ();
+		}
+
+		class SelectionTool : Tool
+		{
+			class Selection
 			{
-				public abstract Tool getInstance ();
+				Canvas myCanvas;
 
-				public abstract void Start (double x, double y);
-
-				public abstract void Continue (double x, double y);
-
-				public abstract void Complete (double x, double y);
-
-				public abstract void Reset ();
-			}
-
-			class SelectionTool : Tool
-			{
-
-				class Selection
+				public Selection (Canvas canvas, List<CanvasItem> items)
 				{
-					Canvas myCanvas;
+					myCanvas = canvas;
+					elements = items;
+				}
 
-					public Selection (Canvas canvas, List<CanvasItem> items)
-					{
-						myCanvas = canvas;
-						elements = items;
+				public List<CanvasItem> items = new List<CanvasItem> ();
+				public List<CanvasItem> elements;
+
+				public void SelectItemsWithin (double x1, double x2, double y1, double y2)
+				{
+					//TODO find a way to read elements back from the canvas itself
+					//foreach (CanvasItem current in myCanvas.AllChildren) {
+					foreach (CanvasItem current in elements) {
+						double cx1, cx2, cy1, cy2;
+						current.GetBounds (out cx1, out cy1, out cx2, out cy2);
+						if (x1 < cx1 && x2 > cx2 && y1 < cy1 && y2 > cy2)
+							items.Add (current);
 					}
+				}
 
-					public List<CanvasItem> items = new List<CanvasItem> ();
-					public List<CanvasItem> elements;
-
-					public void SelectItemsWithin (double x1, double x2, double y1, double y2)
-					{
-						//TODO find a way to read elements back from the canvas itself
-						//foreach (CanvasItem current in myCanvas.AllChildren) {
-						foreach (CanvasItem current in elements) {
-							double cx1, cx2, cy1, cy2;
-							current.GetBounds (out cx1, out cy1, out cx2, out cy2);
-							if (x1 < cx1 && x2 > cx2 && y1 < cy1 && y2 > cy2)
-								items.Add (current);
-						}
-					}
-
-					/**
+				/**
 				 * select one item by placing a gray box around it
 				 * TODO offer various selection methods
 				 */
-					public void selectItem (CanvasItem item)
-					{
-						double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-						item.GetBounds (out x1, out y1, out x2, out y2);
+				public void selectItem (CanvasItem item)
+				{
+					double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+					item.GetBounds (out x1, out y1, out x2, out y2);
 
-						// use these to setup the selection rectangle
-						action = new SelectionTool (myCanvas, elements);
-						action.Start (x1, y1);
-						action.Complete (x2, y2);
-						// clear the selection cache because we only want one single element selected
-						items.Clear ();
+					// use these to setup the selection rectangle
+					currentTool = new SelectionTool (myCanvas, elements);
+					currentTool.Start (x1, y1);
+					currentTool.Complete (x2, y2);
+					// clear the selection cache because we only want one single element selected
+					items.Clear ();
 
-						items.Add (item);
-					}
+					items.Add (item);
+				}
 
-					/**
+				/**
 				 * unselect all
 				 */
-					public void unselect ()
-					{
-						try {
-							items.Clear ();
-						} catch (NullReferenceException) {
-							// in case nothing is selected
-						}
+				public void unselect ()
+				{
+					try {
+						items.Clear ();
+					} catch (NullReferenceException) {
+						// in case nothing is selected
 					}
 				}
+			}
 
-				bool selectionInProgress = false;
-				CanvasRE selectionRect;
-				bool move = false;
-				double lastX, lastY;
-				Canvas myCanvas;
-				List<CanvasItem> elements;
-				Selection selection;
+			bool selectionInProgress = false;
+			CanvasRE selectionRect;
+			bool move = false;
+			double lastX, lastY;
+			Canvas myCanvas;
+			List<CanvasItem> elements;
+			Selection selection;
 
-				public SelectionTool (Canvas canvas, List<CanvasItem> items)
-				{
-					myCanvas = canvas;
-					elements = items;
-					selection = new Selection (canvas, items);
-				}
+			public SelectionTool (Canvas canvas, List<CanvasItem> items)
+			{
+				myCanvas = canvas;
+				elements = items;
+				selection = new Selection (canvas, items);
+			}
 
-				public override void Start (double x, double y)
-				{
-					selectionRect = new CanvasRect (myCanvas.Root ());
+			public override void Start (double x, double y)
+			{
+				selectionRect = new CanvasRect (myCanvas.Root ());
 
-					selectionRect.X1 = x;
-					selectionRect.Y1 = y;
+				selectionRect.X1 = x;
+				selectionRect.Y1 = y;
+				selectionRect.X2 = x;
+				selectionRect.Y2 = y;
+
+				selectionRect.FillColorRgba = 0x88888830; // 0xRRGGBBAA
+				selectionRect.OutlineColor = "black";
+
+				selectionInProgress = true;
+			}
+
+			public override void Continue (double x, double y)
+			{
+				if (selectionInProgress) {
 					selectionRect.X2 = x;
 					selectionRect.Y2 = y;
-
-					selectionRect.FillColorRgba = 0x88888830; // 0xRRGGBBAA
-					selectionRect.OutlineColor = "black";
-
-					selectionInProgress = true;
-				}
-
-				public override void Continue (double x, double y)
-				{
-					if (selectionInProgress) {
-						selectionRect.X2 = x;
-						selectionRect.Y2 = y;
-					}
-				}
-
-				public override void Complete (double x, double y)
-				{
-					Continue (x, y);
-
-					// enable key event recognition
-					selectionRect.GrabFocus ();
-
-					selectionRect.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
-
-					selectionInProgress = false;
-
-					//TODO find selected items
-					selection.SelectItemsWithin (selectionRect.X1, selectionRect.X2, selectionRect.Y1, selectionRect.Y2);
-				}
-
-				public override void Reset ()
-				{
-					try {
-						selectionRect.Destroy ();
-						selectionRect = null;
-						selection.unselect ();
-					} catch (NullReferenceException) {
-					}
-				}
-
-				void Selection_Event (object obj, Gnome.CanvasEventArgs args)
-				{
-					EventButton ev = new EventButton (args.Event.Handle);
-					EventKey key = new EventKey (args.Event.Handle);
-
-					switch (ev.Type) {
-					case EventType.ButtonPress:
-						Selection_MouseDown (obj, ev);
-						break;
-					case EventType.MotionNotify:
-						Selection_MouseMove (obj, ev);
-						break;
-					case EventType.ButtonRelease:
-						Selection_MouseUp (obj, ev);
-						break;
-					case EventType.KeyPress:
-						Selection_KeyPress (obj, key);
-						break;
-					}
-				}
-
-				void Selection_MouseDown (object obj, EventButton args)
-				{
-					switch (args.Button) {
-					case 1: // left mouse button
-						move = true;
-						lastX = args.X;
-						lastY = args.Y;
-						break;
-					case 3:	// right mouse button
-						break;
-					}
-				}
-
-				void Selection_MouseUp (object obj, EventButton args)
-				{
-					switch (args.Button) {
-					case 1: // left mouse button
-						move = false;
-						break;
-					case 3:	// right mouse button
-						break;
-					}
-				}
-
-				void Selection_MouseMove (object obj, EventButton args)
-				{
-					if (move) {
-						// get diff
-						double diffx = args.X - lastX;
-						double diffy = args.Y - lastY;
-						lastX = args.X;
-						lastY = args.Y;
-
-						foreach (CanvasItem current in selection.items)
-							current.Move (diffx, diffy);
-						selectionRect.Move (diffx, diffy);
-					}
-				}
-
-				void Selection_KeyPress (object obj, EventKey args)
-				{
-					switch (args.Key) {
-					case Gdk.Key.Delete: // delete selection
-						foreach (CanvasItem current in selection.items) {
-							current.Destroy ();
-							elements.Remove (current);
-						}
-						selection.unselect ();
-						Reset ();
-						break;
-					}
-				}
-
-				public override Tool getInstance ()
-				{
-					return new SelectionTool (myCanvas, elements);
 				}
 			}
 
-			class Stroke : Tool
+			public override void Complete (double x, double y)
 			{
-				CanvasLine currentStroke;
-				ArrayList currentStrokePoints;
-				Canvas myCanvas;
-				List<CanvasItem> elements;
+				Continue (x, y);
 
-				public Stroke (Canvas canvas, List<CanvasItem> items)
-				{
-					myCanvas = canvas;
-					elements = items;
-				}
+				// enable key event recognition
+				selectionRect.GrabFocus ();
 
-				public override void Start (double x, double y)
-				{
-					currentStroke = new CanvasLine (myCanvas.Root ());
-					currentStroke.WidthUnits = 2;
-					currentStroke.FillColor = "black";
-					currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
-					currentStrokePoints = new ArrayList ();
-					currentStrokePoints.Add (x);
-					currentStrokePoints.Add (y);
-				}
+				selectionRect.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
 
-				public override void Continue (double x, double y)
-				{
-					try {
-						currentStrokePoints.Add (x);
-						currentStrokePoints.Add (y);
-						currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
-					} catch (NullReferenceException) {
-						// in case there was no line started
-					}
-				}
+				selectionInProgress = false;
 
-				public override void Complete (double x, double y)
-				{
-					currentStrokePoints.Add (x);
-					currentStrokePoints.Add (y);
-					currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
-
-					// add the final stroke to the list of elements
-					elements.Add (currentStroke);
-
-					currentStroke = null;
-					currentStrokePoints = null;
-				}
-
-				public override void Reset ()
-				{
-
-				}
-
-				/**
-				 * callback for strokes in canvas
-				 */
-				void Line_Event (object obj, Gnome.CanvasEventArgs args)
-				{
-					EventButton ev = new EventButton (args.Event.Handle);
-
-					switch (ev.Type) {
-					case EventType.ButtonPress:
-						Line_MouseDown (obj, ev);
-						break;
-					}
-				}
-
-				/**
-				 * callback for mousedown of stroke
-				 */
-				void Line_MouseDown (object obj, EventButton args)
-				{
-
-				}
-
-				public override Tool getInstance ()
-				{
-					return new Stroke (myCanvas, elements);
-				}
+				//TODO find selected items
+				selection.SelectItemsWithin (selectionRect.X1, selectionRect.X2, selectionRect.Y1, selectionRect.Y2);
 			}
 
-			const int canvasWidth = 1500, canvasHeight = 1500;
-			Canvas myCanvas;
-			static Tool action;
-
-			// TODO find a way to read elements back from the canvas itself
-			List<CanvasItem> elements = new List<CanvasItem> ();
-
-			public Note ()
+			public override void Reset ()
 			{
-				// add a canvas to the second column
-				myCanvas = Canvas.NewAa ();
-				// TODO find out why this somehow centers the axis origin.
-				myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
-				this.Add (myCanvas);
-//				selection = new Selection (myCanvas, elements);
-
-				// draw a filled rectangle to represent drawing area
-				CanvasRE item = new CanvasRect (myCanvas.Root ());
-				item.FillColor = "white";
-				item.OutlineColor = "black";
-				item.X1 = 0;
-				item.Y1 = 0;
-				item.X2 = canvasWidth;
-				item.Y2 = canvasHeight;
-
-				// add mouse trackers
-				item.CanvasEvent += new Gnome.CanvasEventHandler (Event);
-			}
-
-			public int Width ()
-			{
-				return (int)Math.Round (myCanvas.PixelsPerUnit * canvasWidth);
-			}
-
-			/**
-			 * change the canvas scale
-			 */
-			public void Scale (double factor)
-			{
-				int width = (int)Math.Round (myCanvas.PixelsPerUnit * factor * canvasWidth);
-
-				Fit (width);
-			}
-
-			/**
-			 * fit the canvas scale to a certain width
-			 */
-			public void Fit (int width)
-			{
-				myCanvas.PixelsPerUnit = ((double)width) / canvasWidth;
-
-				myCanvas.SetSizeRequest (width, (int)Math.Round (canvasHeight * myCanvas.PixelsPerUnit));
-				myCanvas.UpdateNow ();
-			}
-
-			public void Fit ()
-			{
-				uint width, height;
-				myCanvas.GetSize (out width, out height);
-				Fit ((int)width);
-			}
-
-			/**
-			 * callback for handling events from canvas drawing area
-			 */
-			void Event (object obj, Gnome.CanvasEventArgs args)
-			{
-				// ((CanvasItem) obj).Canvas may get us the canvas if we ever plan to work cross canvas
 				try {
-					EventButton ev = new EventButton (args.Event.Handle);
-					if (EventType.ButtonPress == ev.Type) {
-						if (null != action)
-							action.Reset ();
-						if (1 == ev.Button)
-							action = new Stroke (myCanvas, elements);
-						else if (3 == ev.Button)
-							action = new SelectionTool (myCanvas, elements);
-					}
-
-					switch (ev.Type) {
-					case EventType.ButtonPress:
-						action.Start (ev.X, ev.Y);
-						break;
-					case EventType.MotionNotify:
-						action.Continue (ev.X, ev.Y);
-						break;
-					case EventType.ButtonRelease:
-						action.Complete (ev.X, ev.Y);
-						break;
-					}
+					selectionRect.Destroy ();
+					selectionRect = null;
+					selection.unselect ();
 				} catch (NullReferenceException) {
 				}
 			}
+
+			void Selection_Event (object obj, Gnome.CanvasEventArgs args)
+			{
+				EventButton ev = new EventButton (args.Event.Handle);
+				EventKey key = new EventKey (args.Event.Handle);
+
+				switch (ev.Type) {
+				case EventType.ButtonPress:
+					Selection_MouseDown (obj, ev);
+					break;
+				case EventType.MotionNotify:
+					Selection_MouseMove (obj, ev);
+					break;
+				case EventType.ButtonRelease:
+					Selection_MouseUp (obj, ev);
+					break;
+				case EventType.KeyPress:
+					Selection_KeyPress (obj, key);
+					break;
+				}
+			}
+
+			void Selection_MouseDown (object obj, EventButton args)
+			{
+				switch (args.Button) {
+				case 1: // left mouse button
+					move = true;
+					lastX = args.X;
+					lastY = args.Y;
+					break;
+				case 3:	// right mouse button
+					break;
+				}
+			}
+
+			void Selection_MouseUp (object obj, EventButton args)
+			{
+				switch (args.Button) {
+				case 1: // left mouse button
+					move = false;
+					break;
+				case 3:	// right mouse button
+					break;
+				}
+			}
+
+			void Selection_MouseMove (object obj, EventButton args)
+			{
+				if (move) {
+					// get diff
+					double diffx = args.X - lastX;
+					double diffy = args.Y - lastY;
+					lastX = args.X;
+					lastY = args.Y;
+
+					foreach (CanvasItem current in selection.items)
+						current.Move (diffx, diffy);
+					selectionRect.Move (diffx, diffy);
+				}
+			}
+
+			void Selection_KeyPress (object obj, EventKey args)
+			{
+				switch (args.Key) {
+				case Gdk.Key.Delete: // delete selection
+					foreach (CanvasItem current in selection.items) {
+						current.Destroy ();
+						elements.Remove (current);
+					}
+					selection.unselect ();
+					Reset ();
+					break;
+				}
+			}
+
+			public override Tool getInstance ()
+			{
+				return new SelectionTool (myCanvas, elements);
+			}
 		}
 
+		class StrokeTool : Tool
+		{
+			CanvasLine currentStroke;
+			ArrayList currentStrokePoints;
+			Canvas myCanvas;
+			List<CanvasItem> elements;
+
+			public StrokeTool (Canvas canvas, List<CanvasItem> items)
+			{
+				myCanvas = canvas;
+				elements = items;
+			}
+
+			public override void Start (double x, double y)
+			{
+				currentStroke = new CanvasLine (myCanvas.Root ());
+				currentStroke.WidthUnits = 2;
+				currentStroke.FillColor = "black";
+				currentStroke.CanvasEvent += new Gnome.CanvasEventHandler (Line_Event);
+				currentStrokePoints = new ArrayList ();
+				currentStrokePoints.Add (x);
+				currentStrokePoints.Add (y);
+			}
+
+			public override void Continue (double x, double y)
+			{
+				try {
+					currentStrokePoints.Add (x);
+					currentStrokePoints.Add (y);
+					currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+				} catch (NullReferenceException) {
+					// in case there was no line started
+				}
+			}
+
+			public override void Complete (double x, double y)
+			{
+				currentStrokePoints.Add (x);
+				currentStrokePoints.Add (y);
+				currentStroke.Points = new CanvasPoints (currentStrokePoints.ToArray (typeof(double)) as double[]);
+
+				// add the final stroke to the list of elements
+				elements.Add (currentStroke);
+
+				currentStroke = null;
+				currentStrokePoints = null;
+			}
+
+			public override void Reset ()
+			{
+
+			}
+
+			/**
+			 * callback for strokes in canvas
+			 */
+			void Line_Event (object obj, Gnome.CanvasEventArgs args)
+			{
+				EventButton ev = new EventButton (args.Event.Handle);
+
+				switch (ev.Type) {
+				case EventType.ButtonPress:
+					Line_MouseDown (obj, ev);
+					break;
+				}
+			}
+
+			/**
+			 * callback for mousedown of stroke
+			 */
+			void Line_MouseDown (object obj, EventButton args)
+			{
+
+			}
+
+			public override Tool getInstance ()
+			{
+				return new StrokeTool (myCanvas, elements);
+			}
+		}
+
+		const int canvasWidth = 1500, canvasHeight = 1500;
+		Canvas myCanvas;
+
+		// static because we only want one tool active in the whole app
+		static Tool currentTool;
+
+		// TODO find a way to read elements back from the canvas itself
+		List<CanvasItem> elements = new List<CanvasItem> ();
+
+		public UiNote ()
+		{
+			// add a canvas to the second column
+			myCanvas = Canvas.NewAa ();
+			// TODO find out why this somehow centers the axis origin.
+			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
+			this.Add (myCanvas);
+
+			// draw a filled rectangle to represent drawing area
+			CanvasRE item = new CanvasRect (myCanvas.Root ());
+			item.FillColor = "white";
+			item.OutlineColor = "black";
+			item.X1 = 0;
+			item.Y1 = 0;
+			item.X2 = canvasWidth;
+			item.Y2 = canvasHeight;
+
+			// add mouse trackers
+			item.CanvasEvent += new Gnome.CanvasEventHandler (Event);
+		}
+
+		public int Width ()
+		{
+			return (int)Math.Round (myCanvas.PixelsPerUnit * canvasWidth);
+		}
+
+		/**
+		 * change the canvas scale
+		 */
+		public void Scale (double factor)
+		{
+			int width = (int)Math.Round (myCanvas.PixelsPerUnit * factor * canvasWidth);
+
+			Fit (width);
+		}
+
+		/**
+		 * fit the canvas scale to a certain width
+		 */
+		public void Fit (int width)
+		{
+			myCanvas.PixelsPerUnit = ((double)width) / canvasWidth;
+
+			myCanvas.SetSizeRequest (width, (int)Math.Round (canvasHeight * myCanvas.PixelsPerUnit));
+			myCanvas.UpdateNow ();
+		}
+
+		public void Fit ()
+		{
+			uint width, height;
+			myCanvas.GetSize (out width, out height);
+			Fit ((int)width);
+		}
+
+		/**
+		 * callback for handling events from canvas drawing area
+		 */
+		void Event (object obj, Gnome.CanvasEventArgs args)
+		{
+			// ((CanvasItem) obj).Canvas may get us the canvas if we ever plan to work cross canvas
+			try {
+				EventButton ev = new EventButton (args.Event.Handle);
+				if (EventType.ButtonPress == ev.Type) {
+					if (null != currentTool)
+						currentTool.Reset ();
+					if (1 == ev.Button)
+						currentTool = new StrokeTool (myCanvas, elements);
+					else if (3 == ev.Button)
+						currentTool = new SelectionTool (myCanvas, elements);
+				}
+
+				switch (ev.Type) {
+				case EventType.ButtonPress:
+					currentTool.Start (ev.X, ev.Y);
+					break;
+				case EventType.MotionNotify:
+					currentTool.Continue (ev.X, ev.Y);
+					break;
+				case EventType.ButtonRelease:
+					currentTool.Complete (ev.X, ev.Y);
+					break;
+				}
+			} catch (NullReferenceException) {
+			}
+		}
+	}
+
+	public class aJournal
+	{
 		TreeView myTreeView;
-		static List<Note> notes = new List<Note> ();
+		static List<UiNote> notes = new List<UiNote> ();
 		Gtk.Window win;
 		VBox myNotesContainer;
 
@@ -468,7 +468,7 @@ namespace code
 			myNotesContainer = new VBox (false, 0);
 			myContentContainer.Add (myNotesContainer);
 
-			Note note = new Note ();
+			UiNote note = new UiNote ();
 			notes.Add (note);
 
 			myNotesContainer.Add (note);
@@ -486,7 +486,7 @@ namespace code
 
 		void AddNote (object obj, EventArgs args)
 		{
-			Note note = new Note ();
+			UiNote note = new UiNote ();
 			notes.Add (note);
 			note.Fit (notes [0].Width ());
 			myNotesContainer.Add (note);
@@ -506,7 +506,7 @@ namespace code
 		 */
 		void ZoomInButton_Clicked (object obj, EventArgs args)
 		{
-			foreach (Note note in notes)
+			foreach (UiNote note in notes)
 				note.Scale ((double)10 / 9);
 		}
 
@@ -515,7 +515,7 @@ namespace code
 		 */
 		void ZoomOutButton_Clicked (object obj, EventArgs args)
 		{
-			foreach (Note note in notes)
+			foreach (UiNote note in notes)
 				note.Scale ((double)9 / 10);
 		}
 
@@ -524,7 +524,7 @@ namespace code
 		 */
 		void ZoomFitButton_Clicked (object obj, EventArgs args)
 		{
-			foreach (Note note in notes)
+			foreach (UiNote note in notes)
 				note.Fit ();
 		}
 
