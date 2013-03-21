@@ -27,15 +27,76 @@ namespace code
 			class SelectionTool : Tool
 			{
 
+				class Selection
+				{
+					Canvas myCanvas;
+
+					public Selection (Canvas canvas, List<CanvasItem> items)
+					{
+						myCanvas = canvas;
+						elements = items;
+					}
+
+					public List<CanvasItem> items = new List<CanvasItem> ();
+					public List<CanvasItem> elements;
+
+					public void SelectItemsWithin (double x1, double x2, double y1, double y2)
+					{
+						//TODO find a way to read elements back from the canvas itself
+						//foreach (CanvasItem current in myCanvas.AllChildren) {
+						foreach (CanvasItem current in elements) {
+							double cx1, cx2, cy1, cy2;
+							current.GetBounds (out cx1, out cy1, out cx2, out cy2);
+							if (x1 < cx1 && x2 > cx2 && y1 < cy1 && y2 > cy2)
+								items.Add (current);
+						}
+					}
+
+					/**
+				 * select one item by placing a gray box around it
+				 * TODO offer various selection methods
+				 */
+					public void selectItem (CanvasItem item)
+					{
+						double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+						item.GetBounds (out x1, out y1, out x2, out y2);
+
+						// use these to setup the selection rectangle
+						action = new SelectionTool (myCanvas, elements);
+						action.Start (x1, y1);
+						action.Complete (x2, y2);
+						// clear the selection cache because we only want one single element selected
+						items.Clear ();
+
+						items.Add (item);
+					}
+
+					/**
+				 * unselect all
+				 */
+					public void unselect ()
+					{
+						try {
+							items.Clear ();
+						} catch (NullReferenceException) {
+							// in case nothing is selected
+						}
+					}
+				}
+
 				bool selectionInProgress = false;
 				CanvasRE selectionRect;
 				bool move = false;
 				double lastX, lastY;
 				Canvas myCanvas;
+				List<CanvasItem> elements;
+				Selection selection;
 
-				public SelectionTool (Canvas canvas)
+				public SelectionTool (Canvas canvas, List<CanvasItem> items)
 				{
 					myCanvas = canvas;
+					elements = items;
+					selection = new Selection (canvas, items);
 				}
 
 				public override void Start (double x, double y)
@@ -162,7 +223,7 @@ namespace code
 
 				public override Tool getInstance ()
 				{
-					return new SelectionTool (myCanvas);
+					return new SelectionTool (myCanvas, elements);
 				}
 			}
 
@@ -171,10 +232,12 @@ namespace code
 				CanvasLine currentStroke;
 				ArrayList currentStrokePoints;
 				Canvas myCanvas;
+				List<CanvasItem> elements;
 
-				public Stroke (Canvas canvas)
+				public Stroke (Canvas canvas, List<CanvasItem> items)
 				{
 					myCanvas = canvas;
+					elements = items;
 				}
 
 				public override void Start (double x, double y)
@@ -236,81 +299,21 @@ namespace code
 				 */
 				void Line_MouseDown (object obj, EventButton args)
 				{
-					switch (args.Button) {
-					case 1: // left mouse button selects the line
-						selection.selectItem ((CanvasLine)obj);
-						break;
-					case 3:	// right mouse button deletes the line
-						((CanvasLine)obj).Destroy ();
-						break;
-					}
+
 				}
 
 				public override Tool getInstance ()
 				{
-					return new Stroke (myCanvas);
-				}
-			}
-
-			class Selection
-			{
-				Canvas myCanvas;
-
-				public Selection (Canvas canvas)
-				{
-					myCanvas = canvas;
-				}
-
-				public List<CanvasItem> items = new List<CanvasItem> ();
-
-				public void SelectItemsWithin (double x1, double x2, double y1, double y2)
-				{
-					//TODO find a way to read elements back from the canvas itself
-					//foreach (CanvasItem current in myCanvas.AllChildren) {
-					foreach (CanvasItem current in elements) {
-						double cx1, cx2, cy1, cy2;
-						current.GetBounds (out cx1, out cy1, out cx2, out cy2);
-						if (x1 < cx1 && x2 > cx2 && y1 < cy1 && y2 > cy2)
-							items.Add (current);
-					}
-				}
-
-				/**
-				 * select one item by placing a gray box around it
-				 * TODO offer various selection methods
-				 */
-				public void selectItem (CanvasItem item)
-				{
-					double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-					item.GetBounds (out x1, out y1, out x2, out y2);
-
-					// use these to setup the selection rectangle
-					action = new SelectionTool (myCanvas);
-					action.Start (x1, y1);
-					action.Complete (x2, y2);
-					// clear the selection cache because we only want one single element selected
-					items.Clear ();
-
-					items.Add (item);
-				}
-
-				/**
-				 * unselect all
-				 */
-				public void unselect ()
-				{
-					try {
-						items.Clear ();
-					} catch (NullReferenceException) {
-						// in case nothing is selected
-					}
+					return new Stroke (myCanvas, elements);
 				}
 			}
 
 			const int canvasWidth = 1500, canvasHeight = 1500;
 			Canvas myCanvas;
 			static Tool action;
-			static Selection selection;
+
+			// TODO find a way to read elements back from the canvas itself
+			List<CanvasItem> elements = new List<CanvasItem> ();
 
 			public Note ()
 			{
@@ -319,7 +322,7 @@ namespace code
 				// TODO find out why this somehow centers the axis origin.
 				myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
 				this.Add (myCanvas);
-				selection = new Selection (myCanvas);
+//				selection = new Selection (myCanvas, elements);
 
 				// draw a filled rectangle to represent drawing area
 				CanvasRE item = new CanvasRect (myCanvas.Root ());
@@ -379,9 +382,9 @@ namespace code
 						if (null != action)
 							action.Reset ();
 						if (1 == ev.Button)
-							action = new Stroke (myCanvas);
+							action = new Stroke (myCanvas, elements);
 						else if (3 == ev.Button)
-							action = new SelectionTool (myCanvas);
+							action = new SelectionTool (myCanvas, elements);
 					}
 
 					switch (ev.Type) {
@@ -404,9 +407,6 @@ namespace code
 		static List<Note> notes = new List<Note> ();
 		Gtk.Window win;
 		VBox myNotesContainer;
-
-		// TODO find a way to read elements back from the canvas itself
-		static List<CanvasItem> elements = new List<CanvasItem> ();
 
 		public aJournal ()
 		{
