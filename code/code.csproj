@@ -66,5 +66,7 @@
     <Compile Include="aJournal.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="Tests.cs" />
+    <Compile Include="ui_tools.cs" />
+    <Compile Include="ui_note_elements.cs" />
   </ItemGroup>
 </Project>
