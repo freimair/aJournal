@@ -98,6 +98,7 @@ namespace ui_gtk_gnome
 			CanvasWidget canvasText;
 			TextView view;
 			CanvasRE itemize;
+			int indentationLevel = 0;
 
 			bool controlModifierActive = false;
 			bool shiftModifierActive = false;
@@ -179,52 +180,41 @@ namespace ui_gtk_gnome
 					}
 
 					// itemize
-					if (!shiftModifierActive && view.Buffer.Text.Contains ("\t")) {
+					if (view.Buffer.Text.Contains ("\t")) {
 						// trim the newline at the end of the string
 						view.Buffer.Text = view.Buffer.Text.Replace ("\t", "");
 
-						if (null == itemize) { // fresh itemize
-							itemize = new CanvasEllipse (canvas.Root ());
-							itemize.X1 = canvasText.Height / 3;
-							itemize.X2 = 2 * canvasText.Height / 3;
-							itemize.Y1 = canvasText.Height / 3;
-							itemize.Y2 = 2 * canvasText.Height / 3;
-							itemize.WidthUnits = 2;
-							itemize.FillColor = "black";
-							itemize.Move (canvasText.X, canvasText.Y);
-							canvasText.Move (80, 0);
-						} else if (itemize is CanvasEllipse) {
-							itemize.Destroy ();
-							itemize = new CanvasRect (canvas.Root ());
-							itemize.X1 = canvasText.Height / 3;
-							itemize.X2 = 2 * canvasText.Height / 3;
-							itemize.Y1 = canvasText.Height / 3;
-							itemize.Y2 = 2 * canvasText.Height / 3;
-							itemize.WidthUnits = 2;
-							itemize.FillColor = "black";
-							itemize.Move (canvasText.X + 80, canvasText.Y);
-							canvasText.Move (80, 0);
-						}
-					} else if (shiftModifierActive && view.Buffer.Text.Contains ("\t")) {
-						// trim the newline at the end of the string
-						view.Buffer.Text = view.Buffer.Text.Replace ("\t", "");
+						int direction = 0;
+						if (shiftModifierActive)
+							direction = -1;
+						else
+							direction = 1;
 
-						if (itemize is CanvasEllipse) {
+						if (indentationLevel + direction < 0)
+							direction = 0;
+
+						indentationLevel += direction;
+
+
+						if (null != itemize)
 							itemize.Destroy ();
-							itemize = null;
-							canvasText.Move (-80, 0);
-						} else if (itemize is CanvasRect) {
-							itemize.Destroy ();
-							itemize = new CanvasEllipse (canvas.Root ());
+
+						if (indentationLevel > 0) {
+							if (indentationLevel % 2 == 1)
+								itemize = new CanvasEllipse (canvas.Root ());
+							else
+								itemize = new CanvasRect (canvas.Root ());
+
 							itemize.X1 = canvasText.Height / 3;
 							itemize.X2 = 2 * canvasText.Height / 3;
 							itemize.Y1 = canvasText.Height / 3;
 							itemize.Y2 = 2 * canvasText.Height / 3;
 							itemize.WidthUnits = 2;
 							itemize.FillColor = "black";
-							itemize.Move (canvasText.X, canvasText.Y);
-							canvasText.Move (-80, 0);
+							itemize.Move (canvasText.X + (indentationLevel - 1) * 80, canvasText.Y);
 						}
+
+						canvasText.Move (direction * 80, 0);
 					}
 				};
 
