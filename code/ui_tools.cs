@@ -310,21 +310,31 @@ namespace ui_gtk_gnome
 			{
 				myText = new UiText (myCanvas);
 				elements.Add (myText);
+
+				// place empty text on (x,y)
+				myText.Move (x, y);
 			}
 
 			public override void Continue (double x, double y)
 			{
-				//TODO
+				// do nothing since this is mouse move
 			}
 
 			public override void Complete (double x, double y)
 			{
-				//TODO
+				// do nothing since this is mouse up
 			}
 
 			public override void Reset ()
 			{
-				//TODO
+				// delete text if empty
+				try {
+					if (myText.Empty) {
+						myText.Destroy ();
+						elements.Remove (myText);
+					}
+				} catch (NullReferenceException) {
+				}
 			}
 		}
 
