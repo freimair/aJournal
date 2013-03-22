@@ -66,6 +66,8 @@ namespace ui_gtk_gnome
 				return new BoundingBox (cx1, cy1, cx2, cy2);
 			}
 
+			public List<int> Points { get { return linemodel.Points; } }
+
 			public override void Move (double diffx, double diffy)
 			{
 				for (int i = 0; i < linemodel.Points.Count; i += 2) {
@@ -79,6 +81,7 @@ namespace ui_gtk_gnome
 			public override void Destroy ()
 			{
 				line.Destroy ();
+				// TODO destroy in backend as well
 			}
 		}
 	}
