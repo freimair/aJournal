@@ -235,6 +235,65 @@ namespace ui_gtk_gnome
 			}
 		}
 
+		public class EraserTool : Tool
+		{
+			List<UiNoteElement> elements;
+			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			{
+				elements = items;
+			}
+
+			public override void Start (double x, double y)
+			{
+				Do (x, y);
+			}
+
+			public override void Continue (double x, double y)
+			{
+				Do (x, y);
+			}
+
+			public override void Complete (double x, double y)
+			{
+			}
+
+			void Do (double x, double y)
+			{
+				foreach (UiNoteElement current in elements) {
+					BoundingBox bb = current.BoundingBox ();
+					if (!(x > bb.left && y > bb.top && x < bb.right && y < bb.bottom))
+						continue;
+
+					if (current is UiLine) {
+						UiLine tmp = (UiLine)current;
+
+						for (int i = 0; i < tmp.Points.Count; i += 2) {
+							int radius = 10; // TODO do we want a configurable eraser (and pen) radius?
+							int cx = tmp.Points [i], cy = tmp.Points [i + 1];
+							if (x > cx - radius && y > cy - radius && x < cx + radius && y < cy + radius) {
+								// we have a match
+								tmp.Destroy (); // TODO make sure the line is destroyed in the backend as well
+							}
+
+
+//							TODO prune line instead of deleting the whole thing
+//							if(i == 0 && eraser matches)
+							// remove point from UiLine
+//							if(i == tmp.Points.Count - 1 && eraser matches)
+							// remove point from UiLine
+//							else
+							// split line and treat each subline as above
+						}
+					}
+
+				}
+			}
+
+			public override void Reset ()
+			{
+			}
+		}
+
 //		public class ResizeDrawingAreaTool : Tool
 //		{
 ////								if (ev.Y > canvasHeight - canvasHeight * 5 / 100 && ev.Y < canvasHeight) {
