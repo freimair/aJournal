@@ -193,14 +193,36 @@ namespace ui_gtk_gnome
 							itemize.FillColor = "black";
 							itemize.Move (canvasText.X, canvasText.Y);
 							canvasText.Move (80, 0);
+						} else if (itemize is CanvasEllipse) {
+							itemize.Destroy ();
+							itemize = new CanvasRect (canvas.Root ());
+							itemize.X1 = canvasText.Height / 3;
+							itemize.X2 = 2 * canvasText.Height / 3;
+							itemize.Y1 = canvasText.Height / 3;
+							itemize.Y2 = 2 * canvasText.Height / 3;
+							itemize.WidthUnits = 2;
+							itemize.FillColor = "black";
+							itemize.Move (canvasText.X + 80, canvasText.Y);
+							canvasText.Move (80, 0);
 						}
 					} else if (shiftModifierActive && view.Buffer.Text.Contains ("\t")) {
 						// trim the newline at the end of the string
 						view.Buffer.Text = view.Buffer.Text.Replace ("\t", "");
 
-						if (null != itemize) {
+						if (itemize is CanvasEllipse) {
 							itemize.Destroy ();
 							itemize = null;
+							canvasText.Move (-80, 0);
+						} else if (itemize is CanvasRect) {
+							itemize.Destroy ();
+							itemize = new CanvasEllipse (canvas.Root ());
+							itemize.X1 = canvasText.Height / 3;
+							itemize.X2 = 2 * canvasText.Height / 3;
+							itemize.Y1 = canvasText.Height / 3;
+							itemize.Y2 = 2 * canvasText.Height / 3;
+							itemize.WidthUnits = 2;
+							itemize.FillColor = "black";
+							itemize.Move (canvasText.X, canvasText.Y);
 							canvasText.Move (-80, 0);
 						}
 					}
