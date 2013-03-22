@@ -106,7 +106,7 @@ namespace ui_gtk_gnome
 		VBox myNotesContainer;
 		// static because we only want one tool active in the whole app
 		public static Tool currentTool;
-		RadioToolButton penToolButton, selectionToolButton;
+		RadioToolButton penToolButton, selectionToolButton, eraserToolButton;
 
 		public aJournal ()
 		{
@@ -156,6 +156,11 @@ namespace ui_gtk_gnome
 			selectionToolButton.TooltipText = "Selection";
 			selectionToolButton.Clicked += SelectTool_Clicked;
 			myToolbar.Insert (selectionToolButton, 5);
+			eraserToolButton = new RadioToolButton (penToolButton, Gtk.Stock.About);
+			eraserToolButton.IconWidget = new Gtk.Image (new Pixbuf ("eraser.png"));
+			eraserToolButton.TooltipText = "Eraser";
+			eraserToolButton.Clicked += SelectTool_Clicked;
+			myToolbar.Insert (eraserToolButton, 6);
 
 			// insert the toolbar into the layoutpen
 			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
@@ -207,6 +212,8 @@ namespace ui_gtk_gnome
 				currentTool = new StrokeTool ();
 			else if (obj == selectionToolButton)
 				currentTool = new SelectionTool ();
+			else if (obj == eraserToolButton)
+				currentTool = new EraserTool ();
 		}
 
 		void AddNote (object obj, EventArgs args)

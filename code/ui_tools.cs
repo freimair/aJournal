@@ -235,6 +235,31 @@ namespace ui_gtk_gnome
 			}
 		}
 
+		public class EraserTool : Tool
+		{
+			List<UiNoteElement> elements;
+			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			{
+				elements = items;
+			}
+
+			public override void Start (double x, double y)
+			{
+			}
+
+			public override void Continue (double x, double y)
+			{
+			}
+
+			public override void Complete (double x, double y)
+			{
+			}
+
+			public override void Reset ()
+			{
+			}
+		}
+
 //		public class ResizeDrawingAreaTool : Tool
 //		{
 ////								if (ev.Y > canvasHeight - canvasHeight * 5 / 100 && ev.Y < canvasHeight) {
