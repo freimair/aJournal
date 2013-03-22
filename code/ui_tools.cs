@@ -294,6 +294,34 @@ namespace ui_gtk_gnome
 			}
 		}
 
+		public class TextTool : Tool
+		{
+			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			{
+				//TODO
+			}
+
+			public override void Start (double x, double y)
+			{
+				//TODO
+			}
+
+			public override void Continue (double x, double y)
+			{
+				//TODO
+			}
+
+			public override void Complete (double x, double y)
+			{
+				//TODO
+			}
+
+			public override void Reset ()
+			{
+				//TODO
+			}
+		}
+
 //		public class ResizeDrawingAreaTool : Tool
 //		{
 ////								if (ev.Y > canvasHeight - canvasHeight * 5 / 100 && ev.Y < canvasHeight) {
