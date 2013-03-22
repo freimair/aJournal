@@ -99,15 +99,22 @@ namespace ui_gtk_gnome
 			TextView view;
 
 			bool controlModifierActive = false;
+			bool shiftModifierActive = false;
 
 			public UiText (Canvas canvas)
 			{
 
+
 				canvasText = new CanvasWidget (canvas.Root ());
-				canvasText.Width = 200;
-				canvasText.Height = 200;
 
 				view = new TextView ();
+				// reset text style
+				FontDescription fontDescription = view.Style.FontDescription;
+				fontDescription.Size = FontSize.Normal;
+				fontDescription.Weight = Weight.Normal;
+				view.ModifyFont (fontDescription);
+
+				// do further configuration
 				view.CursorVisible = true;
 				view.ResizeMode = ResizeMode.Immediate;
 
@@ -124,7 +131,7 @@ namespace ui_gtk_gnome
 				view.KeyPressEvent += delegate(object o, KeyPressEventArgs args) {
 					EventKey ev = new EventKey (args.Event.Handle);
 					if (controlModifierActive) {
-						FontDescription fontDescription = view.Style.FontDescription;
+						fontDescription = view.Style.FontDescription;
 						switch (ev.Key) {
 						case Gdk.Key.Key_0: // standard
 							fontDescription.Size = FontSize.Normal;
@@ -145,11 +152,28 @@ namespace ui_gtk_gnome
 						}
 						view.ModifyFont (fontDescription);
 					}
+
 					switch (ev.Key) {
 					case Gdk.Key.Control_L:
 					case Gdk.Key.Control_R:
 						controlModifierActive = true;
 						break;
+					case Gdk.Key.Shift_L:
+					case Gdk.Key.Shift_R:
+						shiftModifierActive = true;
+						break;
+					}
+				};
+
+				// initialize new text item below the current one if the Enter-Key was pressed
+				view.Buffer.Changed += delegate(object sender, EventArgs e) {
+					if (!shiftModifierActive && view.Buffer.Text.EndsWith ("\n")) {
+						// trim the newline at the end of the string
+						view.Buffer.Text = view.Buffer.Text.Substring (0, view.Buffer.Text.Length - 1);
+
+						// trigger new textbox
+						aJournal.currentTool.Reset ();
+						aJournal.currentTool.Start (canvasText.X, canvasText.Y + canvasText.Height + 30);
 					}
 				};
 
@@ -159,6 +183,10 @@ namespace ui_gtk_gnome
 					case Gdk.Key.Control_L:
 					case Gdk.Key.Control_R:
 						controlModifierActive = false;
+						break;
+					case Gdk.Key.Shift_L:
+					case Gdk.Key.Shift_R:
+						shiftModifierActive = false;
 						break;
 					}
 				};

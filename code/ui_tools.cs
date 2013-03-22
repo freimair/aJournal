@@ -74,6 +74,7 @@ namespace ui_gtk_gnome
 			public override void Start (double x, double y)
 			{
 				selectionRect = new CanvasRect (myCanvas.Root ());
+				selectionRect.RaiseToTop (); // TODO does not work.
 
 				selectionRect.X1 = x;
 				selectionRect.Y1 = y;
