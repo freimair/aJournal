@@ -97,6 +97,7 @@ namespace ui_gtk_gnome
 
 			CanvasWidget canvasText;
 			TextView view;
+			CanvasRE itemize;
 
 			bool controlModifierActive = false;
 			bool shiftModifierActive = false;
@@ -150,6 +151,7 @@ namespace ui_gtk_gnome
 							fontDescription.Weight = Weight.Bold;
 							break;
 						}
+
 						view.ModifyFont (fontDescription);
 					}
 
@@ -174,6 +176,33 @@ namespace ui_gtk_gnome
 						// trigger new textbox
 						aJournal.currentTool.Reset ();
 						aJournal.currentTool.Start (canvasText.X, canvasText.Y + canvasText.Height + 30);
+					}
+
+					// itemize
+					if (!shiftModifierActive && view.Buffer.Text.Contains ("\t")) {
+						// trim the newline at the end of the string
+						view.Buffer.Text = view.Buffer.Text.Replace ("\t", "");
+
+						if (null == itemize) { // fresh itemize
+							itemize = new CanvasEllipse (canvas.Root ());
+							itemize.X1 = canvasText.Height / 3;
+							itemize.X2 = 2 * canvasText.Height / 3;
+							itemize.Y1 = canvasText.Height / 3;
+							itemize.Y2 = 2 * canvasText.Height / 3;
+							itemize.WidthUnits = 2;
+							itemize.FillColor = "black";
+							itemize.Move (canvasText.X, canvasText.Y);
+							canvasText.Move (80, 0);
+						}
+					} else if (shiftModifierActive && view.Buffer.Text.Contains ("\t")) {
+						// trim the newline at the end of the string
+						view.Buffer.Text = view.Buffer.Text.Replace ("\t", "");
+
+						if (null != itemize) {
+							itemize.Destroy ();
+							itemize = null;
+							canvasText.Move (-80, 0);
+						}
 					}
 				};
 
@@ -208,6 +237,11 @@ namespace ui_gtk_gnome
 			{
 				canvasText.X += diffx;
 				canvasText.Y += diffy;
+
+				try {
+					itemize.Move (diffx, diffy);
+				} catch (NullReferenceException) {
+				}
 			}
 
 			public override void Destroy ()
