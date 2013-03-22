@@ -84,5 +84,39 @@ namespace ui_gtk_gnome
 				// TODO destroy in backend as well
 			}
 		}
+
+		public class UiText : UiNoteElement
+		{
+			CanvasText hello;
+
+			public UiText (Canvas canvas)
+			{
+				hello = new CanvasText (canvas.Root ());
+				hello.X = 300;
+				hello.Y = 300;
+				hello.FillColor = "#000000";
+				hello.Text = "Hello, Canvas!";
+				hello.Show ();
+			}
+
+			public override BoundingBox BoundingBox ()
+			{
+				double cx1, cx2, cy1, cy2;
+				hello.GetBounds (out cx1, out cy1, out cx2, out cy2);
+
+				return new BoundingBox (cx1, cy1, cx2, cy2);
+			}
+
+			public override void Move (double diffx, double diffy)
+			{
+				hello.X += diffx;
+				hello.Y += diffy;
+			}
+
+			public override void Destroy ()
+			{
+				throw new System.NotImplementedException ();
+			}
+		}
 	}
 }

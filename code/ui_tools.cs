@@ -296,14 +296,20 @@ namespace ui_gtk_gnome
 
 		public class TextTool : Tool
 		{
+			Canvas myCanvas;
+			List<UiNoteElement> elements;
+			UiText myText;
+
 			public override void Init (Canvas canvas, List<UiNoteElement> items)
 			{
-				//TODO
+				myCanvas = canvas;
+				elements = items;
 			}
 
 			public override void Start (double x, double y)
 			{
-				//TODO
+				myText = new UiText (myCanvas);
+				elements.Add (myText);
 			}
 
 			public override void Continue (double x, double y)
