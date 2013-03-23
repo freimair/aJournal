@@ -342,6 +342,15 @@ namespace test
 			note.RemoveElement (DUT);
 			Assert.IsEmpty (note.GetElements (), "removing a text element with indentation failed");
 		}
+
+		[Test]
+		public void ImageTest ()
+		{
+			ImageElement DUT = new ImageElement ();
+			DUT.X = 10;
+			DUT.Y = 10;
+			DUT.LoadFromFile ("rect-select.png");
+		}
 	}
 }
 
