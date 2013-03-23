@@ -102,11 +102,11 @@ namespace ui_gtk_gnome
 	{
 		TreeView myTreeView;
 		static List<UiNote> notes = new List<UiNote> ();
-		Gtk.Window win;
+		public static Gtk.Window win;
 		VBox myNotesContainer;
 		// static because we only want one tool active in the whole app
 		public static Tool currentTool;
-		RadioToolButton penToolButton, selectionToolButton, eraserToolButton, textToolButton;
+		RadioToolButton penToolButton, selectionToolButton, eraserToolButton, textToolButton, imageToolButton;
 
 		public aJournal ()
 		{
@@ -166,6 +166,10 @@ namespace ui_gtk_gnome
 			textToolButton.TooltipText = "Text";
 			textToolButton.Clicked += SelectTool_Clicked;
 			myToolbar.Insert (textToolButton, 7);
+			imageToolButton = new RadioToolButton (penToolButton, Gtk.Stock.OrientationPortrait);
+			imageToolButton.TooltipText = "Image";
+			imageToolButton.Clicked += SelectTool_Clicked;
+			myToolbar.Insert (imageToolButton, 8);
 
 			// insert the toolbar into the layoutpen
 			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
@@ -221,6 +225,8 @@ namespace ui_gtk_gnome
 				currentTool = new EraserTool ();
 			else if (obj == textToolButton)
 				currentTool = new TextTool ();
+			else if (obj == imageToolButton)
+				currentTool = new ImageTool ();
 		}
 
 		void AddNote (object obj, EventArgs args)
