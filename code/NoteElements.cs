@@ -319,6 +319,47 @@ namespace backend
 				return true;
 			}
 		}
+
+		public class ImageElement : NoteElement
+		{
+			int width, height;
+			string type, image;
+
+			public int Width {
+				get { return width;}
+				set { width = value;}
+			}
+
+			public int Height {
+				get { return height;}
+				set{ height = value;}
+			}
+
+			public void ImageFromFile (string path)
+			{
+				throw new System.NotImplementedException ();
+			}
+
+			public ImageElement ()
+			{
+
+			}
+
+			public ImageElement (XmlNode node)
+			{
+				throw new System.NotImplementedException ();
+			}
+
+			public override XmlNode Find (XmlNode root)
+			{
+				throw new System.NotImplementedException ();
+			}
+
+			public override XmlNode ToXml (XmlDocument document)
+			{
+				throw new System.NotImplementedException ();
+			}
+		}
 	}
 }
 
