@@ -346,10 +346,17 @@ namespace test
 		[Test]
 		public void ImageTest ()
 		{
+			Note note = Note.Create ();
+
 			ImageElement DUT = new ImageElement ();
 			DUT.X = 10;
 			DUT.Y = 10;
+			DUT.Width = 20;
+			DUT.Height = 20;
 			DUT.LoadFromFile ("rect-select.png");
+
+			note.AddElement (DUT);
+//			note.Persist (); // uncomment for visual svg check
 		}
 	}
 }

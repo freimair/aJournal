@@ -353,7 +353,7 @@ namespace backend
 			public void LoadFromFile (string path)
 			{
 				image = Convert.ToBase64String (File.ReadAllBytes (path));
-				type = "image/" + path.Substring (path.LastIndexOf ("."));
+				type = "image/" + path.Substring (path.LastIndexOf (".") + 1);
 			}
 
 			public ImageElement ()
@@ -376,7 +376,29 @@ namespace backend
 			 */
 			public override XmlNode ToXml (XmlDocument document)
 			{
-				throw new System.NotImplementedException ();
+				XmlNode currentNode = document.CreateElement ("image");
+
+				XmlAttribute a = document.CreateAttribute ("x");
+				a.Value = Convert.ToString (X);
+				currentNode.Attributes.Append (a);
+
+				a = document.CreateAttribute ("y");
+				a.Value = Convert.ToString (Y);
+				currentNode.Attributes.Append (a);
+
+				a = document.CreateAttribute ("width");
+				a.Value = Convert.ToString (Width);
+				currentNode.Attributes.Append (a);
+
+				a = document.CreateAttribute ("height");
+				a.Value = Convert.ToString (Height);
+				currentNode.Attributes.Append (a);
+
+				a = document.CreateAttribute ("xlink", "href", "http://www.w3.org/1999/xlink");
+				a.Value = "data:" + type + ";base64," + image;
+				currentNode.Attributes.Append (a);
+
+				return currentNode;
 			}
 		}
 	}
