@@ -215,6 +215,79 @@ namespace test
 			entry.Persist ();
 			entry.Delete ();
 		}
+
+		[Test]
+		public void TextXmlRoundtrip ()
+		{
+			int y = 0;
+
+			Note note = Note.Create ();
+			TextElement DUT = new TextElement ();
+			DUT.Text = "Heading";
+			DUT.X = 10;
+			DUT.Y = 0;
+			y += 15;
+			DUT.FontSize = 20;
+			DUT.FontStrong = true;
+			note.AddElement (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "normal";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			note.AddElement (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "one ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 1;
+			note.AddElement (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "two ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 2;
+			note.AddElement (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "three ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 3;
+			note.AddElement (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "four ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 4;
+			note.AddElement (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "two ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 2;
+			note.AddElement (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "one ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 1;
+			note.AddElement (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "normal";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 0;
+			note.AddElement (DUT);
+
+//			note.Persist (); // for visual svg check
+		}
 	}
 }
 
