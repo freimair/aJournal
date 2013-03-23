@@ -20,6 +20,8 @@ namespace backend
 				case "text":
 				case "g":
 					return new TextElement (node);
+				case "image":
+					return new ImageElement (node);
 				case "desc":
 					return null;
 				default:
@@ -358,12 +360,30 @@ namespace backend
 
 			public ImageElement ()
 			{
-
 			}
 
 			public ImageElement (XmlNode node)
 			{
-				throw new System.NotImplementedException ();
+				foreach (XmlAttribute current in node.Attributes) {
+					switch (current.Name) {
+					case "x":
+						X = Convert.ToInt32 (current.Value);
+						break;
+					case "y":
+						Y = Convert.ToInt32 (current.Value);
+						break;
+					case "width":
+						Width = Convert.ToInt32 (current.Value);
+						break;
+					case "height":
+						Height = Convert.ToInt32 (current.Value);
+						break;
+					case "xlink:href":
+						type = current.Value.Substring (5, 9);
+						image = current.Value.Substring (22);
+						break;
+					}
+				}
 			}
 
 			public override XmlNode Find (XmlNode root)
@@ -399,6 +419,27 @@ namespace backend
 				currentNode.Attributes.Append (a);
 
 				return currentNode;
+			}
+
+			public override bool Equals (object obj)
+			{
+				if (!(obj is ImageElement))
+					return false;
+				ImageElement tmp = (ImageElement)obj;
+				if (x != tmp.x)
+					return false;
+				if (y != tmp.y)
+					return false;
+				if (width != tmp.width)
+					return false;
+				if (height != tmp.height)
+					return false;
+				if (type != tmp.type)
+					return false;
+				if (image != tmp.image)
+					return false;
+
+				return true;
 			}
 		}
 	}

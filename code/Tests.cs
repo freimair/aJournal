@@ -344,7 +344,7 @@ namespace test
 		}
 
 		[Test]
-		public void ImageTest ()
+		public void ImageXmlRoundtripTest ()
 		{
 			Note note = Note.Create ();
 
@@ -356,7 +356,14 @@ namespace test
 			DUT.LoadFromFile ("rect-select.png");
 
 			note.AddElement (DUT);
-//			note.Persist (); // uncomment for visual svg check
+			note.Persist ();
+
+			List<NoteElement> recreated = note.GetElements ();
+
+			Assert.IsNotEmpty (recreated);
+			Assert.Contains (DUT, recreated);
+
+			note.Delete (); // comment for visual svg check
 		}
 	}
 }
