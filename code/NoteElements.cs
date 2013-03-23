@@ -16,6 +16,11 @@ namespace backend
 				switch (node.Name) {
 				case "polyline":
 					return new PolylineElement (node);
+				case "text":
+				case "g":
+					return new TextElement (node);
+				case "desc":
+					return null;
 				default:
 					throw new Exception ("no matching drawable found");
 				}
@@ -128,6 +133,51 @@ namespace backend
 				set{ y = value;}
 			}
 
+			public TextElement ()
+			{
+			}
+
+			public TextElement (XmlNode node)
+			{
+
+				// scan nodes for the text node
+				// we do not need the bullet
+				XmlNode textNode = node;
+				if (0 < node.ChildNodes.Count)
+					foreach (XmlNode current in node.ChildNodes)
+						if ("text".Equals (current.Name))
+							textNode = current;
+
+				// first, find fontsize first!
+				foreach (XmlAttribute current in textNode.Attributes)
+					if ("font-size".Equals (current.Name)) {
+						FontSize = Convert.ToInt32 (current.Value);
+						break;
+					}
+
+				foreach (XmlAttribute current in textNode.Attributes) {
+					switch (current.Name) {
+					case "x":
+						X = Convert.ToInt32 (current.Value);
+						break;
+					case "y":
+						Y = Convert.ToInt32 (current.Value) - FontSize;
+						break;
+					case "fill":
+						color = current.Value;
+						break;
+					case "font-weight":
+						FontStrong = current.Value == "bold" ? true : false;
+						break;
+					case "transform":
+						int indent = Convert.ToInt32 (current.Value.Replace ("translate(", "").Replace (")", ""));
+						IndentationLevel = ParseIndent (indent);
+						break;
+					}
+				}
+				Text = textNode.InnerText;
+			}
+
 			public override XmlNode Find (XmlNode root)
 			{
 				throw new System.NotImplementedException ();
@@ -236,6 +286,34 @@ namespace backend
 			int indent (double offset)
 			{
 				return Convert.ToInt32 ((((double)indentationLevel) * 2 + offset) * FontSize);
+			}
+
+			int ParseIndent (int indent)
+			{
+				return indent / FontSize / 2;
+			}
+
+			public override bool Equals (object obj)
+			{
+				if (!(obj is TextElement))
+					return false;
+				TextElement tmp = (TextElement)obj;
+				if (text != tmp.text)
+					return false;
+				if (indentationLevel != tmp.indentationLevel)
+					return false;
+				if (size != tmp.size)
+					return false;
+				if (strong != tmp.strong)
+					return false;
+				if (color != tmp.color)
+					return false;
+				if (x != tmp.x)
+					return false;
+				if (y != tmp.y)
+					return false;
+
+				return true;
 			}
 		}
 	}

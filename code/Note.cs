@@ -127,11 +127,14 @@ namespace backend
 
 		public List<NoteElement> GetElements ()
 		{
-			XmlNodeList nodes = rootNode.SelectNodes ("/svg/polyline");
+			XmlNodeList nodes = rootNode.SelectNodes ("/svg/*");
 
 			List<NoteElement> result = new List<NoteElement> ();
-			foreach (XmlNode current in nodes)
-				result.Add (NoteElement.RecreateFromXml (current));
+			foreach (XmlNode current in nodes) {
+				NoteElement tmp = NoteElement.RecreateFromXml (current);
+				if (null != tmp)
+					result.Add (tmp);
+			}
 
 			return result;
 		}
