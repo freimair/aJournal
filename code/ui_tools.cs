@@ -357,7 +357,6 @@ namespace ui_gtk_gnome
 				FileChooserDialog fc = new FileChooserDialog ("Choose the file to open", aJournal.win, FileChooserAction.Open,
 				                                              "Cancel", ResponseType.Cancel, "Open", ResponseType.Accept);
 				if (fc.Run () == (int)ResponseType.Accept) {
-					Console.WriteLine (fc.Filename);
 					myImage = new UiImage (myCanvas, fc.Filename);
 					elements.Add (myImage);
 

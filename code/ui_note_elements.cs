@@ -286,12 +286,14 @@ namespace ui_gtk_gnome
 		public class UiImage : UiNoteElement
 		{
 			CanvasPixbuf canvasPixbuf;
+			Pixbuf myPixbuf;
 
 			public UiImage (Canvas canvas, String path)
 			{
 				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
 
-				canvasPixbuf.Pixbuf = new Pixbuf (path);
+				myPixbuf = new Pixbuf (path);
+				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (500, Convert.ToInt32 (500.0 / myPixbuf.Width * myPixbuf.Height), InterpType.Bilinear);
 			}
 
 			public override BoundingBox BoundingBox ()
