@@ -215,6 +215,133 @@ namespace test
 			entry.Persist ();
 			entry.Delete ();
 		}
+
+		[Test]
+		public void TextXmlRoundtrip ()
+		{
+			int y = 0;
+
+			Note note = Note.Create ();
+
+			List<TextElement> DUTs = new List<TextElement> ();
+			TextElement DUT = new TextElement ();
+			DUT.Text = "Heading";
+			DUT.X = 10;
+			DUT.Y = 0;
+			y += 15;
+			DUT.FontSize = 20;
+			DUT.FontStrong = true;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "normal";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "one ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 1;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "two ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 2;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "three ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 3;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "four ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 4;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "two ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 2;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "one ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 1;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "normal";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 0;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			note.Persist ();
+
+			List<NoteElement> recreated = note.GetElements ();
+
+			Assert.AreEqual (DUTs.Count, recreated.Count);
+			Assert.Contains (DUTs [0], recreated, "heading: text, font size, font weight, position invalid");
+			Assert.Contains (DUTs [1], recreated, "normal: text, font size, font weight, position invalid");
+			for (int i = 2; i < DUTs.Count; i++)
+				Assert.Contains (DUTs [i], recreated, "text with indent recreation failed");
+
+			note.Delete (); // comment for visual svg check
+		}
+
+		[Test]
+		public void TextRemovalTest ()
+		{
+			Note note = Note.Create ();
+
+			// without indentation
+			TextElement DUT = new TextElement ();
+			DUT.Text = "text";
+			DUT.X = 10;
+			DUT.Y = 10;
+			note.AddElement (DUT);
+			Assert.Contains (DUT, note.GetElements ());
+			note.RemoveElement (DUT);
+			Assert.IsEmpty (note.GetElements (), "removing a text element failed");
+		}
+
+		[Test]
+		public void TextWithIndentationRemovalTest ()
+		{
+			Note note = Note.Create ();
+
+			// with indentation
+			TextElement DUT = new TextElement ();
+			DUT.Text = "text";
+			DUT.X = 10;
+			DUT.Y = 10;
+			DUT.IndentationLevel = 3;
+			note.AddElement (DUT);
+			Assert.Contains (DUT, note.GetElements ());
+			note.RemoveElement (DUT);
+			Assert.IsEmpty (note.GetElements (), "removing a text element with indentation failed");
+		}
 	}
 }
 
