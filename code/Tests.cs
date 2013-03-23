@@ -309,6 +309,39 @@ namespace test
 
 			note.Delete (); // comment for visual svg check
 		}
+
+		[Test]
+		public void TextRemovalTest ()
+		{
+			Note note = Note.Create ();
+
+			// without indentation
+			TextElement DUT = new TextElement ();
+			DUT.Text = "text";
+			DUT.X = 10;
+			DUT.Y = 10;
+			note.AddElement (DUT);
+			Assert.Contains (DUT, note.GetElements ());
+			note.RemoveElement (DUT);
+			Assert.IsEmpty (note.GetElements (), "removing a text element failed");
+		}
+
+		[Test]
+		public void TextWithIndentationRemovalTest ()
+		{
+			Note note = Note.Create ();
+
+			// with indentation
+			TextElement DUT = new TextElement ();
+			DUT.Text = "text";
+			DUT.X = 10;
+			DUT.Y = 10;
+			DUT.IndentationLevel = 3;
+			note.AddElement (DUT);
+			Assert.Contains (DUT, note.GetElements ());
+			note.RemoveElement (DUT);
+			Assert.IsEmpty (note.GetElements (), "removing a text element with indentation failed");
+		}
 	}
 }
 

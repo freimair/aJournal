@@ -180,7 +180,10 @@ namespace backend
 
 			public override XmlNode Find (XmlNode root)
 			{
-				throw new System.NotImplementedException ();
+				if (0 < IndentationLevel)
+					return root.SelectSingleNode ("/svg/g[text[@x='" + X + "' and @y='" + (Y + FontSize) + "' and text() = '" + Text + "']]");
+				else
+					return root.SelectSingleNode ("/svg/text[@x='" + X + "' and @y='" + (Y + FontSize) + "' and text() = '" + Text + "']");
 			}
 
 			/**
