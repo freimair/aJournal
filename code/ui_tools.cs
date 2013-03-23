@@ -339,6 +339,41 @@ namespace ui_gtk_gnome
 			}
 		}
 
+		public class ImageTool : Tool
+		{
+			List<UiNoteElement> elements;
+
+			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			{
+				elements = items;
+			}
+
+			public override void Start (double x, double y)
+			{
+				// "Cancel", ResponseType.Cancel, "Open", ResponseType.Accept
+				FileChooserDialog fc = new FileChooserDialog ("Choose the file to open", aJournal.win, FileChooserAction.Open,
+				                                              "Cancel", ResponseType.Cancel, "Open", ResponseType.Accept);
+				if (fc.Run () == (int)ResponseType.Accept) {
+					Console.WriteLine (fc.Filename);
+				}
+
+				//Don't forget to call Destroy() or the FileChooserDialog window won't get closed.
+				fc.Destroy ();
+			}
+
+			public override void Continue (double x, double y)
+			{
+			}
+
+			public override void Complete (double x, double y)
+			{
+			}
+
+			public override void Reset ()
+			{
+			}
+		}
+
 //		public class ResizeDrawingAreaTool : Tool
 //		{
 ////								if (ev.Y > canvasHeight - canvasHeight * 5 / 100 && ev.Y < canvasHeight) {
