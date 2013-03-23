@@ -238,17 +238,17 @@ namespace backend
 			descriptionNode.AppendChild (tagsNode);
 		}
 
-		public static Note create ()
+		public static Note Create ()
 		{
 			return new Note ();
 		}
 
-		public static List<Note> getEntries ()
+		public static List<Note> GetEntries ()
 		{
-			return getEntries (null);
+			return GetEntries (null);
 		}
 
-		public static List<Note> getEntries (NoteFilter filter)
+		public static List<Note> GetEntries (NoteFilter filter)
 		{
 			String[] files = Directory.GetFiles (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/", "*.svg");
 
@@ -259,14 +259,14 @@ namespace backend
 
 				try {
 					foreach (Tag current in filter.IncludedTags) {
-						if (candiate.getTags ().Contains (current)) {
+						if (candiate.GetTags ().Contains (current)) {
 							addCandidate = true;
 							break;
 						}
 					}
 
 					foreach (Tag current in filter.ExcludedTags) {
-						if (candiate.getTags ().Contains (current)) {
+						if (candiate.GetTags ().Contains (current)) {
 							addCandidate = false;
 							break;
 						}
@@ -282,18 +282,18 @@ namespace backend
 			return result;
 		}
 
-		public void addTag (Tag tag)
+		public void AddTag (Tag tag)
 		{
 			tagsNode.AppendChild (tag.ToXml (document));
 		}
 
-		public void removeTag (Tag tag)
+		public void RemoveTag (Tag tag)
 		{
 			XmlNode node = tagsNode.SelectSingleNode ("//tag[text()='" + tag.Name + "']");
 			tagsNode.RemoveChild (node);
 		}
 
-		public List<Tag> getTags ()
+		public List<Tag> GetTags ()
 		{
 			List<Tag> result = new List<Tag> ();
 			foreach (XmlNode current in tagsNode.ChildNodes) {
@@ -302,7 +302,7 @@ namespace backend
 			return result;
 		}
 
-		public List<NoteElement> get ()
+		public List<NoteElement> GetElements ()
 		{
 			XmlNodeList nodes = rootNode.SelectNodes ("/svg/polyline");
 
@@ -327,7 +327,7 @@ namespace backend
          *          1150,375" />
          * </svg>
          */
-		public void edit (List<NoteElement> before, List<NoteElement> after)
+		public void Edit (List<NoteElement> before, List<NoteElement> after)
 		{
 			// remove deprecated polylines
 			foreach (NoteElement current in before)
@@ -338,18 +338,25 @@ namespace backend
 				rootNode.AppendChild (current.ToXml (document));
 		}
 
-		public DateTime getCreationTimestamp ()
-		{
-			return new DateTime ();
-		}
-
-		public DateTime getModificationTimestamp ()
+		public void AddElement (NoteElement element)
 		{
 
-			return new DateTime ();
 		}
 
-		public void persist ()
+		public void RemoveElement (NoteElement element)
+		{
+
+		}
+
+		public DateTime CreationTimestamp {
+			get{ return new DateTime ();}
+		}
+
+		public DateTime ModificationTimestamp {
+			get { return new DateTime ();}
+		}
+
+		public void Persist ()
 		{
 			// check and adjust boundaries
 			// TODO check and adjust boundaries

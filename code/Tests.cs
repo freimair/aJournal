@@ -37,37 +37,37 @@ namespace test
 		public void StrokesTest ()
 		{
 			// create DUT
-			Note DUT = Note.create ();
+			Note DUT = Note.Create ();
 
 			// do some edit tasks
 			// - insert
-			DUT.edit (new List<NoteElement> (), listA);
-			Assert.AreEqual (listA.ToString (), DUT.get ().ToString (), "adding stroke failed");
+			DUT.Edit (new List<NoteElement> (), listA);
+			Assert.AreEqual (listA.ToString (), DUT.GetElements ().ToString (), "adding stroke failed");
 			// - change
-			DUT.edit (listA, listB);
-			Assert.AreEqual (listB.ToString (), DUT.get ().ToString (), "altering stroke failed");
+			DUT.Edit (listA, listB);
+			Assert.AreEqual (listB.ToString (), DUT.GetElements ().ToString (), "altering stroke failed");
 			// - delete
-			DUT.edit (listB, new List<NoteElement> ());
-			Assert.AreEqual (new List<NoteElement> ().ToString (), DUT.get ().ToString (), "deleting stroke failed");
+			DUT.Edit (listB, new List<NoteElement> ());
+			Assert.AreEqual (new List<NoteElement> ().ToString (), DUT.GetElements ().ToString (), "deleting stroke failed");
 		}
 
 		[Test]
 		public void PersistenceTest ()
 		{
 			// create DUT
-			Note DUT = Note.create ();
+			Note DUT = Note.Create ();
 
 			// create stroke
-			DUT.edit (new List<NoteElement> (), listA);
+			DUT.Edit (new List<NoteElement> (), listA);
 
 			// save to disk
-			DUT.persist ();
+			DUT.Persist ();
 
 			// reload from disk
-			DUT = Note.getEntries () [0];
+			DUT = Note.GetEntries () [0];
 
 			// check
-			Assert.AreEqual (listA.ToString (), DUT.get ().ToString (), "reloading stroke from disk failed");
+			Assert.AreEqual (listA.ToString (), DUT.GetElements ().ToString (), "reloading stroke from disk failed");
 
 			// cleanup
 			DUT.Delete ();
@@ -136,31 +136,31 @@ namespace test
 		[Test]
 		public void AddingTagsToEntriesTest ()
 		{
-			Note entry = Note.create ();
+			Note entry = Note.Create ();
 
 			Tag tag1 = Tag.Create ("tag1");
 			Tag tag2 = Tag.Create ("tag2");
 
-			entry.addTag (tag1);
-			entry.addTag (tag2);
+			entry.AddTag (tag1);
+			entry.AddTag (tag2);
 
-			Assert.AreEqual (tag1, entry.getTags () [0]);
-			Assert.AreEqual (tag2, entry.getTags () [1]);
+			Assert.AreEqual (tag1, entry.GetTags () [0]);
+			Assert.AreEqual (tag2, entry.GetTags () [1]);
 		}
 
 		[Test]
 		public void RemoveTagFromEntry ()
 		{
 			// setup
-			Note entry = Note.create ();
+			Note entry = Note.Create ();
 			Tag tag = Tag.Create ("tagname");
-			entry.addTag (tag);
+			entry.AddTag (tag);
 
 			// test
-			entry.removeTag (tag);
+			entry.RemoveTag (tag);
 
 			// check
-			Assert.IsEmpty (entry.getTags ());
+			Assert.IsEmpty (entry.GetTags ());
 		}
 
 		[Test]
@@ -172,7 +172,7 @@ namespace test
 			// - create entries
 			List<Note> entries = new List<Note> ();
 			for (int i = 0; i < max; i++)
-				entries.Add (Note.create ());
+				entries.Add (Note.Create ());
 
 			// - create tags
 			List<Tag> tags = new List<Tag> ();
@@ -182,23 +182,23 @@ namespace test
 			// - tag entries
 			for (int i = 0; i < max; i++)
 				for (int j = i; j < max; j++)
-					entries [i].addTag (tags [j]);
+					entries [i].AddTag (tags [j]);
 
 			// - persist
 			foreach (Note current in entries)
-				current.persist ();
+				current.Persist ();
 
 			// test
 			// - create filter
 			NoteFilter filter = new NoteFilter ();
 			filter.IncludedTags.Add (tags [2]);
 			filter.ExcludedTags.Add (tags [1]);
-			List<Note> result = Note.getEntries (filter);
+			List<Note> result = Note.GetEntries (filter);
 
 			// check
 			foreach (Note current in result) {
-				Assert.Contains (tags [2], current.getTags ());
-				Assert.IsFalse (current.getTags ().Contains (tags [1]), "entrylist contains entry with excluded tag");
+				Assert.Contains (tags [2], current.GetTags ());
+				Assert.IsFalse (current.GetTags ().Contains (tags [1]), "entrylist contains entry with excluded tag");
 			}
 
 			// cleanup
@@ -209,8 +209,8 @@ namespace test
 		[Test]
 		public void DeleteEntry ()
 		{
-			Note entry = Note.create ();
-			entry.persist ();
+			Note entry = Note.Create ();
+			entry.Persist ();
 			entry.Delete ();
 		}
 	}
