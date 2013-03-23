@@ -341,11 +341,14 @@ namespace ui_gtk_gnome
 
 		public class ImageTool : Tool
 		{
+			UiImage myImage;
 			List<UiNoteElement> elements;
+			Canvas myCanvas;
 
 			public override void Init (Canvas canvas, List<UiNoteElement> items)
 			{
 				elements = items;
+				myCanvas = canvas;
 			}
 
 			public override void Start (double x, double y)
@@ -355,6 +358,10 @@ namespace ui_gtk_gnome
 				                                              "Cancel", ResponseType.Cancel, "Open", ResponseType.Accept);
 				if (fc.Run () == (int)ResponseType.Accept) {
 					Console.WriteLine (fc.Filename);
+					myImage = new UiImage (myCanvas, fc.Filename);
+					elements.Add (myImage);
+
+					myImage.Move (x, y);
 				}
 
 				//Don't forget to call Destroy() or the FileChooserDialog window won't get closed.

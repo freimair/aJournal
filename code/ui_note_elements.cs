@@ -282,5 +282,36 @@ namespace ui_gtk_gnome
 				// TODO delete in backend
 			}
 		}
+
+		public class UiImage : UiNoteElement
+		{
+			CanvasPixbuf canvasPixbuf;
+
+			public UiImage (Canvas canvas, String path)
+			{
+				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
+
+				canvasPixbuf.Pixbuf = new Pixbuf (path);
+			}
+
+			public override BoundingBox BoundingBox ()
+			{
+				double cx1, cx2, cy1, cy2;
+				canvasPixbuf.GetBounds (out cx1, out cy1, out cx2, out cy2);
+
+				return new BoundingBox (cx1, cy1, cx2, cy2);
+			}
+
+			public override void Move (double diffx, double diffy)
+			{
+				canvasPixbuf.Move (diffx, diffy);
+			}
+
+			public override void Destroy ()
+			{
+				canvasPixbuf.Destroy ();
+				// TODO delete in backend
+			}
+		}
 	}
 }
