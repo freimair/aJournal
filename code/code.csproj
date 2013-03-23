@@ -51,7 +51,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="Model.cs" />
     <Compile Include="Tests.cs" />
+    <Compile Include="Tags.cs" />
+    <Compile Include="Note.cs" />
+    <Compile Include="NoteElements.cs" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,8 @@ using System.Xml;
 using System.Collections.Generic;
 using NUnit.Framework;
 using backend;
+using backend.Tags;
+using backend.NoteElements;
 
 namespace test
 {
@@ -17,23 +19,23 @@ namespace test
 		{
 			// setup test data
 			listA = new List<NoteElement> ();
-			Polyline stroke = new Polyline ();
+			PolylineElement stroke = new PolylineElement ();
 			stroke.Points.AddRange (new int[] {0,0,100,0,100,100});
 			listA.Add (stroke);
-			stroke = new Polyline ();
+			stroke = new PolylineElement ();
 			stroke.Points.AddRange (new int[] {0,0,100,100});
 			listA.Add (stroke);
 
 			listB = new List<NoteElement> ();
-			stroke = new Polyline ();
+			stroke = new PolylineElement ();
 			stroke.Points.AddRange (new int[] {3,3,3,3,3,3});
 			listB.Add (stroke);
-			stroke = new Polyline ();
+			stroke = new PolylineElement ();
 			stroke.Points.AddRange (new int[] {4,4,4,4,4,4});
 			listB.Add (stroke);
 		}
 
-		[Test()]
+		[Test]
 		public void StrokesTest ()
 		{
 			// create DUT
