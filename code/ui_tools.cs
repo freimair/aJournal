@@ -74,6 +74,7 @@ namespace ui_gtk_gnome
 			public override void Start (double x, double y)
 			{
 				selectionRect = new CanvasRect (myCanvas.Root ());
+				selectionRect.RaiseToTop (); // TODO does not work.
 
 				selectionRect.X1 = x;
 				selectionRect.Y1 = y;
@@ -291,6 +292,50 @@ namespace ui_gtk_gnome
 
 			public override void Reset ()
 			{
+			}
+		}
+
+		public class TextTool : Tool
+		{
+			Canvas myCanvas;
+			List<UiNoteElement> elements;
+			UiText myText;
+
+			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			{
+				myCanvas = canvas;
+				elements = items;
+			}
+
+			public override void Start (double x, double y)
+			{
+				myText = new UiText (myCanvas);
+				elements.Add (myText);
+
+				// place empty text on (x,y)
+				myText.Move (x, y);
+			}
+
+			public override void Continue (double x, double y)
+			{
+				// do nothing since this is mouse move
+			}
+
+			public override void Complete (double x, double y)
+			{
+				// do nothing since this is mouse up
+			}
+
+			public override void Reset ()
+			{
+				// delete text if empty
+				try {
+					if (myText.Empty) {
+						myText.Destroy ();
+						elements.Remove (myText);
+					}
+				} catch (NullReferenceException) {
+				}
 			}
 		}
 
