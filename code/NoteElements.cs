@@ -388,7 +388,7 @@ namespace backend
 
 			public override XmlNode Find (XmlNode root)
 			{
-				throw new System.NotImplementedException ();
+				return root.SelectSingleNode ("/svg/image[@x='" + X + "' and @y='" + Y + "' and @width='" + Width + "' and @height='" + Height + "']");
 			}
 
 			/**
