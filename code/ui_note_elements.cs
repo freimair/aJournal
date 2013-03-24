@@ -41,23 +41,32 @@ namespace ui_gtk_gnome
 		{
 			PolylineElement linemodel;
 			CanvasLine line;
+			Note myNote;
 
 			public UiLine (Canvas canvas, Note note)
 			{
+				myNote = note;
+
 				line = new CanvasLine (canvas.Root ());
 				line.WidthUnits = 2;
 				line.FillColor = "black";
 
 				linemodel = new PolylineElement ();
+
+				myNote.AddElement (linemodel);
 			}
 
 			public void Add (double x, double y)
 			{
+				myNote.RemoveElement (linemodel);
+
 				linemodel.Points.Add (Convert.ToInt32 (x));
 				linemodel.Points.Add (Convert.ToInt32 (y));
 
 				if (linemodel.Points.Count > 2)
 					line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
+
+				myNote.AddElement (linemodel);
 			}
 
 			public override BoundingBox BoundingBox ()
@@ -72,18 +81,22 @@ namespace ui_gtk_gnome
 
 			public override void Move (double diffx, double diffy)
 			{
+				myNote.RemoveElement (linemodel);
+
 				for (int i = 0; i < linemodel.Points.Count; i += 2) {
 					linemodel.Points [i] += Convert.ToInt32 (diffx);
 					linemodel.Points [i + 1] += Convert.ToInt32 (diffy);
 				}
 
 				line.Move (diffx, diffy);
+
+				myNote.AddElement (linemodel);
 			}
 
 			public override void Destroy ()
 			{
 				line.Destroy ();
-				// TODO destroy in backend as well
+				myNote.RemoveElement (linemodel);
 			}
 		}
 
