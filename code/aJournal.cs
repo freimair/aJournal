@@ -17,9 +17,12 @@ namespace ui_gtk_gnome
 		Canvas myCanvas;
 		CanvasRect drawingArea;
 		List<UiNoteElement> elements = new List<UiNoteElement> ();
+		Note note;
 
 		public UiNote ()
 		{
+			note = Note.Create ();
+
 			// add a canvas to the second column
 			myCanvas = Canvas.NewAa ();
 			// TODO find out why this somehow centers the axis origin.
@@ -82,7 +85,7 @@ namespace ui_gtk_gnome
 			try {
 				switch (ev.Type) {
 				case EventType.ButtonPress:
-					aJournal.currentTool.Init (myCanvas, elements);
+					aJournal.currentTool.Init (myCanvas, note, elements);
 					aJournal.currentTool.Reset ();
 					aJournal.currentTool.Start (ev.X, ev.Y);
 					break;
@@ -91,6 +94,7 @@ namespace ui_gtk_gnome
 					break;
 				case EventType.ButtonRelease:
 					aJournal.currentTool.Complete (ev.X, ev.Y);
+					note.Persist ();
 					break;
 				}
 			} catch (NullReferenceException) {

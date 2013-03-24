@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Gnome;
 using Gtk;
 using Gdk;
+using backend;
 using ui_gtk_gnome.NoteElements;
 
 namespace ui_gtk_gnome
@@ -11,7 +12,7 @@ namespace ui_gtk_gnome
 	{
 		public abstract class Tool
 		{
-			public abstract void Init (Canvas canvas, List<UiNoteElement> items);
+			public abstract void Init (Canvas canvas, Note note, List<UiNoteElement> items);
 
 			public abstract void Start (double x, double y);
 
@@ -64,7 +65,7 @@ namespace ui_gtk_gnome
 			List<UiNoteElement> elements;
 			Selection selection;
 
-			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			public override void Init (Canvas canvas, Note note, List<UiNoteElement> items)
 			{
 				myCanvas = canvas;
 				elements = items;
@@ -199,16 +200,18 @@ namespace ui_gtk_gnome
 			UiLine currentStroke;
 			Canvas myCanvas;
 			List<UiNoteElement> elements;
+			Note myNote;
 
-			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			public override void Init (Canvas canvas, Note note, List<UiNoteElement> items)
 			{
 				myCanvas = canvas;
 				elements = items;
+				myNote = note;
 			}
 
 			public override void Start (double x, double y)
 			{
-				currentStroke = new UiLine (myCanvas);
+				currentStroke = new UiLine (myCanvas, myNote);
 			}
 
 			public override void Continue (double x, double y)
@@ -239,7 +242,7 @@ namespace ui_gtk_gnome
 		public class EraserTool : Tool
 		{
 			List<UiNoteElement> elements;
-			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			public override void Init (Canvas canvas, Note note, List<UiNoteElement> items)
 			{
 				elements = items;
 			}
@@ -300,16 +303,18 @@ namespace ui_gtk_gnome
 			Canvas myCanvas;
 			List<UiNoteElement> elements;
 			UiText myText;
+			Note myNote;
 
-			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			public override void Init (Canvas canvas, Note note, List<UiNoteElement> items)
 			{
 				myCanvas = canvas;
 				elements = items;
+				myNote = note;
 			}
 
 			public override void Start (double x, double y)
 			{
-				myText = new UiText (myCanvas);
+				myText = new UiText (myCanvas, myNote);
 				elements.Add (myText);
 
 				// place empty text on (x,y)
@@ -345,7 +350,7 @@ namespace ui_gtk_gnome
 			List<UiNoteElement> elements;
 			Canvas myCanvas;
 
-			public override void Init (Canvas canvas, List<UiNoteElement> items)
+			public override void Init (Canvas canvas, Note note, List<UiNoteElement> items)
 			{
 				elements = items;
 				myCanvas = canvas;
@@ -357,7 +362,7 @@ namespace ui_gtk_gnome
 				FileChooserDialog fc = new FileChooserDialog ("Choose the file to open", aJournal.win, FileChooserAction.Open,
 				                                              "Cancel", ResponseType.Cancel, "Open", ResponseType.Accept);
 				if (fc.Run () == (int)ResponseType.Accept) {
-					myImage = new UiImage (myCanvas, fc.Filename);
+					myImage = new UiImage (myCanvas, myNote, fc.Filename);
 					elements.Add (myImage);
 
 					myImage.Move (x, y);

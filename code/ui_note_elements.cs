@@ -42,7 +42,7 @@ namespace ui_gtk_gnome
 			PolylineElement linemodel;
 			CanvasLine line;
 
-			public UiLine (Canvas canvas)
+			public UiLine (Canvas canvas, Note note)
 			{
 				line = new CanvasLine (canvas.Root ());
 				line.WidthUnits = 2;
@@ -104,7 +104,7 @@ namespace ui_gtk_gnome
 			bool controlModifierActive = false;
 			bool shiftModifierActive = false;
 
-			public UiText (Canvas canvas)
+			public UiText (Canvas canvas, Note note)
 			{
 				// use Gtk TextView widget for text input
 				view = new TextView ();
@@ -289,7 +289,7 @@ namespace ui_gtk_gnome
 			CanvasPixbuf canvasPixbuf;
 			Pixbuf myPixbuf;
 
-			public UiImage (Canvas canvas, String path)
+			public UiImage (Canvas canvas, Note note, String path)
 			{
 				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
 
