@@ -36,6 +36,8 @@ namespace ui_gtk_gnome
 					return new UiLine (canvas, note, (PolylineElement)element);
 				if (element is TextElement)
 					return new UiText (canvas, note, (TextElement)element);
+				if (element is ImageElement)
+					return new UiImage (canvas, note, (ImageElement)element);
 				return null;
 			}
 
@@ -391,13 +393,28 @@ namespace ui_gtk_gnome
 			ImageElement myImage;
 			Note myNote;
 
-			public UiImage (Canvas canvas, Note note, String path)
+			UiImage (Note note)
 			{
 				myNote = note;
+				myImage = new ImageElement ();
+			}
+
+			public UiImage (Canvas canvas, Note note, ImageElement imageElement) : this(note)
+			{
+				myImage = imageElement;
+
+				Byte[] image = Convert.FromBase64String (myImage.Image);
+				myPixbuf = new Pixbuf (image);
 
 				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
+				canvasPixbuf.X = myImage.X;
+				canvasPixbuf.Y = myImage.Y;
+				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
+				myNote.AddElement (myImage);
+			}
 
-				myImage = new ImageElement ();
+			public UiImage (Canvas canvas, Note note, String path) : this(note)
+			{
 				myImage.LoadFromFile (path);
 
 				Byte[] image = Convert.FromBase64String (myImage.Image);
@@ -406,6 +423,7 @@ namespace ui_gtk_gnome
 				myImage.Width = myPixbuf.Width;
 				myImage.Height = myPixbuf.Height;
 
+				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
 				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
 				myNote.AddElement (myImage);
 			}
