@@ -355,7 +355,7 @@ namespace backend
 			public void LoadFromFile (string path)
 			{
 				image = Convert.ToBase64String (File.ReadAllBytes (path));
-				type = "image/" + path.Substring (path.LastIndexOf (".") + 1);
+				type = "image/" + path.Substring (path.LastIndexOf (".") + 1).ToLower ();
 			}
 
 			public ImageElement ()
