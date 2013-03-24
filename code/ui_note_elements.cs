@@ -30,6 +30,13 @@ namespace ui_gtk_gnome
 
 		public abstract class UiNoteElement
 		{
+			public static UiNoteElement Recreate (Canvas canvas, Note note, NoteElement element)
+			{
+				if (element is PolylineElement)
+					return new UiLine (canvas, note, (PolylineElement)element);
+				return null;
+			}
+
 			public abstract BoundingBox BoundingBox ();
 
 			public abstract void Move (double diffx, double diffy);
@@ -42,6 +49,14 @@ namespace ui_gtk_gnome
 			PolylineElement linemodel;
 			CanvasLine line;
 			Note myNote;
+
+			public UiLine (Canvas canvas, Note note, PolylineElement noteElement) : this(canvas, note)
+			{
+				myNote.RemoveElement (linemodel); // this(canvas, note) inserted that beforehand
+				linemodel = noteElement;
+
+				line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
+			}
 
 			public UiLine (Canvas canvas, Note note)
 			{

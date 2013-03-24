@@ -5,6 +5,7 @@ using Gnome;
 using Gtk;
 using Gdk;
 using backend;
+using backend.NoteElements;
 using ui_gtk_gnome.Tools;
 using ui_gtk_gnome.NoteElements;
 using System.Linq;
@@ -17,12 +18,25 @@ namespace ui_gtk_gnome
 		Canvas myCanvas;
 		CanvasRect drawingArea;
 		List<UiNoteElement> elements = new List<UiNoteElement> ();
-		Note note;
+		Note myNote;
 
 		public UiNote ()
 		{
-			note = Note.Create ();
+			myNote = Note.Create ();
+			Init ();
+		}
 
+		public UiNote (Note note)
+		{
+			myNote = note;
+			Init ();
+
+			foreach (NoteElement current in note.GetElements())
+				elements.Add (UiNoteElement.Recreate (myCanvas, note, current));
+		}
+
+		void Init ()
+		{
 			// add a canvas to the second column
 			myCanvas = Canvas.NewAa ();
 			// TODO find out why this somehow centers the axis origin.
@@ -88,7 +102,7 @@ namespace ui_gtk_gnome
 				try {
 					switch (ev.Type) {
 					case EventType.ButtonPress:
-						aJournal.currentTool.Init (myCanvas, note, elements);
+						aJournal.currentTool.Init (myCanvas, myNote, elements);
 						aJournal.currentTool.Reset ();
 						aJournal.currentTool.Start (ev.X, ev.Y);
 						break;
@@ -97,7 +111,7 @@ namespace ui_gtk_gnome
 						break;
 					case EventType.ButtonRelease:
 						aJournal.currentTool.Complete (ev.X, ev.Y);
-						note.Persist ();
+						myNote.Persist ();
 						break;
 					}
 				} catch (NullReferenceException) {
@@ -204,10 +218,14 @@ namespace ui_gtk_gnome
 			myNotesContainer = new VBox (false, 0);
 			myContentContainer.Add (myNotesContainer);
 
-			UiNote note = new UiNote ();
-			notes.Add (note);
+			List<Note> noteList = Note.GetEntries ();
+			foreach (Note note in noteList) {
+				UiNote current = new UiNote (note);
+				notes.Add (current);
 
-			myNotesContainer.Add (note);
+				myNotesContainer.Add (current);
+				current.Fit (400);
+			}
 
 			// indicate that there will somewhen be the option to add another notes area
 			Button addNotesButton = new Button (Gtk.Stock.Add);
@@ -216,8 +234,6 @@ namespace ui_gtk_gnome
 			win.ShowAll ();
 
 			myTreeView.Visible = false;
-
-			note.Fit (400);
 		}
 
 		void SelectTool_Clicked (object obj, EventArgs args)
