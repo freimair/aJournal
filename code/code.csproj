@@ -56,4 +56,9 @@
     <Compile Include="Note.cs" />
     <Compile Include="NoteElements.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="rect-select.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

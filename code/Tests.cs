@@ -342,6 +342,47 @@ namespace test
 			note.RemoveElement (DUT);
 			Assert.IsEmpty (note.GetElements (), "removing a text element with indentation failed");
 		}
+
+		[Test]
+		public void ImageXmlRoundtripTest ()
+		{
+			Note note = Note.Create ();
+
+			ImageElement DUT = new ImageElement ();
+			DUT.X = 10;
+			DUT.Y = 10;
+			DUT.Width = 20;
+			DUT.Height = 20;
+			DUT.LoadFromFile ("rect-select.png");
+
+			note.AddElement (DUT);
+			note.Persist ();
+
+			List<NoteElement> recreated = note.GetElements ();
+
+			Assert.IsNotEmpty (recreated);
+			Assert.Contains (DUT, recreated);
+
+			note.Delete (); // comment for visual svg check
+		}
+
+		[Test]
+		public void ImageRemovalTest ()
+		{
+			Note note = Note.Create ();
+
+			ImageElement DUT = new ImageElement ();
+			DUT.X = 10;
+			DUT.Y = 10;
+			DUT.Width = 20;
+			DUT.Height = 20;
+			DUT.LoadFromFile ("rect-select.png");
+
+			note.AddElement (DUT);
+			Assert.IsNotEmpty (note.GetElements ());
+			note.RemoveElement (DUT);
+			Assert.IsEmpty (note.GetElements ());
+		}
 	}
 }
 
