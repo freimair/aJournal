@@ -130,6 +130,9 @@ namespace ui_gtk_gnome
 		public static Tool currentTool;
 		RadioToolButton penToolButton, selectionToolButton, eraserToolButton, textToolButton, imageToolButton;
 
+		// event fired when some zooming occurs
+		public static event ScaledEventHandler Scaled;
+
 		public aJournal ()
 		{
 			win = new Gtk.Window ("aJournal");
@@ -277,6 +280,8 @@ namespace ui_gtk_gnome
 		{
 			foreach (UiNote note in notes)
 				note.Scale ((double)10 / 9);
+			if (null != Scaled)
+				Scaled ();
 		}
 
 		/**
@@ -286,6 +291,8 @@ namespace ui_gtk_gnome
 		{
 			foreach (UiNote note in notes)
 				note.Scale ((double)9 / 10);
+			if (null != Scaled)
+				Scaled ();
 		}
 
 		/**
@@ -295,6 +302,8 @@ namespace ui_gtk_gnome
 		{
 			foreach (UiNote note in notes)
 				note.Fit ();
+			if (null != Scaled)
+				Scaled ();
 		}
 
 		void Window_Delete (object obj, DeleteEventArgs args)
@@ -312,5 +321,7 @@ namespace ui_gtk_gnome
 			return 0;
 		}
 	}
+
+	public delegate void ScaledEventHandler ();
 }
 
