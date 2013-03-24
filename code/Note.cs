@@ -38,6 +38,7 @@ namespace backend
 
 		private Note (String file)
 		{
+			filename = file;
 			// instantiate XmlDocument and load XML from file
 			document = new XmlDocument ();
 			document.Load (file);
@@ -48,6 +49,8 @@ namespace backend
 
 		private Note ()
 		{
+			filename = Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + DateTime.Now.ToString ("yyyyMMddHHmmss") + ".svg";
+
 			document = new XmlDocument ();
 			document.AppendChild (document.CreateXmlDeclaration ("1.0", "utf-8", null));
 
@@ -171,7 +174,9 @@ namespace backend
 
 		public void RemoveElement (NoteElement element)
 		{
-			rootNode.RemoveChild (element.Find (rootNode));
+			XmlNode node = element.Find (rootNode);
+//			if (null != node)
+			rootNode.RemoveChild (node);
 		}
 
 		public DateTime CreationTimestamp {
@@ -188,16 +193,15 @@ namespace backend
 			// TODO check and adjust boundaries
 
 			// check if data directory exists and create if neccessary
-			if (!Directory.Exists (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/"))
-				Directory.CreateDirectory (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/");
+			if (!Directory.GetParent (filename).Exists)
+				Directory.GetParent (filename).Create ();
 
-			filename = DateTime.Now.ToString ("yyyyMMddHHmmss");
-			document.Save (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + filename + ".svg");
+			document.Save (filename);
 		}
 
 		public void Delete ()
 		{
-			File.Delete (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + filename + ".svg");
+			File.Delete (filename);
 		}
 
 		static void Main (string[] args)
