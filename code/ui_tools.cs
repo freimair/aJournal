@@ -349,18 +349,22 @@ namespace ui_gtk_gnome
 			UiImage myImage;
 			List<UiNoteElement> elements;
 			Canvas myCanvas;
+			Note myNote;
 
 			public override void Init (Canvas canvas, Note note, List<UiNoteElement> items)
 			{
 				elements = items;
 				myCanvas = canvas;
+				myNote = note;
 			}
 
 			public override void Start (double x, double y)
 			{
-				// "Cancel", ResponseType.Cancel, "Open", ResponseType.Accept
 				FileChooserDialog fc = new FileChooserDialog ("Choose the file to open", aJournal.win, FileChooserAction.Open,
 				                                              "Cancel", ResponseType.Cancel, "Open", ResponseType.Accept);
+
+				// FIXME Run() does not block. so the mouse up action is performed before we select an image.
+				// therefore, nothing gets persisted.
 				if (fc.Run () == (int)ResponseType.Accept) {
 					myImage = new UiImage (myCanvas, myNote, fc.Filename);
 					elements.Add (myImage);
@@ -370,6 +374,9 @@ namespace ui_gtk_gnome
 
 				//Don't forget to call Destroy() or the FileChooserDialog window won't get closed.
 				fc.Destroy ();
+
+				// TODO quick 'n' dirty fix for FIXME above
+				myNote.Persist ();
 			}
 
 			public override void Continue (double x, double y)

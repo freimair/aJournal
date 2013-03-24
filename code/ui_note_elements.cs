@@ -301,13 +301,26 @@ namespace ui_gtk_gnome
 		{
 			CanvasPixbuf canvasPixbuf;
 			Pixbuf myPixbuf;
+			ImageElement myImage;
+			Note myNote;
 
 			public UiImage (Canvas canvas, Note note, String path)
 			{
+				myNote = note;
+
 				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
 
-				myPixbuf = new Pixbuf (path);
-				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (500, Convert.ToInt32 (500.0 / myPixbuf.Width * myPixbuf.Height), InterpType.Bilinear);
+				myImage = new ImageElement ();
+				myImage.LoadFromFile (path);
+
+				Byte[] image = Convert.FromBase64String (myImage.Image);
+				myPixbuf = new Pixbuf (image);
+
+				myImage.Width = myPixbuf.Width;
+				myImage.Height = myPixbuf.Height;
+
+				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
+				myNote.AddElement (myImage);
 			}
 
 			public override BoundingBox BoundingBox ()
@@ -320,13 +333,19 @@ namespace ui_gtk_gnome
 
 			public override void Move (double diffx, double diffy)
 			{
+				myNote.RemoveElement (myImage);
 				canvasPixbuf.Move (diffx, diffy);
+
+				// the cavnvasPixbuf location is not updated by now so we have to do it manually
+				myImage.X += Convert.ToInt32 (diffx);
+				myImage.Y += Convert.ToInt32 (diffy);
+				myNote.AddElement (myImage);
 			}
 
 			public override void Destroy ()
 			{
 				canvasPixbuf.Destroy ();
-				// TODO delete in backend
+				myNote.RemoveElement (myImage);
 			}
 		}
 	}

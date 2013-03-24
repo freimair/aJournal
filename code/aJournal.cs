@@ -75,6 +75,8 @@ namespace ui_gtk_gnome
 			Fit ((int)width);
 		}
 
+		static object myLock = new ImageTool ();
+
 		/**
 		 * callback for handling events from canvas drawing area
 		 */
@@ -82,22 +84,24 @@ namespace ui_gtk_gnome
 		{
 			EventButton ev = new EventButton (args.Event.Handle);
 
-			try {
-				switch (ev.Type) {
-				case EventType.ButtonPress:
-					aJournal.currentTool.Init (myCanvas, note, elements);
-					aJournal.currentTool.Reset ();
-					aJournal.currentTool.Start (ev.X, ev.Y);
-					break;
-				case EventType.MotionNotify:
-					aJournal.currentTool.Continue (ev.X, ev.Y);
-					break;
-				case EventType.ButtonRelease:
-					aJournal.currentTool.Complete (ev.X, ev.Y);
-					note.Persist ();
-					break;
+			lock (myLock) { // TODO does not fix the FIXME in ImageTool.Start. why?
+				try {
+					switch (ev.Type) {
+					case EventType.ButtonPress:
+						aJournal.currentTool.Init (myCanvas, note, elements);
+						aJournal.currentTool.Reset ();
+						aJournal.currentTool.Start (ev.X, ev.Y);
+						break;
+					case EventType.MotionNotify:
+						aJournal.currentTool.Continue (ev.X, ev.Y);
+						break;
+					case EventType.ButtonRelease:
+						aJournal.currentTool.Complete (ev.X, ev.Y);
+						note.Persist ();
+						break;
+					}
+				} catch (NullReferenceException) {
 				}
-			} catch (NullReferenceException) {
 			}
 		}
 	}
