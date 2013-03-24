@@ -1,2 +1,5 @@
 *.exe
 *.exe.mdb
+bin
+test-results
+code.userprefs

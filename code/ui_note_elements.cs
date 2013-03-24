@@ -6,6 +6,7 @@ using Gtk;
 using Gdk;
 using Pango;
 using backend;
+using backend.NoteElements;
 
 namespace ui_gtk_gnome
 {
@@ -38,7 +39,7 @@ namespace ui_gtk_gnome
 
 		public class UiLine : UiNoteElement
 		{
-			Polyline linemodel;
+			PolylineElement linemodel;
 			CanvasLine line;
 
 			public UiLine (Canvas canvas)
@@ -47,7 +48,7 @@ namespace ui_gtk_gnome
 				line.WidthUnits = 2;
 				line.FillColor = "black";
 
-				linemodel = new Polyline ();
+				linemodel = new PolylineElement ();
 			}
 
 			public void Add (double x, double y)

@@ -1,6 +1,48 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Tests.cs">
+    <Files>
+      <File FileName="Tests.cs" Line="352" Column="15" />
+      <File FileName="NoteElements.cs" Line="391" Column="134" />
+      <File FileName="Note.cs" Line="174" Column="1" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State expanded="True" selected="True">
+          <Node name="code" expanded="True" />
+        </State>
+      </Pad>
+      <Pad Id="ClassPad">
+        <State expanded="True">
+          <Node name="code" expanded="True">
+            <Node name="backend" expanded="True">
+              <Node name="NoteElements" expanded="True" />
+              <Node name="Tags" expanded="True" />
+            </Node>
+            <Node name="test" expanded="True">
+              <Node name="test.ModelTests" expanded="True" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State>
+          <Value>root.SelectSingleNode ("/svg/image[@x='" + X + "' and @y='" + Y + "' and @xlink:href='data:" + type + ";base64," + image + "']")</Value>
+          <Value>root.SelectSingleNode ("/svg/image[starts-with(@xlink:href,'data:" + type + ";base64," + image.Substring(0, 20) + "')]")</Value>
+          <Value>"/svg/image[starts-with(@xlink:href,'data:" + type + ";base64," + image + "')]"</Value>
+        </State>
+      </Pad>
+      <Pad Id="MonoDevelop.NUnit.TestPad">
+        <State expanded="True">
+          <Node name="code" expanded="True">
+            <Node name="test" expanded="True">
+              <Node name="ModelTests" expanded="True" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>

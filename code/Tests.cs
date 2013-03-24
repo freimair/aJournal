@@ -3,6 +3,8 @@ using System.Xml;
 using System.Collections.Generic;
 using NUnit.Framework;
 using backend;
+using backend.Tags;
+using backend.NoteElements;
 
 namespace test
 {
@@ -17,57 +19,57 @@ namespace test
 		{
 			// setup test data
 			listA = new List<NoteElement> ();
-			Polyline stroke = new Polyline ();
+			PolylineElement stroke = new PolylineElement ();
 			stroke.Points.AddRange (new int[] {0,0,100,0,100,100});
 			listA.Add (stroke);
-			stroke = new Polyline ();
+			stroke = new PolylineElement ();
 			stroke.Points.AddRange (new int[] {0,0,100,100});
 			listA.Add (stroke);
 
 			listB = new List<NoteElement> ();
-			stroke = new Polyline ();
+			stroke = new PolylineElement ();
 			stroke.Points.AddRange (new int[] {3,3,3,3,3,3});
 			listB.Add (stroke);
-			stroke = new Polyline ();
+			stroke = new PolylineElement ();
 			stroke.Points.AddRange (new int[] {4,4,4,4,4,4});
 			listB.Add (stroke);
 		}
 
-		[Test()]
+		[Test]
 		public void StrokesTest ()
 		{
 			// create DUT
-			Note DUT = Note.create ();
+			Note DUT = Note.Create ();
 
 			// do some edit tasks
 			// - insert
-			DUT.edit (new List<NoteElement> (), listA);
-			Assert.AreEqual (listA.ToString (), DUT.get ().ToString (), "adding stroke failed");
+			DUT.Edit (new List<NoteElement> (), listA);
+			Assert.AreEqual (listA.ToString (), DUT.GetElements ().ToString (), "adding stroke failed");
 			// - change
-			DUT.edit (listA, listB);
-			Assert.AreEqual (listB.ToString (), DUT.get ().ToString (), "altering stroke failed");
+			DUT.Edit (listA, listB);
+			Assert.AreEqual (listB.ToString (), DUT.GetElements ().ToString (), "altering stroke failed");
 			// - delete
-			DUT.edit (listB, new List<NoteElement> ());
-			Assert.AreEqual (new List<NoteElement> ().ToString (), DUT.get ().ToString (), "deleting stroke failed");
+			DUT.Edit (listB, new List<NoteElement> ());
+			Assert.AreEqual (new List<NoteElement> ().ToString (), DUT.GetElements ().ToString (), "deleting stroke failed");
 		}
 
 		[Test]
 		public void PersistenceTest ()
 		{
 			// create DUT
-			Note DUT = Note.create ();
+			Note DUT = Note.Create ();
 
 			// create stroke
-			DUT.edit (new List<NoteElement> (), listA);
+			DUT.Edit (new List<NoteElement> (), listA);
 
 			// save to disk
-			DUT.persist ();
+			DUT.Persist ();
 
 			// reload from disk
-			DUT = Note.getEntries () [0];
+			DUT = Note.GetEntries () [0];
 
 			// check
-			Assert.AreEqual (listA.ToString (), DUT.get ().ToString (), "reloading stroke from disk failed");
+			Assert.AreEqual (listA.ToString (), DUT.GetElements ().ToString (), "reloading stroke from disk failed");
 
 			// cleanup
 			DUT.Delete ();
@@ -136,31 +138,31 @@ namespace test
 		[Test]
 		public void AddingTagsToEntriesTest ()
 		{
-			Note entry = Note.create ();
+			Note entry = Note.Create ();
 
 			Tag tag1 = Tag.Create ("tag1");
 			Tag tag2 = Tag.Create ("tag2");
 
-			entry.addTag (tag1);
-			entry.addTag (tag2);
+			entry.AddTag (tag1);
+			entry.AddTag (tag2);
 
-			Assert.AreEqual (tag1, entry.getTags () [0]);
-			Assert.AreEqual (tag2, entry.getTags () [1]);
+			Assert.AreEqual (tag1, entry.GetTags () [0]);
+			Assert.AreEqual (tag2, entry.GetTags () [1]);
 		}
 
 		[Test]
 		public void RemoveTagFromEntry ()
 		{
 			// setup
-			Note entry = Note.create ();
+			Note entry = Note.Create ();
 			Tag tag = Tag.Create ("tagname");
-			entry.addTag (tag);
+			entry.AddTag (tag);
 
 			// test
-			entry.removeTag (tag);
+			entry.RemoveTag (tag);
 
 			// check
-			Assert.IsEmpty (entry.getTags ());
+			Assert.IsEmpty (entry.GetTags ());
 		}
 
 		[Test]
@@ -172,7 +174,7 @@ namespace test
 			// - create entries
 			List<Note> entries = new List<Note> ();
 			for (int i = 0; i < max; i++)
-				entries.Add (Note.create ());
+				entries.Add (Note.Create ());
 
 			// - create tags
 			List<Tag> tags = new List<Tag> ();
@@ -182,23 +184,23 @@ namespace test
 			// - tag entries
 			for (int i = 0; i < max; i++)
 				for (int j = i; j < max; j++)
-					entries [i].addTag (tags [j]);
+					entries [i].AddTag (tags [j]);
 
 			// - persist
 			foreach (Note current in entries)
-				current.persist ();
+				current.Persist ();
 
 			// test
 			// - create filter
 			NoteFilter filter = new NoteFilter ();
 			filter.IncludedTags.Add (tags [2]);
 			filter.ExcludedTags.Add (tags [1]);
-			List<Note> result = Note.getEntries (filter);
+			List<Note> result = Note.GetEntries (filter);
 
 			// check
 			foreach (Note current in result) {
-				Assert.Contains (tags [2], current.getTags ());
-				Assert.IsFalse (current.getTags ().Contains (tags [1]), "entrylist contains entry with excluded tag");
+				Assert.Contains (tags [2], current.GetTags ());
+				Assert.IsFalse (current.GetTags ().Contains (tags [1]), "entrylist contains entry with excluded tag");
 			}
 
 			// cleanup
@@ -209,9 +211,177 @@ namespace test
 		[Test]
 		public void DeleteEntry ()
 		{
-			Note entry = Note.create ();
-			entry.persist ();
+			Note entry = Note.Create ();
+			entry.Persist ();
 			entry.Delete ();
+		}
+
+		[Test]
+		public void TextXmlRoundtrip ()
+		{
+			int y = 0;
+
+			Note note = Note.Create ();
+
+			List<TextElement> DUTs = new List<TextElement> ();
+			TextElement DUT = new TextElement ();
+			DUT.Text = "Heading";
+			DUT.X = 10;
+			DUT.Y = 0;
+			y += 15;
+			DUT.FontSize = 20;
+			DUT.FontStrong = true;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "normal";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "one ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 1;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "two ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 2;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "three ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 3;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "four ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 4;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "two ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 2;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "one ident";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 1;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			DUT = new TextElement ();
+			DUT.Text = "normal";
+			DUT.X = 10;
+			DUT.Y = y += 15;
+			DUT.IndentationLevel = 0;
+			note.AddElement (DUT);
+			DUTs.Add (DUT);
+
+			note.Persist ();
+
+			List<NoteElement> recreated = note.GetElements ();
+
+			Assert.AreEqual (DUTs.Count, recreated.Count);
+			Assert.Contains (DUTs [0], recreated, "heading: text, font size, font weight, position invalid");
+			Assert.Contains (DUTs [1], recreated, "normal: text, font size, font weight, position invalid");
+			for (int i = 2; i < DUTs.Count; i++)
+				Assert.Contains (DUTs [i], recreated, "text with indent recreation failed");
+
+			note.Delete (); // comment for visual svg check
+		}
+
+		[Test]
+		public void TextRemovalTest ()
+		{
+			Note note = Note.Create ();
+
+			// without indentation
+			TextElement DUT = new TextElement ();
+			DUT.Text = "text";
+			DUT.X = 10;
+			DUT.Y = 10;
+			note.AddElement (DUT);
+			Assert.Contains (DUT, note.GetElements ());
+			note.RemoveElement (DUT);
+			Assert.IsEmpty (note.GetElements (), "removing a text element failed");
+		}
+
+		[Test]
+		public void TextWithIndentationRemovalTest ()
+		{
+			Note note = Note.Create ();
+
+			// with indentation
+			TextElement DUT = new TextElement ();
+			DUT.Text = "text";
+			DUT.X = 10;
+			DUT.Y = 10;
+			DUT.IndentationLevel = 3;
+			note.AddElement (DUT);
+			Assert.Contains (DUT, note.GetElements ());
+			note.RemoveElement (DUT);
+			Assert.IsEmpty (note.GetElements (), "removing a text element with indentation failed");
+		}
+
+		[Test]
+		public void ImageXmlRoundtripTest ()
+		{
+			Note note = Note.Create ();
+
+			ImageElement DUT = new ImageElement ();
+			DUT.X = 10;
+			DUT.Y = 10;
+			DUT.Width = 20;
+			DUT.Height = 20;
+			DUT.LoadFromFile ("rect-select.png");
+
+			note.AddElement (DUT);
+			note.Persist ();
+
+			List<NoteElement> recreated = note.GetElements ();
+
+			Assert.IsNotEmpty (recreated);
+			Assert.Contains (DUT, recreated);
+
+			note.Delete (); // comment for visual svg check
+		}
+
+		[Test]
+		public void ImageRemovalTest ()
+		{
+			Note note = Note.Create ();
+
+			ImageElement DUT = new ImageElement ();
+			DUT.X = 10;
+			DUT.Y = 10;
+			DUT.Width = 20;
+			DUT.Height = 20;
+			DUT.LoadFromFile ("rect-select.png");
+
+			note.AddElement (DUT);
+			Assert.IsNotEmpty (note.GetElements ());
+			note.RemoveElement (DUT);
+			Assert.IsEmpty (note.GetElements ());
 		}
 	}
 }
