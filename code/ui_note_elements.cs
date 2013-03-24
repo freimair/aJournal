@@ -109,16 +109,22 @@ namespace ui_gtk_gnome
 				public static int Large = 25000;
 			}
 
+			Note myNote;
+			TextElement myText;
+
 			CanvasWidget canvasWidget;
 			TextView view;
 			CanvasRE itemize;
-			int indentationLevel = 0;
 
 			bool controlModifierActive = false;
 			bool shiftModifierActive = false;
 
 			public UiText (Canvas canvas, Note note)
 			{
+				myNote = note;
+				myText = new TextElement ();
+				canvasWidget = new CanvasWidget (canvas.Root ());
+
 				// use Gtk TextView widget for text input
 				view = new TextView ();
 				// reset text style
@@ -126,6 +132,8 @@ namespace ui_gtk_gnome
 				fontDescription.Size = FontSize.Normal;
 				fontDescription.Weight = Weight.Normal;
 				view.ModifyFont (fontDescription);
+				myText.FontSize = Convert.ToInt32 (fontDescription.Size / (canvasWidget.Canvas.PixelsPerUnit * 1000));
+				myText.FontStrong = fontDescription.Weight == Weight.Bold;
 
 				// do further configuration
 				view.CursorVisible = true;
@@ -133,7 +141,6 @@ namespace ui_gtk_gnome
 				view.Show ();
 
 				// create canvas container for text view widget
-				canvasWidget = new CanvasWidget (canvas.Root ());
 				canvasWidget.Widget = view;
 
 				// autoresize the canvasWidget to match the textviews size
@@ -152,6 +159,7 @@ namespace ui_gtk_gnome
 				// handle TAB key and ENTER key
 				view.Buffer.Changed += TextView_TextChanged;
 
+				myNote.AddElement (myText);
 			}
 
 			void TextView_KeyPress (object o, KeyPressEventArgs args)
@@ -179,6 +187,12 @@ namespace ui_gtk_gnome
 					}
 
 					view.ModifyFont (fontDescription);
+
+					myNote.RemoveElement (myText);
+					myText.FontSize = Convert.ToInt32 (fontDescription.Size / (canvasWidget.Canvas.PixelsPerUnit * 1000));
+					myText.FontStrong = fontDescription.Weight == Weight.Bold;
+					myNote.AddElement (myText);
+					myNote.Persist (); // no mouse_up here to persist
 				}
 
 				// track modifier keys
@@ -213,9 +227,21 @@ namespace ui_gtk_gnome
 
 			void TextView_TextChanged (object sender, EventArgs e)
 			{
+				try {
+					myNote.RemoveElement (myText);
+				} catch (NullReferenceException) {
+					/**
+					 * in case of \n and \t we already removed the element from the note. Clipping the 
+					 * \n/\t from the text and reassign to the text triggers this very callback again.
+					 */
+				}
+
 				if (!shiftModifierActive && view.Buffer.Text.EndsWith ("\n")) {
 					// trim the newline at the end of the string
 					view.Buffer.Text = view.Buffer.Text.Substring (0, view.Buffer.Text.Length - 1);
+
+					// the text assignment above triggered this method and with that created a new element in myNote
+					myNote.RemoveElement (myText);
 
 					// trigger new textbox
 					aJournal.currentTool.Reset ();
@@ -227,25 +253,28 @@ namespace ui_gtk_gnome
 					// trim the newline at the end of the string
 					view.Buffer.Text = view.Buffer.Text.Replace ("\t", "");
 
+					// the text assignment above triggered this method and with that created a new element in myNote
+					myNote.RemoveElement (myText);
+
 					int direction = 0;
 					if (shiftModifierActive)
 						direction = -1;
 					else
 						direction = 1;
 
-					if (indentationLevel + direction < 0)
+					if (myText.IndentationLevel + direction < 0)
 						direction = 0;
 
-					indentationLevel += direction;
+					myText.IndentationLevel += direction;
 
 					// remove old bullet
 					if (null != itemize)
 						itemize.Destroy ();
 
 					// check if there is a new bullet necessary
-					if (indentationLevel > 0) {
+					if (myText.IndentationLevel > 0) {
 						// create a circle or a rectangle
-						if (indentationLevel % 2 == 1)
+						if (myText.IndentationLevel % 2 == 1)
 							itemize = new CanvasEllipse (canvasWidget.Canvas.Root ());
 						else
 							itemize = new CanvasRect (canvasWidget.Canvas.Root ());
@@ -258,13 +287,17 @@ namespace ui_gtk_gnome
 						itemize.FillColor = "black";
 
 						// move to appropriate position
-						itemize.Move (canvasWidget.X + (indentationLevel - 1) * canvasWidget.Height * 1.5, canvasWidget.Y);
+						itemize.Move (canvasWidget.X + (myText.IndentationLevel - 1) * canvasWidget.Height * 1.5, canvasWidget.Y);
 					}
 
 					// indent text
 					// TODO the relative movements only work as long as the same text size is used!
 					canvasWidget.Move (direction * canvasWidget.Height * 1.5, 0);
 				}
+
+				myText.Text = view.Buffer.Text;
+				myNote.AddElement (myText);
+				myNote.Persist (); // no mouse_up here to persist
 			}
 
 			public bool Empty {
@@ -281,6 +314,8 @@ namespace ui_gtk_gnome
 
 			public override void Move (double diffx, double diffy)
 			{
+				myNote.RemoveElement (myText);
+
 				canvasWidget.X += diffx;
 				canvasWidget.Y += diffy;
 
@@ -288,12 +323,18 @@ namespace ui_gtk_gnome
 					itemize.Move (diffx, diffy);
 				} catch (NullReferenceException) {
 				}
+
+				myText.X += Convert.ToInt32 (diffx);
+				myText.Y += Convert.ToInt32 (diffy);
+
+				myNote.AddElement (myText);
+				myNote.Persist (); // no mouse_up here to persist
 			}
 
 			public override void Destroy ()
 			{
 				canvasWidget.Destroy ();
-				// TODO delete in backend
+				myNote.RemoveElement (myText);
 			}
 		}
 
