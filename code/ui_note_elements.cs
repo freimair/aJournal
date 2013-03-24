@@ -34,6 +34,8 @@ namespace ui_gtk_gnome
 			{
 				if (element is PolylineElement)
 					return new UiLine (canvas, note, (PolylineElement)element);
+				if (element is TextElement)
+					return new UiText (canvas, note, (TextElement)element);
 				return null;
 			}
 
@@ -160,8 +162,12 @@ namespace ui_gtk_gnome
 
 				// autoresize the canvasWidget to match the textviews size
 				view.SizeRequested += delegate(object o, SizeRequestedArgs args) {
-					canvasWidget.Width = args.Requisition.Width / canvas.PixelsPerUnit + 20;
-					canvasWidget.Height = args.Requisition.Height / canvas.PixelsPerUnit;
+					// FIXME dirty hack. refactor during text scaling refactoring
+					int height = args.Requisition.Height;
+					if (0 == height)
+						height = 6 * myText.FontSize;
+					canvasWidget.Width = args.Requisition.Width / canvasWidget.Canvas.PixelsPerUnit + 20;
+					canvasWidget.Height = height / canvasWidget.Canvas.PixelsPerUnit;
 				};
 
 				// set focus to textview for keyboard input
@@ -175,6 +181,24 @@ namespace ui_gtk_gnome
 				view.Buffer.Changed += TextView_TextChanged;
 
 				myNote.AddElement (myText);
+			}
+
+			public UiText (Canvas canvas, Note note, TextElement noteElement) : this(canvas, note)
+			{
+				myNote.RemoveElement (myText);
+				myText = noteElement;
+				view.Buffer.Text = myText.Text;
+				view.CheckResize ();
+				canvasWidget.X = myText.X;
+				canvasWidget.Y = myText.Y;
+
+				FontDescription fontDescription = view.Style.FontDescription;
+				// TODO fix fontsize when fixing font scaling on scale events
+				fontDescription.Size = Convert.ToInt32 (myText.FontSize * (canvasWidget.Canvas.PixelsPerUnit * 1000));
+				fontDescription.Weight = myText.FontStrong ? Weight.Bold : Weight.Normal;
+				view.ModifyFont (fontDescription);
+
+				Indent ();
 			}
 
 			void TextView_KeyPress (object o, KeyPressEventArgs args)
@@ -260,7 +284,7 @@ namespace ui_gtk_gnome
 
 					// trigger new textbox
 					aJournal.currentTool.Reset ();
-					aJournal.currentTool.Start (canvasWidget.X, canvasWidget.Y + canvasWidget.Height + 30);
+					aJournal.currentTool.Start (myText.X, myText.Y + canvasWidget.Height + 30);
 				}
 
 				// itemize
@@ -282,37 +306,41 @@ namespace ui_gtk_gnome
 
 					myText.IndentationLevel += direction;
 
-					// remove old bullet
-					if (null != itemize)
-						itemize.Destroy ();
-
-					// check if there is a new bullet necessary
-					if (myText.IndentationLevel > 0) {
-						// create a circle or a rectangle
-						if (myText.IndentationLevel % 2 == 1)
-							itemize = new CanvasEllipse (canvasWidget.Canvas.Root ());
-						else
-							itemize = new CanvasRect (canvasWidget.Canvas.Root ());
-
-						itemize.X1 = canvasWidget.Height / 3;
-						itemize.X2 = 2 * canvasWidget.Height / 3;
-						itemize.Y1 = canvasWidget.Height / 3;
-						itemize.Y2 = 2 * canvasWidget.Height / 3;
-						itemize.WidthUnits = 2;
-						itemize.FillColor = "black";
-
-						// move to appropriate position
-						itemize.Move (canvasWidget.X + (myText.IndentationLevel - 1) * canvasWidget.Height * 1.5, canvasWidget.Y);
-					}
-
-					// indent text
-					// TODO the relative movements only work as long as the same text size is used!
-					canvasWidget.Move (direction * canvasWidget.Height * 1.5, 0);
+					Indent ();
 				}
 
 				myText.Text = view.Buffer.Text;
 				myNote.AddElement (myText);
 				myNote.Persist (); // no mouse_up here to persist
+			}
+
+			void Indent ()
+			{
+				// remove old bullet
+				if (null != itemize)
+					itemize.Destroy ();
+
+				// check if there is a new bullet necessary
+				if (myText.IndentationLevel > 0) {
+					// create a circle or a rectangle
+					if (myText.IndentationLevel % 2 == 1)
+						itemize = new CanvasEllipse (canvasWidget.Canvas.Root ());
+					else
+						itemize = new CanvasRect (canvasWidget.Canvas.Root ());
+
+					// move to appropriate position
+					double offsetx = myText.X + (myText.IndentationLevel - 1) * canvasWidget.Height * 1.5;
+					double offsety = myText.Y;
+
+					itemize.X1 = offsetx + canvasWidget.Height / 3;
+					itemize.X2 = offsetx + 2 * canvasWidget.Height / 3;
+					itemize.Y1 = offsety + canvasWidget.Height / 3;
+					itemize.Y2 = offsety + 2 * canvasWidget.Height / 3;
+					itemize.FillColor = "black";
+				}
+
+				// indent text
+				canvasWidget.X = myText.X + myText.IndentationLevel * canvasWidget.Height * 1.5;
 			}
 
 			public bool Empty {
@@ -335,7 +363,10 @@ namespace ui_gtk_gnome
 				canvasWidget.Y += diffy;
 
 				try {
-					itemize.Move (diffx, diffy);
+					itemize.X1 += diffx;
+					itemize.X2 += diffx;
+					itemize.Y1 += diffy;
+					itemize.Y2 += diffy;
 				} catch (NullReferenceException) {
 				}
 
