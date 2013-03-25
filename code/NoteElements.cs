@@ -29,8 +29,6 @@ namespace backend
 				}
 			}
 
-			public abstract XmlNode Find (XmlNode root);
-
 			public abstract XmlNode ToXml (XmlDocument document);
 		}
 
@@ -67,11 +65,6 @@ namespace backend
 				return result.Trim ();
 			}
 
-			public override XmlNode Find (XmlNode root)
-			{
-				return root.SelectSingleNode ("/svg/polyline[@points='" + GetSVGPointList () + "']");
-			}
-
 			public override XmlNode ToXml (XmlDocument document)
 			{
 				XmlAttribute fillAttribute = document.CreateAttribute ("fill");
@@ -94,6 +87,24 @@ namespace backend
 				currentNode.Attributes.Append (pointsAttribute);
 
 				return currentNode;
+			}
+
+			public override bool Equals (object obj)
+			{
+				if (!(obj is PolylineElement))
+					return false;
+				PolylineElement tmp = (PolylineElement)obj;
+
+				if (color != tmp.color)
+					return false;
+				if (strength != tmp.strength)
+					return false;
+				if (points.Count != tmp.points.Count)
+					return false;
+				for (int i = 0; i < points.Count; i++)
+					if (points [i] != tmp.points [i])
+						return false;
+				return true;
 			}
 		}
 
@@ -179,14 +190,6 @@ namespace backend
 					}
 				}
 				Text = textNode.InnerText;
-			}
-
-			public override XmlNode Find (XmlNode root)
-			{
-				if (0 < IndentationLevel)
-					return root.SelectSingleNode ("/svg/g[text[@x='" + X + "' and @y='" + (Y + FontSize) + "' and text() = '" + Text + "']]");
-				else
-					return root.SelectSingleNode ("/svg/text[@x='" + X + "' and @y='" + (Y + FontSize) + "' and text() = '" + Text + "']");
 			}
 
 			/**
@@ -384,11 +387,6 @@ namespace backend
 						break;
 					}
 				}
-			}
-
-			public override XmlNode Find (XmlNode root)
-			{
-				return root.SelectSingleNode ("/svg/image[@x='" + X + "' and @y='" + Y + "' and @width='" + Width + "' and @height='" + Height + "']");
 			}
 
 			/**
