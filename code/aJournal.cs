@@ -14,7 +14,7 @@ namespace ui_gtk_gnome
 {
 	class UiNote : VBox
 	{
-		const int canvasWidth = 1500, canvasHeight = 1500;
+		public static int canvasWidth = 1500, canvasHeight = 1500;
 		Canvas myCanvas;
 		CanvasRect drawingArea;
 		List<UiNoteElement> elements = new List<UiNoteElement> ();
@@ -128,7 +128,7 @@ namespace ui_gtk_gnome
 		VBox myNotesContainer;
 		// static because we only want one tool active in the whole app
 		public static Tool currentTool;
-		RadioToolButton penToolButton, selectionToolButton, eraserToolButton, textToolButton, imageToolButton;
+		RadioToolButton penToolButton, selectionToolButton, eraserToolButton, textToolButton, imageToolButton, verticalSpaceToolButton;
 
 		// event fired when some zooming occurs
 		public static event ScaledEventHandler Scaled;
@@ -195,6 +195,11 @@ namespace ui_gtk_gnome
 			imageToolButton.TooltipText = "Image";
 			imageToolButton.Clicked += SelectTool_Clicked;
 			myToolbar.Insert (imageToolButton, 8);
+			verticalSpaceToolButton = new RadioToolButton (penToolButton);
+			verticalSpaceToolButton.IconWidget = new Gtk.Image (new Pixbuf ("stretch.png"));
+			verticalSpaceToolButton.TooltipText = "vertical space";
+			verticalSpaceToolButton.Clicked += SelectTool_Clicked;
+			myToolbar.Insert (verticalSpaceToolButton, 9);
 
 			// insert the toolbar into the layoutpen
 			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
@@ -254,6 +259,8 @@ namespace ui_gtk_gnome
 				currentTool = new TextTool ();
 			else if (obj == imageToolButton)
 				currentTool = new ImageTool ();
+			else if (obj == verticalSpaceToolButton)
+				currentTool = new VerticalSpaceTool ();
 		}
 
 		void AddNote (object obj, EventArgs args)

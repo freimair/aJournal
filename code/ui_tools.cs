@@ -23,6 +23,52 @@ namespace ui_gtk_gnome
 			public abstract void Reset ();
 		}
 
+		public class VerticalSpaceTool : Tool
+		{
+			Canvas myCanvas;
+			Note myNote;
+			List<UiNoteElement> myItems;
+			CanvasRect canvasVisualization;
+
+			public override void Init (Canvas canvas, Note note, List<UiNoteElement> items)
+			{
+				myCanvas = canvas;
+				myNote = note;
+				myItems = items;
+			}
+
+			public override void Start (double x, double y)
+			{
+				canvasVisualization = new CanvasRect (myCanvas.Root ());
+				canvasVisualization.X1 = 0;
+				canvasVisualization.X2 = UiNote.canvasWidth;
+				canvasVisualization.Y1 = y;
+				canvasVisualization.Y2 = y;
+
+				canvasVisualization.FillColorRgba = 0x88888830; // 0xRRGGBBAA
+				canvasVisualization.OutlineColor = "black";
+			}
+
+			public override void Continue (double x, double y)
+			{
+				if (null != canvasVisualization)
+					canvasVisualization.Y2 = y;
+			}
+
+			public override void Complete (double x, double y)
+			{
+				try {
+					canvasVisualization.Destroy ();
+					canvasVisualization = null;
+				} catch (NullReferenceException) {
+				}
+			}
+
+			public override void Reset ()
+			{
+			}
+		}
+
 		public class SelectionTool : Tool
 		{
 			class Selection
