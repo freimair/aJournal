@@ -29,6 +29,7 @@ namespace ui_gtk_gnome
 			Note myNote;
 			List<UiNoteElement> myItems;
 			CanvasRect canvasVisualization;
+			List<UiNoteElement> affectedItems = new List<UiNoteElement> ();
 			double oldHeight;
 
 			public override void Init (CanvasRect sheet, Note note, List<UiNoteElement> items)
@@ -50,14 +51,27 @@ namespace ui_gtk_gnome
 
 				canvasVisualization.FillColorRgba = 0x88888830; // 0xRRGGBBAA
 				canvasVisualization.OutlineColor = "black";
+
+				// fetch items to be moved
+				foreach (UiNoteElement current in myItems)
+					if (y < current.BoundingBox ().top)
+						affectedItems.Add (current);
 			}
 
 			public override void Continue (double x, double y)
 			{
 				try {
+					// memorize old y
+					double oldY = canvasVisualization.Y2;
+
 					canvasVisualization.Y2 = y;
 					// adjust sheet size
 					mySheet.Y2 = Convert.ToUInt32 (oldHeight + Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1));
+
+					// move affected items
+					foreach (UiNoteElement current in affectedItems)
+						// move by diffy
+						current.Move (0, y - oldY);
 				} catch (NullReferenceException) {
 				}
 			}
@@ -77,6 +91,7 @@ namespace ui_gtk_gnome
 
 			public override void Reset ()
 			{
+				affectedItems.Clear ();
 			}
 		}
 
