@@ -410,7 +410,6 @@ namespace ui_gtk_gnome
 				canvasPixbuf.X = myImage.X;
 				canvasPixbuf.Y = myImage.Y;
 				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
-				myNote.AddElement (myImage);
 			}
 
 			public UiImage (Canvas canvas, Note note, String path) : this(note)
@@ -438,13 +437,11 @@ namespace ui_gtk_gnome
 
 			public override void Move (double diffx, double diffy)
 			{
-				myNote.RemoveElement (myImage);
 				canvasPixbuf.Move (diffx, diffy);
 
 				// the cavnvasPixbuf location is not updated by now so we have to do it manually
 				myImage.X += Convert.ToInt32 (diffx);
 				myImage.Y += Convert.ToInt32 (diffy);
-				myNote.AddElement (myImage);
 			}
 
 			public override void Destroy ()
