@@ -56,9 +56,9 @@ namespace ui_gtk_gnome
 
 			public UiLine (Canvas canvas, Note note, PolylineElement noteElement) : this(canvas, note)
 			{
-				myNote.RemoveElement (linemodel); // this(canvas, note) inserted that beforehand
 				linemodel = noteElement;
 
+				Init (canvas);
 				line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
 			}
 
@@ -66,26 +66,25 @@ namespace ui_gtk_gnome
 			{
 				myNote = note;
 
+				linemodel = new PolylineElement ();
+				note.AddElement (linemodel);
+				Init (canvas);
+			}
+
+			void Init (Canvas canvas)
+			{
 				line = new CanvasLine (canvas.Root ());
 				line.WidthUnits = 2;
 				line.FillColor = "black";
-
-				linemodel = new PolylineElement ();
-
-				myNote.AddElement (linemodel);
 			}
 
 			public void Add (double x, double y)
 			{
-				myNote.RemoveElement (linemodel);
-
 				linemodel.Points.Add (Convert.ToInt32 (x));
 				linemodel.Points.Add (Convert.ToInt32 (y));
 
 				if (linemodel.Points.Count > 2)
 					line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
-
-				myNote.AddElement (linemodel);
 			}
 
 			public override BoundingBox BoundingBox ()
@@ -100,16 +99,12 @@ namespace ui_gtk_gnome
 
 			public override void Move (double diffx, double diffy)
 			{
-				myNote.RemoveElement (linemodel);
-
 				for (int i = 0; i < linemodel.Points.Count; i += 2) {
 					linemodel.Points [i] += Convert.ToInt32 (diffx);
 					linemodel.Points [i + 1] += Convert.ToInt32 (diffy);
 				}
 
 				line.Move (diffx, diffy);
-
-				myNote.AddElement (linemodel);
 			}
 
 			public override void Destroy ()
@@ -133,11 +128,9 @@ namespace ui_gtk_gnome
 
 			Note myNote;
 			TextElement myText;
-
 			CanvasWidget canvasWidget;
 			TextView view;
 			CanvasRE itemize;
-
 			bool controlModifierActive = false;
 			bool shiftModifierActive = false;
 

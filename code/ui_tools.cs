@@ -235,13 +235,19 @@ namespace ui_gtk_gnome
 
 			public override void Reset ()
 			{
-
+				// delete if empty
+				try {
+					if (2 > currentStroke.Points.Count)
+						currentStroke.Destroy ();
+				} catch (NullReferenceException) {
+				}
 			}
 		}
 
 		public class EraserTool : Tool
 		{
 			List<UiNoteElement> elements;
+
 			public override void Init (Canvas canvas, Note note, List<UiNoteElement> items)
 			{
 				elements = items;
