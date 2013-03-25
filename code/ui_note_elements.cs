@@ -137,7 +137,19 @@ namespace ui_gtk_gnome
 			public UiText (Canvas canvas, Note note)
 			{
 				myNote = note;
+
 				myText = new TextElement ();
+				myNote.AddElement (myText);
+
+				Init (canvas);
+
+				FontDescription fontDescription = view.Style.FontDescription;
+				myText.FontSize = Convert.ToInt32 (fontDescription.Size / 360);
+				myText.FontStrong = fontDescription.Weight == Weight.Bold;
+			}
+
+			void Init (Canvas canvas)
+			{
 				canvasWidget = new CanvasWidget (canvas.Root ());
 
 				// use Gtk TextView widget for text input
@@ -147,8 +159,6 @@ namespace ui_gtk_gnome
 				fontDescription.Size = FontSize.Normal;
 				fontDescription.Weight = Weight.Normal;
 				view.ModifyFont (fontDescription);
-				myText.FontSize = Convert.ToInt32 (fontDescription.Size / 360);
-				myText.FontStrong = fontDescription.Weight == Weight.Bold;
 
 				// do further configuration
 				view.CursorVisible = true;
@@ -174,8 +184,6 @@ namespace ui_gtk_gnome
 				// handle TAB key and ENTER key
 				view.Buffer.Changed += TextView_TextChanged;
 
-				myNote.AddElement (myText);
-
 				aJournal.Scaled += Scaled;
 			}
 
@@ -186,10 +194,13 @@ namespace ui_gtk_gnome
 				view.ModifyFont (fontDescription);
 			}
 
-			public UiText (Canvas canvas, Note note, TextElement noteElement) : this(canvas, note)
+			public UiText (Canvas canvas, Note note, TextElement noteElement)
 			{
-				myNote.RemoveElement (myText);
+				myNote = note;
 				myText = noteElement;
+
+				Init (canvas);
+
 				view.Buffer.Text = myText.Text;
 				view.CheckResize ();
 				canvasWidget.X = myText.X;
@@ -229,10 +240,8 @@ namespace ui_gtk_gnome
 
 					view.ModifyFont (fontDescription);
 
-					myNote.RemoveElement (myText);
 					myText.FontSize = Convert.ToInt32 (fontDescription.Size / 360);
 					myText.FontStrong = fontDescription.Weight == Weight.Bold;
-					myNote.AddElement (myText);
 					myNote.Persist (); // no mouse_up here to persist
 				}
 
@@ -268,21 +277,9 @@ namespace ui_gtk_gnome
 
 			void TextView_TextChanged (object sender, EventArgs e)
 			{
-				try {
-					myNote.RemoveElement (myText);
-				} catch (NullReferenceException) {
-					/**
-					 * in case of \n and \t we already removed the element from the note. Clipping the 
-					 * \n/\t from the text and reassign to the text triggers this very callback again.
-					 */
-				}
-
 				if (!shiftModifierActive && view.Buffer.Text.EndsWith ("\n")) {
 					// trim the newline at the end of the string
 					view.Buffer.Text = view.Buffer.Text.Substring (0, view.Buffer.Text.Length - 1);
-
-					// the text assignment above triggered this method and with that created a new element in myNote
-					myNote.RemoveElement (myText);
 
 					// trigger new textbox
 					aJournal.currentTool.Reset ();
@@ -293,9 +290,6 @@ namespace ui_gtk_gnome
 				if (view.Buffer.Text.Contains ("\t")) {
 					// trim the newline at the end of the string
 					view.Buffer.Text = view.Buffer.Text.Replace ("\t", "");
-
-					// the text assignment above triggered this method and with that created a new element in myNote
-					myNote.RemoveElement (myText);
 
 					int direction = 0;
 					if (shiftModifierActive)
@@ -312,7 +306,6 @@ namespace ui_gtk_gnome
 				}
 
 				myText.Text = view.Buffer.Text;
-				myNote.AddElement (myText);
 				myNote.Persist (); // no mouse_up here to persist
 			}
 
@@ -359,8 +352,6 @@ namespace ui_gtk_gnome
 
 			public override void Move (double diffx, double diffy)
 			{
-				myNote.RemoveElement (myText);
-
 				canvasWidget.X += diffx;
 				canvasWidget.Y += diffy;
 
@@ -375,14 +366,17 @@ namespace ui_gtk_gnome
 				myText.X += Convert.ToInt32 (diffx);
 				myText.Y += Convert.ToInt32 (diffy);
 
-				myNote.AddElement (myText);
 				myNote.Persist (); // no mouse_up here to persist
 			}
 
 			public override void Destroy ()
 			{
 				canvasWidget.Destroy ();
+				if (null != itemize)
+					itemize.Destroy ();
+
 				myNote.RemoveElement (myText);
+				myNote.Persist ();
 			}
 		}
 
