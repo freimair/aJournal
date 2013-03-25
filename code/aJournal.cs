@@ -251,8 +251,10 @@ namespace ui_gtk_gnome
 
 		void TreeView_Fill (TreeStore tagList)
 		{
-			tagList.AppendValues (false, "tag1");
-			tagList.AppendValues (true, "tag2");
+			TreeIter iter = tagList.AppendValues (false, "tag1");
+			TreeIter iter2 = tagList.AppendValues (iter, false, "tag11");
+			tagList.AppendValues (iter2, false, "tag111");
+			tagList.AppendValues (false, "tag2");
 		}
 
 		void TreeItem_Toggle (object o, ToggledArgs args)
