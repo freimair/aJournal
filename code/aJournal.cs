@@ -102,7 +102,7 @@ namespace ui_gtk_gnome
 				try {
 					switch (ev.Type) {
 					case EventType.ButtonPress:
-						aJournal.currentTool.Init (myCanvas, myNote, elements);
+						aJournal.currentTool.Init (drawingArea, myNote, elements);
 						aJournal.currentTool.Reset ();
 						aJournal.currentTool.Start (ev.X, ev.Y);
 						break;
