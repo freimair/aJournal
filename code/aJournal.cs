@@ -205,6 +205,16 @@ namespace ui_gtk_gnome
 
 			// add an empty treeview to the first column
 			myTreeView = new TreeView ();
+			myTreeView.HeadersVisible = false;
+
+			TreeStore tagList = new TreeStore (typeof(bool), typeof(string));
+			CellRendererToggle myCellRendererToggle = new Gtk.CellRendererToggle ();
+			myCellRendererToggle.Activatable = true;
+			myCellRendererToggle.Toggled += TreeItem_Toggle;
+			myTreeView.AppendColumn ("", myCellRendererToggle, "active", 0);
+			myTreeView.AppendColumn ("", new Gtk.CellRendererText (), "text", 1);
+			TreeView_Fill (tagList);
+			myTreeView.Model = tagList;
 			taglistContentLayout.Add (myTreeView);
 
 			// add canvas container
@@ -237,6 +247,22 @@ namespace ui_gtk_gnome
 			win.ShowAll ();
 
 			myTreeView.Visible = false;
+		}
+
+		void TreeView_Fill (TreeStore tagList)
+		{
+			tagList.AppendValues (false, "tag1");
+			tagList.AppendValues (true, "tag2");
+		}
+
+		void TreeItem_Toggle (object o, ToggledArgs args)
+		{
+			TreeIter iter;
+
+			if (myTreeView.Model.GetIter (out iter, new TreePath (args.Path))) {
+				bool old = (bool)myTreeView.Model.GetValue (iter, 0);
+				myTreeView.Model.SetValue (iter, 0, !old);
+			}
 		}
 
 		void SelectTool_Clicked (object obj, EventArgs args)
