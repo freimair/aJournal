@@ -36,7 +36,7 @@ namespace test
 		}
 
 		[Test]
-		public void StrokesTest ()
+		public void ElementEditTest ()
 		{
 			// create DUT
 			Note DUT = Note.Create ();
@@ -68,90 +68,45 @@ namespace test
 			// reload from disk
 			DUT = Note.GetEntries () [0];
 
-			// check
-			Assert.AreEqual (listA.ToString (), DUT.GetElements ().ToString (), "reloading stroke from disk failed");
-
 			// cleanup
 			DUT.Delete ();
+
+			// check
+			Assert.AreEqual (listA.ToString (), DUT.GetElements ().ToString (), "reloading stroke from disk failed");
 		}
 
 		[Test]
-		public void SimpleTagTest ()
-		{
-			Tag DUT = Tag.Create ("tag1");
-			Assert.AreEqual (DUT.Name, DUT.ToString ());
-		}
-
-		[Test]
-		public void TagTreeTest ()
-		{
-			// setup testing entities
-			string tag1name = "tag1", tag2name = "tag2", tag3name = "tag3";
-			Tag tag1 = Tag.Create (tag1name);
-			Tag tag2 = Tag.Create (tag2name);
-			Tag tag3 = Tag.Create (tag3name);
-
-			// assemble tree
-			tag3.Parent = tag2;
-			tag2.Parent = tag1;
-
-			Assert.AreEqual ("tag1.tag2.tag3", tag3.ToString ());
-		}
-
-		[Test]
-		public void TagToXmlToTagTest ()
-		{
-			Tag DUT = Tag.Create ("tagname");
-			XmlDocument doc = new XmlDocument ();
-			Tag recreated = Tag.RecreateFromXml (DUT.ToXml (doc));
-
-			Assert.AreEqual (DUT, recreated);
-		}
-
-		[Test]
-		public void TagTreeXmlRoundtrip ()
-		{
-			// setup
-			int max = 3;
-
-			// - create tags
-			List<Tag> tags = new List<Tag> ();
-			for (int i = 0; i < max; i++)
-				tags.Add (Tag.Create ("tag" + (i + 1)));
-
-			// - relate tags
-			for (int i = 0; i < max - 1; i++)
-				tags [i].Parent = tags [i + 1];
-
-			// test
-			// - to XML
-			XmlDocument doc = new XmlDocument ();
-			XmlNode xml = tags [0].ToXml (doc);
-
-			// - recreate
-			Tag recreated = Tag.RecreateFromXml (xml);
-
-			Assert.AreEqual (tags [0].ToString (), recreated.ToString ());
-			Assert.AreEqual (tags [0], recreated);
-		}
-
-		[Test]
-		public void AddingTagsToEntriesTest ()
+		public void AddingTagsToNoteTest ()
 		{
 			Note entry = Note.Create ();
-
+			
 			Tag tag1 = Tag.Create ("tag1");
 			Tag tag2 = Tag.Create ("tag2");
-
+			
 			entry.AddTag (tag1);
 			entry.AddTag (tag2);
-
+			
 			Assert.AreEqual (tag1, entry.GetTags () [0]);
 			Assert.AreEqual (tag2, entry.GetTags () [1]);
 		}
 
 		[Test]
-		public void RemoveTagFromEntry ()
+		public void TaggedNoteRoundtrip ()
+		{
+			Tag tag = Tag.Create ("mytag");
+			Note note = Note.Create ();
+
+			note.AddTag (tag);
+			note.Persist ();
+
+			List<Note> recreated = Note.GetEntries ();
+			note.Delete ();
+
+			Assert.Contains (tag, recreated [0].GetTags ());
+		}
+
+		[Test]
+		public void RemoveTagFromNote ()
 		{
 			// setup
 			Note entry = Note.Create ();
@@ -166,7 +121,7 @@ namespace test
 		}
 
 		[Test]
-		public void TagFilterEntries ()
+		public void TagFilterNote ()
 		{
 			// setup
 			int max = 3;
@@ -197,23 +152,43 @@ namespace test
 			filter.ExcludedTags.Add (tags [1]);
 			List<Note> result = Note.GetEntries (filter);
 
+			// cleanup
+			foreach (Note current in entries)
+				current.Delete ();
+
 			// check
 			foreach (Note current in result) {
 				Assert.Contains (tags [2], current.GetTags ());
 				Assert.IsFalse (current.GetTags ().Contains (tags [1]), "entrylist contains entry with excluded tag");
 			}
-
-			// cleanup
-			foreach (Note current in entries)
-				current.Delete ();
 		}
 
 		[Test]
-		public void DeleteEntry ()
+		public void DeleteNote ()
 		{
 			Note entry = Note.Create ();
 			entry.Persist ();
 			entry.Delete ();
+		}
+	}
+
+	[TestFixture]
+	public class NoteElementTests
+	{
+		[Test]
+		public void PolylineSvgRoundtrip ()
+		{
+			Note note = Note.Create ();
+			PolylineElement DUT = new PolylineElement ();
+			DUT.Points.AddRange (new int[]{1,2,3,4,5,6});
+			note.AddElement (DUT);
+
+			note.Persist ();
+
+			List<NoteElement> recreated = Note.GetEntries () [0].GetElements ();
+			note.Delete (); // comment for visual svg check
+
+			Assert.Contains (DUT, recreated);
 		}
 
 		[Test]
@@ -299,7 +274,8 @@ namespace test
 
 			note.Persist ();
 
-			List<NoteElement> recreated = note.GetElements ();
+			List<NoteElement> recreated = Note.GetEntries () [0].GetElements ();
+			note.Delete (); // comment for visual svg check
 
 			Assert.AreEqual (DUTs.Count, recreated.Count);
 			Assert.Contains (DUTs [0], recreated, "heading: text, font size, font weight, position invalid");
@@ -307,7 +283,6 @@ namespace test
 			for (int i = 2; i < DUTs.Count; i++)
 				Assert.Contains (DUTs [i], recreated, "text with indent recreation failed");
 
-			note.Delete (); // comment for visual svg check
 		}
 
 		[Test]
@@ -358,12 +333,12 @@ namespace test
 			note.AddElement (DUT);
 			note.Persist ();
 
-			List<NoteElement> recreated = note.GetElements ();
+			List<NoteElement> recreated = Note.GetEntries () [0].GetElements ();
 
+			note.Delete (); // comment for visual svg check
 			Assert.IsNotEmpty (recreated);
 			Assert.Contains (DUT, recreated);
 
-			note.Delete (); // comment for visual svg check
 		}
 
 		[Test]
@@ -384,5 +359,71 @@ namespace test
 			Assert.IsEmpty (note.GetElements ());
 		}
 	}
+
+	[TestFixture]
+	public class TagTests
+	{
+
+		[Test]
+		public void SimpleTagTest ()
+		{
+			Tag DUT = Tag.Create ("tag1");
+			Assert.AreEqual (DUT.Name, DUT.ToString ());
+		}
+
+		[Test]
+		public void TagTreeTest ()
+		{
+			// setup testing entities
+			string tag1name = "tag1", tag2name = "tag2", tag3name = "tag3";
+			Tag tag1 = Tag.Create (tag1name);
+			Tag tag2 = Tag.Create (tag2name);
+			Tag tag3 = Tag.Create (tag3name);
+
+			// assemble tree
+			tag3.Parent = tag2;
+			tag2.Parent = tag1;
+
+			Assert.AreEqual ("tag1.tag2.tag3", tag3.ToString ());
+		}
+
+		[Test]
+		public void TagToXmlToTagTest ()
+		{
+			Tag DUT = Tag.Create ("tagname");
+			XmlDocument doc = new XmlDocument ();
+			Tag recreated = Tag.RecreateFromXml (DUT.ToXml (doc));
+
+			Assert.AreEqual (DUT, recreated);
+		}
+
+		[Test]
+		public void TagTreeXmlRoundtrip ()
+		{
+			// setup
+			int max = 3;
+
+			// - create tags
+			List<Tag> tags = new List<Tag> ();
+			for (int i = 0; i < max; i++)
+				tags.Add (Tag.Create ("tag" + (i + 1)));
+
+			// - relate tags
+			for (int i = 0; i < max - 1; i++)
+				tags [i].Parent = tags [i + 1];
+
+			// test
+			// - to XML
+			XmlDocument doc = new XmlDocument ();
+			XmlNode xml = tags [0].ToXml (doc);
+
+			// - recreate
+			Tag recreated = Tag.RecreateFromXml (xml);
+
+			Assert.AreEqual (tags [0].ToString (), recreated.ToString ());
+			Assert.AreEqual (tags [0], recreated);
+		}
+	}
+
 }
 

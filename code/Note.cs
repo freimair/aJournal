@@ -32,33 +32,36 @@ namespace backend
 	public class Note
 	{
 		string filename;
-		XmlDocument document;
-		XmlNode rootNode;
-		XmlNode tagsNode;
+		HashSet<NoteElement> elements = new HashSet<NoteElement> ();
+		HashSet<Tag> tags = new HashSet<Tag> ();
 
 		private Note (String file)
 		{
+			filename = file;
 			// instantiate XmlDocument and load XML from file
-			document = new XmlDocument ();
+			XmlDocument document = new XmlDocument ();
 			document.Load (file);
 
-			rootNode = document.GetElementsByTagName ("svg") [0];
-			tagsNode = document.GetElementsByTagName ("tags") [0];
+			// recreate elements
+			XmlNodeList svgNodeList = document.SelectNodes ("/svg/*");
+			foreach (XmlNode current in svgNodeList) {
+				NoteElement tmp = NoteElement.RecreateFromXml (current);
+				if (null != tmp)
+					elements.Add (tmp);
+			}
+
+			// recreate tags
+			XmlNodeList svgTagList = document.SelectNodes ("/svg/desc/tags/tag");
+			foreach (XmlNode current in svgTagList) {
+				Tag tmp = Tag.RecreateFromXml (current);
+				if (null != tmp)
+					tags.Add (tmp);
+			}
 		}
 
 		private Note ()
 		{
-			document = new XmlDocument ();
-			document.AppendChild (document.CreateXmlDeclaration ("1.0", "utf-8", null));
-
-			rootNode = document.CreateElement ("svg");
-			document.AppendChild (rootNode);
-
-			XmlNode descriptionNode = document.CreateElement ("desc");
-			rootNode.AppendChild (descriptionNode);
-
-			tagsNode = document.CreateElement ("tags");
-			descriptionNode.AppendChild (tagsNode);
+			filename = Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + DateTime.Now.ToString ("yyyyMMddHHmmss") + ".svg";
 		}
 
 		public static Note Create ()
@@ -107,36 +110,22 @@ namespace backend
 
 		public void AddTag (Tag tag)
 		{
-			tagsNode.AppendChild (tag.ToXml (document));
+			tags.Add (tag);
 		}
 
 		public void RemoveTag (Tag tag)
 		{
-			XmlNode node = tagsNode.SelectSingleNode ("//tag[text()='" + tag.Name + "']");
-			tagsNode.RemoveChild (node);
+			tags.Remove (tag);
 		}
 
 		public List<Tag> GetTags ()
 		{
-			List<Tag> result = new List<Tag> ();
-			foreach (XmlNode current in tagsNode.ChildNodes) {
-				result.Add (Tag.RecreateFromXml (current));
-			}
-			return result;
+			return new List<Tag> (tags);
 		}
 
 		public List<NoteElement> GetElements ()
 		{
-			XmlNodeList nodes = rootNode.SelectNodes ("/svg/*");
-
-			List<NoteElement> result = new List<NoteElement> ();
-			foreach (XmlNode current in nodes) {
-				NoteElement tmp = NoteElement.RecreateFromXml (current);
-				if (null != tmp)
-					result.Add (tmp);
-			}
-
-			return result;
+			return new List<NoteElement> (elements);
 		}
 
 		/*
@@ -166,12 +155,12 @@ namespace backend
 
 		public void AddElement (NoteElement element)
 		{
-			rootNode.AppendChild (element.ToXml (document));
+			elements.Add (element);
 		}
 
 		public void RemoveElement (NoteElement element)
 		{
-			rootNode.RemoveChild (element.Find (rootNode));
+			elements.Remove (element);
 		}
 
 		public DateTime CreationTimestamp {
@@ -187,17 +176,35 @@ namespace backend
 			// check and adjust boundaries
 			// TODO check and adjust boundaries
 
-			// check if data directory exists and create if neccessary
-			if (!Directory.Exists (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/"))
-				Directory.CreateDirectory (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/");
+			// assemble svg document
+			XmlDocument document = new XmlDocument ();
+			document.AppendChild (document.CreateXmlDeclaration ("1.0", "utf-8", null));
 
-			filename = DateTime.Now.ToString ("yyyyMMddHHmmss");
-			document.Save (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + filename + ".svg");
+			XmlNode rootNode = document.CreateElement ("svg");
+			document.AppendChild (rootNode);
+
+			XmlNode descriptionNode = document.CreateElement ("desc");
+			rootNode.AppendChild (descriptionNode);
+
+			XmlNode tagsNode = document.CreateElement ("tags");
+			descriptionNode.AppendChild (tagsNode);
+
+			foreach (Tag current in tags)
+				tagsNode.AppendChild (current.ToXml (document));
+
+			foreach (NoteElement current in elements)
+				rootNode.AppendChild (current.ToXml (document));
+
+			// check if data directory exists and create if neccessary
+			if (!Directory.GetParent (filename).Exists)
+				Directory.GetParent (filename).Create ();
+
+			document.Save (filename);
 		}
 
 		public void Delete ()
 		{
-			File.Delete (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + filename + ".svg");
+			File.Delete (filename);
 		}
 	}
 }
