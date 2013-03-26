@@ -213,8 +213,21 @@ namespace ui_gtk_gnome
 			myTreeView.HeadersVisible = false;
 			myTreeView.EnableTreeLines = true;
 
-			TreeStore tagList = new TreeStore (typeof(string));
-			myTreeView.AppendColumn ("", new Gtk.CellRendererText (), "text", 0);
+			// create tag tree
+			TreeStore tagList = new TreeStore (typeof(bool), typeof(string));
+
+			TreeViewColumn col = new TreeViewColumn ();
+			CellRendererToggle myCellRendererToggle = new CellRendererToggle ();
+			myCellRendererToggle.Activatable = true;
+			col.PackStart (myCellRendererToggle, false);
+			myCellRendererToggle.Toggled += TreeItem_Toggle;
+			CellRendererText myCellRendererText = new CellRendererText ();
+			col.PackStart (myCellRendererText, true);
+
+			myTreeView.AppendColumn (col);
+
+			col.AddAttribute (myCellRendererToggle, "active", 0);
+			col.AddAttribute (myCellRendererText, "text", 1);
 
 			TreeView_Fill (tagList);
 			myTreeView.Model = tagList;
@@ -272,9 +285,9 @@ namespace ui_gtk_gnome
 
 			foreach (Tag current in tags) {
 				if (null == current.Parent)
-					iters.Add (current, tagList.AppendValues (current.Name));
+					iters.Add (current, tagList.AppendValues (false, current.Name));
 				else
-					iters.Add (current, tagList.AppendValues (iters [current.Parent], current.Name));
+					iters.Add (current, tagList.AppendValues (iters [current.Parent], false, current.Name));
 			}
 		}
 
