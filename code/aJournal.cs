@@ -5,6 +5,7 @@ using Gnome;
 using Gtk;
 using Gdk;
 using backend;
+using backend.Tags;
 using backend.NoteElements;
 using ui_gtk_gnome.Tools;
 using ui_gtk_gnome.NoteElements;
@@ -210,13 +211,11 @@ namespace ui_gtk_gnome
 			// add an empty treeview to the first column
 			myTreeView = new TreeView ();
 			myTreeView.HeadersVisible = false;
+			myTreeView.EnableTreeLines = true;
 
-			TreeStore tagList = new TreeStore (typeof(bool), typeof(string));
-			CellRendererToggle myCellRendererToggle = new Gtk.CellRendererToggle ();
-			myCellRendererToggle.Activatable = true;
-			myCellRendererToggle.Toggled += TreeItem_Toggle;
-			myTreeView.AppendColumn ("", myCellRendererToggle, "active", 0);
-			myTreeView.AppendColumn ("", new Gtk.CellRendererText (), "text", 1);
+			TreeStore tagList = new TreeStore (typeof(string));
+			myTreeView.AppendColumn ("", new Gtk.CellRendererText (), "text", 0);
+
 			TreeView_Fill (tagList);
 			myTreeView.Model = tagList;
 			taglistContentLayout.Add (myTreeView);
@@ -253,12 +252,30 @@ namespace ui_gtk_gnome
 			myTreeView.Visible = false;
 		}
 
+		class MyComparer : IComparer
+		{
+			public int Compare (object x, object y)
+			{
+				Tag tag1 = (Tag)x;
+				Tag tag2 = (Tag)y;
+
+				return tag1.Name.CompareTo (tag2.Name);
+			}
+		}
+
 		void TreeView_Fill (TreeStore tagList)
 		{
-			TreeIter iter = tagList.AppendValues (false, "tag1");
-			TreeIter iter2 = tagList.AppendValues (iter, false, "tag11");
-			tagList.AppendValues (iter2, false, "tag111");
-			tagList.AppendValues (false, "tag2");
+			Tag[] tags = Note.AllTags.ToArray ();
+			Array.Sort (tags, new MyComparer ());
+
+			Dictionary<Tag, TreeIter> iters = new Dictionary<Tag, TreeIter> ();
+
+			foreach (Tag current in tags) {
+				if (null == current.Parent)
+					iters.Add (current, tagList.AppendValues (current.Name));
+				else
+					iters.Add (current, tagList.AppendValues (iters [current.Parent], current.Name));
+			}
 		}
 
 		void TreeItem_Toggle (object o, ToggledArgs args)
