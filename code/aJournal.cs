@@ -157,12 +157,64 @@ namespace ui_gtk_gnome
 			myTagTree.ShowAll ();
 			VBox.Add (myTagTree);
 
+			Button newButton = new Button (Gtk.Stock.New);
+			newButton.Clicked += delegate(object sender, EventArgs e) {
+				CreateTagDialog dialog = new CreateTagDialog (myNote, this);
+				if (ResponseType.Ok == (ResponseType)dialog.Run ()) {
+					Tag newTag = Tag.Create (dialog.TagName);
+					newTag.Parent = dialog.Parenttag;
+					myNote.AddTag (newTag);
+					myNote.Persist ();
+					myTagTree.Selection = myNote.GetTags ();
+					myNote.RemoveTag (newTag);
+					myNote.Persist ();
+				}
+				dialog.Hide ();
+			};
+			newButton.Show ();
+			VBox.Add (newButton);
+
 			this.AddButton (Gtk.Stock.Cancel, ResponseType.Cancel);
 			this.AddButton (Gtk.Stock.Ok, ResponseType.Ok);
 		}
 
 		public List<Tag> Selection {
 			get{ return myTagTree.Selection; }
+		}
+	}
+
+	class CreateTagDialog : Dialog
+	{
+		TagTree myTagTree;
+		Gtk.Entry nameEntry;
+
+		public CreateTagDialog (Note note, Gtk.Window parent) : base("Create Tag", parent, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
+		{
+			VBox.Add (new Label ("Parent:"));
+			myTagTree = new TagTree ();
+			myTagTree.Selection = new List<Tag> ();
+			VBox.Add (myTagTree);
+
+			VBox.Add (new Label ("Name:"));
+			nameEntry = new Gtk.Entry ();
+			VBox.Add (nameEntry);
+			VBox.ShowAll ();
+
+			this.AddButton (Gtk.Stock.Cancel, ResponseType.Cancel);
+			this.AddButton (Gtk.Stock.Ok, ResponseType.Ok);
+		}
+
+		public string TagName {
+			get { return nameEntry.Text; }
+		}
+
+		public Tag Parenttag {
+			get {
+				if (0 < myTagTree.Selection.Count)
+					return myTagTree.Selection [0];
+				else
+					return null;
+			}
 		}
 	}
 
