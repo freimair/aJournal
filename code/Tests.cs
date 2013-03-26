@@ -170,6 +170,47 @@ namespace test
 			entry.Persist ();
 			entry.Delete ();
 		}
+
+		[Test]
+		public void SizePersistenceTest ()
+		{
+			Note DUT = Note.Create ();
+			DUT.Height = 200;
+			DUT.Width = 400;
+			DUT.Persist ();
+
+			Assert.AreEqual (200, Note.GetEntries () [0].Height);
+			Assert.AreEqual (400, Note.GetEntries () [0].Width);
+
+			DUT.Delete ();
+		}
+
+		[Test]
+		public void TagListTest ()
+		{
+			int max = 10;
+			List<Tag> tags = new List<Tag> ();
+			List<Note> notes = new List<Note> ();
+
+			for (int i = 0; i < max; i++) {
+				Note note = Note.Create ();
+				Tag tag = Tag.Create ("tag" + i);
+				if (max / 2 < i)
+					tag.Parent = tags [i - 1];
+				note.AddTag (tag);
+				note.Persist ();
+
+				notes.Add (note);
+				tags.Add (tag);
+			}
+
+			foreach (Tag tag in tags)
+				Assert.Contains (tag, new List<Tag> (Note.AllTags));
+
+			// cleanup
+			foreach (Note note in notes)
+				note.Delete ();
+		}
 	}
 
 	[TestFixture]

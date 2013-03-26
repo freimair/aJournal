@@ -34,6 +34,11 @@ namespace backend
 		string filename;
 		HashSet<NoteElement> elements = new HashSet<NoteElement> ();
 		HashSet<Tag> tags = new HashSet<Tag> ();
+		static HashSet<Tag> allTags = new HashSet<Tag> ();
+
+		public int Width { get; set; }
+
+		public int Height { get; set; }
 
 		private Note (String file)
 		{
@@ -41,6 +46,11 @@ namespace backend
 			// instantiate XmlDocument and load XML from file
 			XmlDocument document = new XmlDocument ();
 			document.Load (file);
+
+			// recreate size
+			XmlNode svgNode = document.SelectSingleNode ("/svg");
+			Width = Convert.ToInt32 (svgNode.Attributes.GetNamedItem ("width").Value);
+			Height = Convert.ToInt32 (svgNode.Attributes.GetNamedItem ("height").Value);
 
 			// recreate elements
 			XmlNodeList svgNodeList = document.SelectNodes ("/svg/*");
@@ -61,7 +71,12 @@ namespace backend
 
 		private Note ()
 		{
-			filename = Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + DateTime.Now.ToString ("yyyyMMddHHmmss") + ".svg";
+			string name = DateTime.Now.ToString ("yyyyMMddHHmmss");
+			while (File.Exists(filename = Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + name + ".svg"))
+				name += "_" + new Random ().Next (10);
+
+			Width = 1500;
+			Height = 1500;
 		}
 
 		public static Note Create ()
@@ -76,12 +91,16 @@ namespace backend
 
 		public static List<Note> GetEntries (NoteFilter filter)
 		{
+			allTags.Clear ();
 			String[] files = Directory.GetFiles (Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/", "*.svg");
 
 			List<Note> result = new List<Note> ();
 			foreach (String file in files) {
 				Note candiate = new Note (file);
 				bool addCandidate = false;
+
+				// collect tags
+				allTags.UnionWith (candiate.GetTags ());
 
 				try {
 					foreach (Tag current in filter.IncludedTags) {
@@ -121,6 +140,14 @@ namespace backend
 		public List<Tag> GetTags ()
 		{
 			return new List<Tag> (tags);
+		}
+
+		public static HashSet<Tag> AllTags {
+			get {
+				// FIXME quick and dirty
+				GetEntries (null);
+				return allTags;
+			}
 		}
 
 		public List<NoteElement> GetElements ()
@@ -178,9 +205,21 @@ namespace backend
 
 			// assemble svg document
 			XmlDocument document = new XmlDocument ();
-			document.AppendChild (document.CreateXmlDeclaration ("1.0", "utf-8", null));
+			document.AppendChild (document.CreateXmlDeclaration ("1.0", "utf-8", "yes"));
 
 			XmlNode rootNode = document.CreateElement ("svg");
+			XmlAttribute a = document.CreateAttribute ("width");
+			a.Value = Convert.ToString (Width);
+			rootNode.Attributes.Append (a);
+
+			a = document.CreateAttribute ("height");
+			a.Value = Convert.ToString (Height);
+			rootNode.Attributes.Append (a);
+
+			a = document.CreateAttribute ("version");
+			a.Value = "1.1";
+			rootNode.Attributes.Append (a);
+
 			document.AppendChild (rootNode);
 
 			XmlNode descriptionNode = document.CreateElement ("desc");
