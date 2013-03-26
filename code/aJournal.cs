@@ -266,7 +266,7 @@ namespace ui_gtk_gnome
 				Tag tag1 = (Tag)x;
 				Tag tag2 = (Tag)y;
 
-				return tag1.Name.CompareTo (tag2.Name);
+				return tag1.ToString ().CompareTo (tag2.ToString ());
 			}
 		}
 
