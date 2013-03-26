@@ -83,6 +83,9 @@ namespace ui_gtk_gnome
 					UiNote.canvasHeight += Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1);
 					mySheet.Canvas.HeightRequest = Convert.ToInt32 (mySheet.Canvas.PixelsPerUnit * UiNote.canvasHeight);
 					mySheet.Canvas.SetScrollRegion (0.0, 0.0, UiNote.canvasWidth, UiNote.canvasHeight);
+
+					// TODO persist new sheet height
+
 					canvasVisualization.Destroy ();
 					canvasVisualization = null;
 				} catch (NullReferenceException) {

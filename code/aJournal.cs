@@ -39,7 +39,7 @@ namespace ui_gtk_gnome
 		{
 			// add a canvas to the second column
 			myCanvas = Canvas.NewAa ();
-			// TODO find out why this somehow centers the axis origin.
+			// TODO restore sheet height
 			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
 			this.Add (myCanvas);
 
