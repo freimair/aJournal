@@ -43,7 +43,7 @@ namespace ui_gtk_gnome
 			{
 				canvasVisualization = new CanvasRect (mySheet.Canvas.Root ());
 				canvasVisualization.X1 = 0;
-				canvasVisualization.X2 = UiNote.canvasWidth;
+				canvasVisualization.X2 = myNote.Width;
 				canvasVisualization.Y1 = y;
 				canvasVisualization.Y2 = y;
 
@@ -80,11 +80,11 @@ namespace ui_gtk_gnome
 			{
 				try {
 					// adjust canvas size
-					UiNote.canvasHeight += Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1);
-					mySheet.Canvas.HeightRequest = Convert.ToInt32 (mySheet.Canvas.PixelsPerUnit * UiNote.canvasHeight);
-					mySheet.Canvas.SetScrollRegion (0.0, 0.0, UiNote.canvasWidth, UiNote.canvasHeight);
+					myNote.Height += Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1);
+					mySheet.Canvas.HeightRequest = Convert.ToInt32 (mySheet.Canvas.PixelsPerUnit * myNote.Height);
+					mySheet.Canvas.SetScrollRegion (0.0, 0.0, myNote.Width, myNote.Height);
 
-					// TODO persist new sheet height
+					myNote.Persist ();
 
 					canvasVisualization.Destroy ();
 					canvasVisualization = null;

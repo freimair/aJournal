@@ -14,7 +14,6 @@ namespace ui_gtk_gnome
 {
 	class UiNote : VBox
 	{
-		public static int canvasWidth = 1500, canvasHeight = 1500;
 		Canvas myCanvas;
 		CanvasRect drawingArea;
 		List<UiNoteElement> elements = new List<UiNoteElement> ();
@@ -39,8 +38,7 @@ namespace ui_gtk_gnome
 		{
 			// add a canvas to the second column
 			myCanvas = Canvas.NewAa ();
-			// TODO restore sheet height
-			myCanvas.SetScrollRegion (0.0, 0.0, canvasWidth, canvasHeight);
+			myCanvas.SetScrollRegion (0.0, 0.0, myNote.Width, myNote.Height);
 			this.Add (myCanvas);
 
 			// draw a filled rectangle to represent drawing area
@@ -49,8 +47,8 @@ namespace ui_gtk_gnome
 			drawingArea.OutlineColor = "black";
 			drawingArea.X1 = 0;
 			drawingArea.Y1 = 0;
-			drawingArea.X2 = canvasWidth;
-			drawingArea.Y2 = canvasHeight;
+			drawingArea.X2 = myNote.Width;
+			drawingArea.Y2 = myNote.Height;
 
 			// add mouse trackers
 			drawingArea.CanvasEvent += new Gnome.CanvasEventHandler (Event);
@@ -58,7 +56,7 @@ namespace ui_gtk_gnome
 
 		public int Width ()
 		{
-			return (int)Math.Round (myCanvas.PixelsPerUnit * canvasWidth);
+			return (int)Math.Round (myCanvas.PixelsPerUnit * myNote.Width);
 		}
 
 		/**
@@ -66,7 +64,7 @@ namespace ui_gtk_gnome
 		 */
 		public void Scale (double factor)
 		{
-			int width = (int)Math.Round (myCanvas.PixelsPerUnit * factor * canvasWidth);
+			int width = (int)Math.Round (myCanvas.PixelsPerUnit * factor * myNote.Width);
 
 			Fit (width);
 		}
@@ -76,9 +74,9 @@ namespace ui_gtk_gnome
 		 */
 		public void Fit (int width)
 		{
-			myCanvas.PixelsPerUnit = ((double)width) / canvasWidth;
+			myCanvas.PixelsPerUnit = ((double)width) / myNote.Width;
 
-			myCanvas.SetSizeRequest (width, (int)Math.Round (canvasHeight * myCanvas.PixelsPerUnit));
+			myCanvas.SetSizeRequest (width, (int)Math.Round (myNote.Height * myCanvas.PixelsPerUnit));
 			myCanvas.UpdateNow ();
 		}
 
@@ -111,6 +109,7 @@ namespace ui_gtk_gnome
 						break;
 					case EventType.ButtonRelease:
 						aJournal.currentTool.Complete (ev.X, ev.Y);
+						aJournal.currentTool.Reset ();
 						myNote.Persist ();
 						break;
 					}
