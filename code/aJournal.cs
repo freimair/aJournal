@@ -37,6 +37,12 @@ namespace ui_gtk_gnome
 
 		void Init ()
 		{
+			Label myLabel = new Label ();
+			myLabel.Text = "last edited: " + myNote.ModificationTimestamp + " tags: ";
+			foreach (Tag current in myNote.GetTags())
+				myLabel.Text += current.ToString () + " ";
+			this.Add (myLabel);
+
 			// add a canvas to the second column
 			myCanvas = Canvas.NewAa ();
 			myCanvas.SetScrollRegion (0.0, 0.0, myNote.Width, myNote.Height);
