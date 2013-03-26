@@ -153,6 +153,7 @@ namespace ui_gtk_gnome
 		public NoteSettings (Note myNote) : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
 		{
 			myTagTree = new TagTree ();
+			myTagTree.Selection = myNote.GetTags ();
 			myTagTree.ShowAll ();
 			VBox.Add (myTagTree);
 
@@ -168,13 +169,14 @@ namespace ui_gtk_gnome
 	class TagTree : VBox
 	{
 		TreeView myTreeView;
+		TreeStore tagList;
 
 		public TagTree ()
 		{
 			myTreeView = new TreeView ();
 			myTreeView.HeadersVisible = false;
 			myTreeView.EnableTreeLines = true;
-			TreeStore tagList = new TreeStore (typeof(bool), typeof(string));
+
 
 			TreeViewColumn col = new TreeViewColumn ();
 			CellRendererToggle myCellRendererToggle = new CellRendererToggle ();
@@ -189,7 +191,7 @@ namespace ui_gtk_gnome
 			col.AddAttribute (myCellRendererToggle, "active", 0);
 			col.AddAttribute (myCellRendererText, "text", 1);
 
-			TreeView_Fill (tagList);
+			Fill (new List<Tag> ());
 			myTreeView.Model = tagList;
 
 			this.Add (myTreeView);
@@ -218,18 +220,23 @@ namespace ui_gtk_gnome
 
 		Dictionary<Tag, TreeIter> iters;
 
-		void TreeView_Fill (TreeStore tagList)
+		void Fill (List<Tag> preset)
 		{
+			tagList = new TreeStore (typeof(bool), typeof(string));
+
 			Tag[] tags = Note.AllTags.ToArray ();
 			Array.Sort (tags, new MyComparer ());
 
 			iters = new Dictionary<Tag, TreeIter> ();
 
 			foreach (Tag current in tags) {
+				bool value = false;
+				if (preset.Contains (current))
+					value = true;
 				if (null == current.Parent)
-					iters.Add (current, tagList.AppendValues (false, current.Name));
+					iters.Add (current, tagList.AppendValues (value, current.Name));
 				else
-					iters.Add (current, tagList.AppendValues (iters [current.Parent], false, current.Name));
+					iters.Add (current, tagList.AppendValues (iters [current.Parent], value, current.Name));
 			}
 		}
 
@@ -240,6 +247,10 @@ namespace ui_gtk_gnome
 					if ((bool)myTreeView.Model.GetValue (current.Value, 0))
 						result.Add (current.Key);
 				return result;
+			}
+
+			set {
+				Fill (value);
 			}
 		}
 	}
