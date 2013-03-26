@@ -35,12 +35,21 @@ namespace backend
 		HashSet<NoteElement> elements = new HashSet<NoteElement> ();
 		HashSet<Tag> tags = new HashSet<Tag> ();
 
+		public int Width { get; set; }
+
+		public int Height { get; set; }
+
 		private Note (String file)
 		{
 			filename = file;
 			// instantiate XmlDocument and load XML from file
 			XmlDocument document = new XmlDocument ();
 			document.Load (file);
+
+			// recreate size
+			XmlNode svgNode = document.SelectSingleNode ("/svg");
+			Width = Convert.ToInt32 (svgNode.Attributes.GetNamedItem ("width").Value);
+			Height = Convert.ToInt32 (svgNode.Attributes.GetNamedItem ("height").Value);
 
 			// recreate elements
 			XmlNodeList svgNodeList = document.SelectNodes ("/svg/*");
@@ -62,6 +71,9 @@ namespace backend
 		private Note ()
 		{
 			filename = Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/" + DateTime.Now.ToString ("yyyyMMddHHmmss") + ".svg";
+
+			Width = 1500;
+			Height = 1500;
 		}
 
 		public static Note Create ()
@@ -178,9 +190,21 @@ namespace backend
 
 			// assemble svg document
 			XmlDocument document = new XmlDocument ();
-			document.AppendChild (document.CreateXmlDeclaration ("1.0", "utf-8", null));
+			document.AppendChild (document.CreateXmlDeclaration ("1.0", "utf-8", "yes"));
 
 			XmlNode rootNode = document.CreateElement ("svg");
+			XmlAttribute a = document.CreateAttribute ("width");
+			a.Value = Convert.ToString (Width);
+			rootNode.Attributes.Append (a);
+
+			a = document.CreateAttribute ("height");
+			a.Value = Convert.ToString (Height);
+			rootNode.Attributes.Append (a);
+
+			a = document.CreateAttribute ("version");
+			a.Value = "1.1";
+			rootNode.Attributes.Append (a);
+
 			document.AppendChild (rootNode);
 
 			XmlNode descriptionNode = document.CreateElement ("desc");

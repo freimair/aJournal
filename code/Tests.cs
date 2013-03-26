@@ -170,6 +170,20 @@ namespace test
 			entry.Persist ();
 			entry.Delete ();
 		}
+
+		[Test]
+		public void SizePersistenceTest ()
+		{
+			Note DUT = Note.Create ();
+			DUT.Height = 200;
+			DUT.Width = 400;
+			DUT.Persist ();
+
+			Assert.AreEqual (200, Note.GetEntries () [0].Height);
+			Assert.AreEqual (400, Note.GetEntries () [0].Width);
+
+			DUT.Delete ();
+		}
 	}
 
 	[TestFixture]
