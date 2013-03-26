@@ -37,11 +37,31 @@ namespace ui_gtk_gnome
 
 		void Init ()
 		{
+			HBox header = new HBox ();
 			Label myLabel = new Label ();
-			myLabel.Text = "last edited: " + myNote.ModificationTimestamp + " tags: ";
+			myLabel.Text = myNote.ModificationTimestamp + " - ";
 			foreach (Tag current in myNote.GetTags())
 				myLabel.Text += current.ToString () + " ";
-			this.Add (myLabel);
+			header.Add (myLabel);
+			Button myButton = new Button ("+");
+			myButton.TooltipText = "edit metadata";
+			myButton.Clicked += delegate(object o, EventArgs args) {
+				NoteSettings tmp = new NoteSettings (myNote);
+				if (ResponseType.Ok == (ResponseType)tmp.Run ()) {
+					// TODO provide setter for tags in backend
+					foreach (Tag tag in myNote.GetTags())
+						myNote.RemoveTag (tag);
+					foreach (Tag tag in tmp.Selection)
+						myNote.AddTag (tag);
+					myNote.Persist ();
+				}
+				tmp.Hide ();
+				myLabel.Text = myNote.ModificationTimestamp + " - ";
+				foreach (Tag current in myNote.GetTags())
+					myLabel.Text += current.ToString () + " ";
+			};
+			header.Add (myButton);
+			this.Add (header);
 
 			// add a canvas to the second column
 			myCanvas = Canvas.NewAa ();
@@ -126,9 +146,107 @@ namespace ui_gtk_gnome
 		}
 	}
 
-	public class aJournal
+	class NoteSettings : Dialog
+	{
+		TagTree myTagTree;
+
+		public NoteSettings (Note myNote) : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
+		{
+			myTagTree = new TagTree ();
+			myTagTree.ShowAll ();
+			VBox.Add (myTagTree);
+
+			this.AddButton (Gtk.Stock.Cancel, ResponseType.Cancel);
+			this.AddButton (Gtk.Stock.Ok, ResponseType.Ok);
+		}
+
+		public List<Tag> Selection {
+			get{ return myTagTree.Selection; }
+		}
+	}
+
+	class TagTree : VBox
 	{
 		TreeView myTreeView;
+
+		public TagTree ()
+		{
+			myTreeView = new TreeView ();
+			myTreeView.HeadersVisible = false;
+			myTreeView.EnableTreeLines = true;
+			TreeStore tagList = new TreeStore (typeof(bool), typeof(string));
+
+			TreeViewColumn col = new TreeViewColumn ();
+			CellRendererToggle myCellRendererToggle = new CellRendererToggle ();
+			myCellRendererToggle.Activatable = true;
+			col.PackStart (myCellRendererToggle, false);
+			myCellRendererToggle.Toggled += TreeItem_Toggle;
+			CellRendererText myCellRendererText = new CellRendererText ();
+			col.PackStart (myCellRendererText, true);
+
+			myTreeView.AppendColumn (col);
+
+			col.AddAttribute (myCellRendererToggle, "active", 0);
+			col.AddAttribute (myCellRendererText, "text", 1);
+
+			TreeView_Fill (tagList);
+			myTreeView.Model = tagList;
+
+			this.Add (myTreeView);
+		}
+
+		void TreeItem_Toggle (object o, ToggledArgs args)
+		{
+			TreeIter iter;
+
+			if (myTreeView.Model.GetIter (out iter, new TreePath (args.Path))) {
+				bool old = (bool)myTreeView.Model.GetValue (iter, 0);
+				myTreeView.Model.SetValue (iter, 0, !old);
+			}
+		}
+
+		class MyComparer : IComparer
+		{
+			public int Compare (object x, object y)
+			{
+				Tag tag1 = (Tag)x;
+				Tag tag2 = (Tag)y;
+
+				return tag1.Name.CompareTo (tag2.Name);
+			}
+		}
+
+		Dictionary<Tag, TreeIter> iters;
+
+		void TreeView_Fill (TreeStore tagList)
+		{
+			Tag[] tags = Note.AllTags.ToArray ();
+			Array.Sort (tags, new MyComparer ());
+
+			iters = new Dictionary<Tag, TreeIter> ();
+
+			foreach (Tag current in tags) {
+				if (null == current.Parent)
+					iters.Add (current, tagList.AppendValues (false, current.Name));
+				else
+					iters.Add (current, tagList.AppendValues (iters [current.Parent], false, current.Name));
+			}
+		}
+
+		public List<Tag> Selection {
+			get {
+				List<Tag> result = new List<Tag> ();
+				foreach (KeyValuePair<Tag, TreeIter> current in iters)
+					if ((bool)myTreeView.Model.GetValue (current.Value, 0))
+						result.Add (current.Key);
+				return result;
+			}
+		}
+	}
+
+	public class aJournal
+	{
+		TagTree myTreeView;
 		static List<UiNote> notes = new List<UiNote> ();
 		public static Gtk.Window win;
 		VBox myNotesContainer;
@@ -215,28 +333,9 @@ namespace ui_gtk_gnome
 			toolbarContentLayout.Add (taglistContentLayout);
 
 			// add an empty treeview to the first column
-			myTreeView = new TreeView ();
-			myTreeView.HeadersVisible = false;
-			myTreeView.EnableTreeLines = true;
 
 			// create tag tree
-			TreeStore tagList = new TreeStore (typeof(bool), typeof(string));
-
-			TreeViewColumn col = new TreeViewColumn ();
-			CellRendererToggle myCellRendererToggle = new CellRendererToggle ();
-			myCellRendererToggle.Activatable = true;
-			col.PackStart (myCellRendererToggle, false);
-			myCellRendererToggle.Toggled += TreeItem_Toggle;
-			CellRendererText myCellRendererText = new CellRendererText ();
-			col.PackStart (myCellRendererText, true);
-
-			myTreeView.AppendColumn (col);
-
-			col.AddAttribute (myCellRendererToggle, "active", 0);
-			col.AddAttribute (myCellRendererText, "text", 1);
-
-			TreeView_Fill (tagList);
-			myTreeView.Model = tagList;
+			myTreeView = new TagTree ();
 			taglistContentLayout.Add (myTreeView);
 
 			// add canvas container
@@ -269,42 +368,6 @@ namespace ui_gtk_gnome
 			win.ShowAll ();
 
 			myTreeView.Visible = false;
-		}
-
-		class MyComparer : IComparer
-		{
-			public int Compare (object x, object y)
-			{
-				Tag tag1 = (Tag)x;
-				Tag tag2 = (Tag)y;
-
-				return tag1.Name.CompareTo (tag2.Name);
-			}
-		}
-
-		void TreeView_Fill (TreeStore tagList)
-		{
-			Tag[] tags = Note.AllTags.ToArray ();
-			Array.Sort (tags, new MyComparer ());
-
-			Dictionary<Tag, TreeIter> iters = new Dictionary<Tag, TreeIter> ();
-
-			foreach (Tag current in tags) {
-				if (null == current.Parent)
-					iters.Add (current, tagList.AppendValues (false, current.Name));
-				else
-					iters.Add (current, tagList.AppendValues (iters [current.Parent], false, current.Name));
-			}
-		}
-
-		void TreeItem_Toggle (object o, ToggledArgs args)
-		{
-			TreeIter iter;
-
-			if (myTreeView.Model.GetIter (out iter, new TreePath (args.Path))) {
-				bool old = (bool)myTreeView.Model.GetValue (iter, 0);
-				myTreeView.Model.SetValue (iter, 0, !old);
-			}
 		}
 
 		void SelectTool_Clicked (object obj, EventArgs args)
