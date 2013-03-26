@@ -54,7 +54,7 @@ namespace ui_gtk_gnome
 			CanvasLine line;
 			Note myNote;
 
-			public UiLine (Canvas canvas, Note note, PolylineElement noteElement) : this(canvas, note)
+			public UiLine (Canvas canvas, Note note, PolylineElement noteElement)
 			{
 				linemodel = noteElement;
 
