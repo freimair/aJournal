@@ -400,6 +400,30 @@ namespace ui_gtk_gnome
 
 				// place empty text on (x,y)
 				myText.Move (x, y);
+
+				// TODO unfortunately we cannot hook to the event if an element is recreated
+				myText.MoveFocus += MoveFocusUp_EventHandler;
+			}
+
+			void MoveFocusUp_EventHandler (UiText sender, bool up)
+			{
+				UiText winner = null;
+				foreach (UiNoteElement element in elements) {
+					if (element is UiText && sender != element) {
+						if (sender.Y > ((UiText)element).Y && up) {
+							if (null == winner)
+								winner = (UiText)element;
+							if (sender.Y - ((UiText)element).Y < sender.Y - winner.Y)
+								winner = (UiText)element;
+						} else if (sender.Y < ((UiText)element).Y && !up) {
+							if (null == winner)
+								winner = (UiText)element;
+							if (((UiText)element).Y - sender.Y < winner.Y - sender.Y)
+								winner = (UiText)element;
+						}
+					}
+				}
+				winner.ForceFocus ();
 			}
 
 			public override void Continue (double x, double y)

@@ -272,7 +272,24 @@ namespace ui_gtk_gnome
 				case Gdk.Key.Shift_R:
 					shiftModifierActive = false;
 					break;
+				case Gdk.Key.Up: // TODO we need the whole list of elements here. unfortunately, we do not have it. call someone who has.
+					if (null != MoveFocus)
+						MoveFocus (this, true);
+					break;
+				case Gdk.Key.Down:
+					if (null != MoveFocus)
+						MoveFocus (this, false);
+					break;
 				}
+			}
+
+			public delegate void MoveFocusRequest (UiText sender,bool up);
+
+			public event MoveFocusRequest MoveFocus;
+
+			public void ForceFocus ()
+			{
+				view.GrabFocus ();
 			}
 
 			void TextView_TextChanged (object sender, EventArgs e)
@@ -367,6 +384,10 @@ namespace ui_gtk_gnome
 				myText.Y += Convert.ToInt32 (diffy);
 
 				myNote.Persist (); // no mouse_up here to persist
+			}
+
+			public double Y {
+				get{ return myText.Y;}
 			}
 
 			public override void Destroy ()
