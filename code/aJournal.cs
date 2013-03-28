@@ -282,14 +282,12 @@ namespace ui_gtk_gnome
 			iters = new Dictionary<Tag, TreeIter> ();
 
 			foreach (Tag current in tags) {
-				bool value = false;
-				if (preset.Contains (current))
-					value = true;
 				if (null == current.Parent)
-					iters.Add (current, tagList.AppendValues (value, current.Name));
+					iters.Add (current, tagList.AppendValues (preset.Contains (current), current.Name));
 				else
-					iters.Add (current, tagList.AppendValues (iters [current.Parent], value, current.Name));
+					iters.Add (current, tagList.AppendValues (iters [current.Parent], preset.Contains (current), current.Name));
 			}
+			myTreeView.Model = tagList;
 		}
 
 		public List<Tag> Selection {
