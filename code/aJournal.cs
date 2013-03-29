@@ -225,9 +225,12 @@ namespace ui_gtk_gnome
 
 		public TagTree ()
 		{
+			ScrolledWindow myScrolledContainer = new ScrolledWindow ();
+
 			myTreeView = new TreeView ();
 			myTreeView.HeadersVisible = false;
 			myTreeView.EnableTreeLines = true;
+			myTreeView.SetSizeRequest (300, 200);
 
 
 			TreeViewColumn col = new TreeViewColumn ();
@@ -246,7 +249,8 @@ namespace ui_gtk_gnome
 			Fill (new List<Tag> ());
 			myTreeView.Model = tagList;
 
-			this.Add (myTreeView);
+			myScrolledContainer.Add (myTreeView);
+			this.Add (myScrolledContainer);
 		}
 
 		void TreeItem_Toggle (object o, ToggledArgs args)
