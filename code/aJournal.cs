@@ -416,7 +416,7 @@ namespace ui_gtk_gnome
 			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
 
 			// add a column-like layout into the second row
-			HBox taglistContentLayout = new HBox (false, 0);
+			HPaned taglistContentLayout = new HPaned ();
 			toolbarContentLayout.Add (taglistContentLayout);
 
 			// add an empty treeview to the first column
@@ -424,12 +424,12 @@ namespace ui_gtk_gnome
 			// create tag tree
 			myTreeView = new TagTree (true);
 			myTreeView.SelectionChanged += Filter_Changed;
-			taglistContentLayout.Add (myTreeView);
+			taglistContentLayout.Add1 (myTreeView);
 
 			// add canvas container
 			ScrolledWindow myScrolledNotesContainer = new ScrolledWindow ();
 			myScrolledNotesContainer.SetPolicy (Gtk.PolicyType.Automatic, Gtk.PolicyType.Always);
-			taglistContentLayout.Add (myScrolledNotesContainer);
+			taglistContentLayout.Add2 (myScrolledNotesContainer);
 
 			Viewport myViewport = new Viewport ();
 			myScrolledNotesContainer.Add (myViewport);
