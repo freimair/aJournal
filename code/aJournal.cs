@@ -152,7 +152,7 @@ namespace ui_gtk_gnome
 
 		public NoteSettings (Note myNote) : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
 		{
-			myTagTree = new TagTree ();
+			myTagTree = new TagTree (true);
 			myTagTree.Selection = myNote.GetTags ();
 			myTagTree.ShowAll ();
 			VBox.Add (myTagTree);
@@ -191,7 +191,7 @@ namespace ui_gtk_gnome
 		public CreateTagDialog (Note note, Gtk.Window parent) : base("Create Tag", parent, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
 		{
 			VBox.Add (new Label ("Parent:"));
-			myTagTree = new TagTree ();
+			myTagTree = new TagTree (false);
 			myTagTree.Selection = new List<Tag> ();
 			VBox.Add (myTagTree);
 
@@ -222,9 +222,12 @@ namespace ui_gtk_gnome
 	{
 		TreeView myTreeView;
 		TreeStore tagList;
+		bool checkboxes;
 
-		public TagTree ()
+		public TagTree (bool displayCheckboxes)
 		{
+			checkboxes = displayCheckboxes;
+
 			ScrolledWindow myScrolledContainer = new ScrolledWindow ();
 
 			myTreeView = new TreeView ();
@@ -236,14 +239,16 @@ namespace ui_gtk_gnome
 			TreeViewColumn col = new TreeViewColumn ();
 			CellRendererToggle myCellRendererToggle = new CellRendererToggle ();
 			myCellRendererToggle.Activatable = true;
-			col.PackStart (myCellRendererToggle, false);
+			if (checkboxes)
+				col.PackStart (myCellRendererToggle, false);
 			myCellRendererToggle.Toggled += TreeItem_Toggle;
 			CellRendererText myCellRendererText = new CellRendererText ();
 			col.PackStart (myCellRendererText, true);
 
 			myTreeView.AppendColumn (col);
 
-			col.AddAttribute (myCellRendererToggle, "active", 0);
+			if (checkboxes)
+				col.AddAttribute (myCellRendererToggle, "active", 0);
 			col.AddAttribute (myCellRendererText, "text", 1);
 
 			Fill (new List<Tag> ());
@@ -297,9 +302,19 @@ namespace ui_gtk_gnome
 		public List<Tag> Selection {
 			get {
 				List<Tag> result = new List<Tag> ();
-				foreach (KeyValuePair<Tag, TreeIter> current in iters)
-					if ((bool)myTreeView.Model.GetValue (current.Value, 0))
-						result.Add (current.Key);
+				if (checkboxes) {
+					foreach (KeyValuePair<Tag, TreeIter> current in iters)
+						if ((bool)myTreeView.Model.GetValue (current.Value, 0))
+							result.Add (current.Key);
+				} else {
+					TreeIter selectedIter;
+					myTreeView.Selection.GetSelected (out selectedIter);
+
+					foreach (KeyValuePair<Tag, TreeIter> current in iters)
+						if (selectedIter.Equals (current.Value))
+							result.Add (current.Key);
+				}
+
 				return result;
 			}
 
@@ -400,7 +415,7 @@ namespace ui_gtk_gnome
 			// add an empty treeview to the first column
 
 			// create tag tree
-			myTreeView = new TagTree ();
+			myTreeView = new TagTree (true);
 			taglistContentLayout.Add (myTreeView);
 
 			// add canvas container
