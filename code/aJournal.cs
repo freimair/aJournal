@@ -224,6 +224,9 @@ namespace ui_gtk_gnome
 		TreeStore tagList;
 		bool checkboxes;
 
+		public delegate void SelectionChangedHandler (List<Tag> tags);
+		public event SelectionChangedHandler SelectionChanged;
+
 		public TagTree (bool displayCheckboxes)
 		{
 			checkboxes = displayCheckboxes;
@@ -246,6 +249,10 @@ namespace ui_gtk_gnome
 			col.PackStart (myCellRendererText, true);
 
 			myTreeView.AppendColumn (col);
+			myTreeView.CursorChanged += delegate(object sender, EventArgs e) {
+				if (null != SelectionChanged)
+					SelectionChanged (Selection);
+			};
 
 			if (checkboxes)
 				col.AddAttribute (myCellRendererToggle, "active", 0);
@@ -416,6 +423,7 @@ namespace ui_gtk_gnome
 
 			// create tag tree
 			myTreeView = new TagTree (true);
+			myTreeView.SelectionChanged += Filter_Changed;
 			taglistContentLayout.Add (myTreeView);
 
 			// add canvas container
@@ -432,14 +440,7 @@ namespace ui_gtk_gnome
 			myNotesContainer = new VBox (false, 0);
 			myContentContainer.Add (myNotesContainer);
 
-			List<Note> noteList = Note.GetEntries ();
-			foreach (Note note in noteList) {
-				UiNote current = new UiNote (note);
-				notes.Add (current);
-
-				myNotesContainer.Add (current);
-				current.Fit (400);
-			}
+			Filter_Changed (new List<Tag> ());
 
 			// indicate that there will somewhen be the option to add another notes area
 			Button addNotesButton = new Button (Gtk.Stock.Add);
@@ -448,6 +449,26 @@ namespace ui_gtk_gnome
 			win.ShowAll ();
 
 			myTreeView.Visible = false;
+		}
+
+		void Filter_Changed (List<Tag> selection)
+		{
+			notes.Clear ();
+			foreach (Widget current in myNotesContainer.AllChildren)
+				myNotesContainer.Remove (current);
+
+			NoteFilter filter = new NoteFilter ();
+			filter.IncludedTags.AddRange (selection);
+
+			List<Note> noteList = Note.GetEntries (filter);
+			foreach (Note note in noteList) {
+				UiNote current = new UiNote (note);
+				notes.Add (current);
+
+				myNotesContainer.Add (current);
+				myNotesContainer.ShowAll ();
+				current.Fit (400);
+			}
 		}
 
 		void SelectTool_Clicked (object obj, EventArgs args)
