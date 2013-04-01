@@ -39,6 +39,10 @@ namespace test
 			DUT.Persist ();
 
 			Assert.Contains (DUT, NoteElement.Elements);
+
+			DUT.Remove ();
+
+			Assert.IsEmpty (NoteElement.Elements);
 		}
 	}
 

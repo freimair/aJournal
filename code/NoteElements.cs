@@ -156,6 +156,19 @@ namespace backend
 
 			protected abstract void PersistElementDetails ();
 
+			public void Remove ()
+			{
+				RemoveElementDetails ();
+				RemoveNoteElement ();
+			}
+
+			private void RemoveNoteElement ()
+			{
+				Db.Execute ("DELETE FROM elements WHERE element_id='" + myId + "'");
+			}
+
+			protected abstract void RemoveElementDetails ();
+
 			public abstract XmlNode ToXml (XmlDocument document);
 
 			public override bool Equals (object obj)
@@ -224,6 +237,11 @@ namespace backend
 						break;
 					}
 				}
+			}
+
+			protected override void RemoveElementDetails ()
+			{
+				Db.Execute ("DELETE FROM polyline_elements WHERE element_id='" + myId + "'");
 			}
 
 			public PolylineElement ()
@@ -460,6 +478,11 @@ namespace backend
 			{
 				throw new System.NotImplementedException ();
 			}
+
+			protected override void RemoveElementDetails ()
+			{
+				throw new System.NotImplementedException ();
+			}
 		}
 
 		public class ImageElement : NoteElement
@@ -546,6 +569,11 @@ namespace backend
 			}
 
 			protected override void PersistElementDetails ()
+			{
+				throw new System.NotImplementedException ();
+			}
+
+			protected override void RemoveElementDetails ()
 			{
 				throw new System.NotImplementedException ();
 			}
