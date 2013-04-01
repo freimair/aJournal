@@ -86,7 +86,7 @@ namespace backend
 				set;
 			}
 
-			public NoteElement ()
+			protected NoteElement ()
 			{
 
 			}
@@ -132,7 +132,7 @@ namespace backend
 						reader.Read ();
 						myId = reader.GetInt64 (0);
 						Db.QueryCleanup (reader);
-					} catch (Exception e) {
+					} catch (Exception) {
 						if (null != reader)
 							Db.QueryCleanup (reader);
 						// create table elements
@@ -157,6 +157,21 @@ namespace backend
 			protected abstract void PersistElementDetails ();
 
 			public abstract XmlNode ToXml (XmlDocument document);
+
+			public override bool Equals (object obj)
+			{
+				if (!(obj is NoteElement))
+					return false;
+				if (myId != ((NoteElement)obj).myId)
+					return false;
+
+				return true;
+			}
+
+			public override int GetHashCode ()
+			{
+				return Convert.ToInt32 (myId);
+			}
 		}
 
 		public class PolylineElement : NoteElement
@@ -256,16 +271,6 @@ namespace backend
 
 				return currentNode;
 			}
-
-			public override bool Equals (object obj)
-			{
-				if (!(obj is PolylineElement))
-					return false;
-				if (myId != ((PolylineElement)obj).myId)
-					return false;
-
-				return true;
-			}
 		}
 
 		public class TextElement : NoteElement
@@ -275,7 +280,6 @@ namespace backend
 			int size = 10;
 			bool strong = false;
 			string color = "red";
-			int x = 0, y = 0;
 
 			public string Text {
 				get{ return text;}
@@ -295,16 +299,6 @@ namespace backend
 			public bool FontStrong {
 				get{ return strong;}
 				set{ strong = value;}
-			}
-
-			public int X {
-				get{ return x;}
-				set{ x = value;}
-			}
-
-			public int Y {
-				get{ return y;}
-				set{ y = value;}
 			}
 
 			public TextElement ()
@@ -462,29 +456,6 @@ namespace backend
 				return indent / FontSize / 2;
 			}
 
-			public override bool Equals (object obj)
-			{
-				if (!(obj is TextElement))
-					return false;
-				TextElement tmp = (TextElement)obj;
-				if (text != tmp.text)
-					return false;
-				if (indentationLevel != tmp.indentationLevel)
-					return false;
-				if (size != tmp.size)
-					return false;
-				if (strong != tmp.strong)
-					return false;
-				if (color != tmp.color)
-					return false;
-				if (x != tmp.x)
-					return false;
-				if (y != tmp.y)
-					return false;
-
-				return true;
-			}
-
 			protected override void PersistElementDetails ()
 			{
 				throw new System.NotImplementedException ();
@@ -493,18 +464,8 @@ namespace backend
 
 		public class ImageElement : NoteElement
 		{
-			int x, y, width, height;
+			int width, height;
 			string type, image;
-
-			public int X {
-				get { return x;}
-				set { x = value;}
-			}
-
-			public int Y {
-				get { return y;}
-				set { y = value;}
-			}
 
 			public int Width {
 				get { return width;}
@@ -582,27 +543,6 @@ namespace backend
 				currentNode.Attributes.Append (a);
 
 				return currentNode;
-			}
-
-			public override bool Equals (object obj)
-			{
-				if (!(obj is ImageElement))
-					return false;
-				ImageElement tmp = (ImageElement)obj;
-				if (x != tmp.x)
-					return false;
-				if (y != tmp.y)
-					return false;
-				if (width != tmp.width)
-					return false;
-				if (height != tmp.height)
-					return false;
-				if (type != tmp.type)
-					return false;
-				if (image != tmp.image)
-					return false;
-
-				return true;
 			}
 
 			protected override void PersistElementDetails ()
