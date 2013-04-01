@@ -1,7 +1,11 @@
 using System;
 using System.IO;
 using System.Xml;
+using System.Data;
 using System.Collections.Generic;
+
+//TODO get rid of sqlite specificas
+using Mono.Data.Sqlite;
 
 namespace backend
 {
@@ -12,6 +16,18 @@ namespace backend
 	 */
 		public abstract class NoteElement
 		{
+			//############### statics ###############
+
+			protected static Database db = new Database ();
+
+			protected static Database Db {
+				get {
+					if (null == db)
+						db = new Database ();
+					return db;
+				}
+			}
+
 			public static NoteElement RecreateFromXml (XmlNode node)
 			{
 				switch (node.Name) {
@@ -29,18 +45,110 @@ namespace backend
 				}
 			}
 
+			//############### non-statics ###############
+
+			protected long myId;
+
+			public long X {
+				get;
+				set;
+			}
+
+			public long Y {
+				get;
+				set;
+			}
+
+			public string Time {
+				get;
+				set;
+			}
+
+			public string Color {
+				get;
+				set;
+			}
+
+			public void Persist ()
+			{
+				PersistNoteElement ();
+				PersistElementDetails ();
+			}
+
+			void PersistNoteElement ()
+			{
+				if (0 >= myId) {
+					// we have a new element here
+					// TODO mutex!
+					IDataReader reader = null;
+
+					try {
+						if (null == Time)
+							Time = DateTime.Now.ToString ("yyyMMddHHmmssff");
+						Color = "red";
+						Db.Execute ("INSERT INTO elements (type, x, y, timestamp, color) VALUES ('" + this.GetType () + "', '" + X + "', '" + Y + "', '" + Time + "' , '" + Color + "')");
+						reader = Db.QueryInit ("SELECT MAX(element_id) FROM elements");
+						reader.Read ();
+						myId = reader.GetInt64 (0);
+						Db.QueryCleanup (reader);
+					} catch (Exception e) {
+						if (null != reader)
+							Db.QueryCleanup (reader);
+						// create table elements
+						Db.Execute ("CREATE TABLE elements (" +
+							"element_id INTEGER PRIMARY KEY ASC," +
+							"type varchar(255)," +
+							"x int," +
+							"y int," +
+							"timestamp varchar(15)," +
+							"color varchar(10)" +
+							")"
+						);
+						PersistNoteElement ();
+					}
+				} else {
+					// we may have updated values
+					// TODO do we need to update the timestamp?
+					Db.Execute ("UPDATE elements SET x='" + X + "', y='" + Y + "', color='" + Color + "' WHERE element_id='" + myId + "'");
+				}
+			}
+
+			protected abstract void PersistElementDetails ();
+
 			public abstract XmlNode ToXml (XmlDocument document);
 		}
 
 		public class PolylineElement : NoteElement
 		{
-			string color = "red";
 			int strength = 1;
 			private List<int> points;
 
 			public List<int> Points {
 				get { return points; }
 				set { points = value; }
+			}
+
+			protected override void PersistElementDetails ()
+			{
+				try {
+					// we have a new element here
+					Db.Execute ("INSERT INTO polyline_elements (element_id, width, points) VALUES ('" + myId + "', '" + strength + "', '" + GetSVGPointList () + "')");
+				} catch (SqliteException e) {
+					switch (e.ErrorCode) {
+					case SQLiteErrorCode.Constraint:
+						Db.Execute ("UPDATE polyline_elements SET width='" + strength + "', points='" + GetSVGPointList () + "' WHERE element_id='" + myId + "'");
+						break;
+					case SQLiteErrorCode.Error:
+						Db.Execute ("CREATE TABLE polyline_elements (" +
+							"element_id INTEGER PRIMARY KEY," +
+							"width INTEGER," +
+							"points TEXT" +
+							")"
+						);
+						PersistElementDetails ();
+						break;
+					}
+				}
 			}
 
 			public PolylineElement ()
@@ -71,7 +179,7 @@ namespace backend
 				fillAttribute.Value = "none";
 
 				XmlAttribute strokeAttribute = document.CreateAttribute ("stroke");
-				strokeAttribute.Value = color;
+				strokeAttribute.Value = Color;
 
 				XmlAttribute strokeWidthAttribute = document.CreateAttribute ("stroke-width");
 				strokeWidthAttribute.Value = strength.ToString ();
@@ -95,7 +203,7 @@ namespace backend
 					return false;
 				PolylineElement tmp = (PolylineElement)obj;
 
-				if (color != tmp.color)
+				if (Color != tmp.Color)
 					return false;
 				if (strength != tmp.strength)
 					return false;
@@ -324,6 +432,11 @@ namespace backend
 
 				return true;
 			}
+
+			protected override void PersistElementDetails ()
+			{
+				throw new System.NotImplementedException ();
+			}
 		}
 
 		public class ImageElement : NoteElement
@@ -438,6 +551,11 @@ namespace backend
 					return false;
 
 				return true;
+			}
+
+			protected override void PersistElementDetails ()
+			{
+				throw new System.NotImplementedException ();
 			}
 		}
 	}

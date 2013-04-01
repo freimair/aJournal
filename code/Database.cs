@@ -23,5 +23,34 @@ namespace backend
 			dbcon.Close ();
 			dbcon = null;
 		}
+
+		public void Execute (string sql)
+		{
+			IDbCommand dbcmd = dbcon.CreateCommand ();
+			dbcmd.CommandText = sql;
+			dbcmd.ExecuteNonQuery ();
+			dbcmd.Dispose ();
+			dbcmd = null;
+		}
+
+		public IDataReader QueryInit (string sql)
+		{
+			IDbCommand dbcmd = dbcon.CreateCommand ();
+			dbcmd.CommandText = sql;
+
+			IDataReader reader = dbcmd.ExecuteReader ();
+
+			dbcmd.Dispose ();
+			dbcmd = null;
+
+			return reader;
+		}
+
+		public void QueryCleanup (IDataReader reader)
+		{
+			// clean up
+			reader.Close ();
+			reader = null;
+		}
 	}
 }

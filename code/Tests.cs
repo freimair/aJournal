@@ -30,6 +30,14 @@ namespace test
 		{
 			new Database ();
 		}
+
+		[Test]
+		public void PersistPolylineElement ()
+		{
+			PolylineElement DUT = new PolylineElement ();
+			DUT.Persist ();
+			DUT.Persist ();
+		}
 	}
 
 	[TestFixture()]
