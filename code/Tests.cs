@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Xml;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -8,6 +9,29 @@ using backend.NoteElements;
 
 namespace test
 {
+
+	[TestFixture]
+	public class DatabaseTests
+	{
+		[SetUp]
+		public void Setup ()
+		{
+			File.Delete ("test.db");
+			Database.connectionString = "URI=file:test.db";
+		}
+
+		[TearDown]
+		public void Teardown ()
+		{
+		}
+
+		[Test]
+		public void OpenDatabaseConnection ()
+		{
+			new Database ();
+		}
+	}
+
 	[TestFixture()]
 	public class ModelTests
 	{

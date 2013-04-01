@@ -48,6 +48,8 @@
       <Private>False</Private>
       <Package>mono-nunit</Package>
     </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="Mono.Data.Sqlite" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -55,6 +57,7 @@
     <Compile Include="Tags.cs" />
     <Compile Include="Note.cs" />
     <Compile Include="NoteElements.cs" />
+    <Compile Include="Database.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rect-select.png">
