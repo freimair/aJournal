@@ -28,6 +28,23 @@ namespace backend
 				}
 			}
 
+			public static List<NoteElement> Elements {
+				get {
+					List<NoteElement> result = new List<NoteElement> ();
+					IDataReader reader = Db.QueryInit ("SELECT element_id, type FROM elements");
+					while (reader.Read())
+						result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
+					Db.QueryCleanup (reader);
+
+					return result;
+				}
+			}
+
+			static NoteElement RecreateFromDb (long id, string type)
+			{
+				return (NoteElement)Activator.CreateInstance (Type.GetType (type), id);
+			}
+
 			public static NoteElement RecreateFromXml (XmlNode node)
 			{
 				switch (node.Name) {
@@ -67,6 +84,30 @@ namespace backend
 			public string Color {
 				get;
 				set;
+			}
+
+			public NoteElement ()
+			{
+
+			}
+
+			/**
+			 * recreate a NoteElement from database
+			 */
+			protected NoteElement (long id)
+			{
+				myId = id;
+
+				// fill x, y, timestamp, color
+				IDataReader reader = Db.QueryInit ("SELECT x, y, timestamp, color FROM elements WHERE element_id='" + id + "'");
+				reader.Read ();
+				X = reader.GetInt64 (0);
+				Y = reader.GetInt64 (1);
+				Time = reader.GetString (2);
+				Color = reader.GetString (3);
+				Db.QueryCleanup (reader);
+
+				// TODO fill tags
 			}
 
 			public void Persist ()
@@ -126,6 +167,25 @@ namespace backend
 			public List<int> Points {
 				get { return points; }
 				set { points = value; }
+			}
+
+			/**
+			 * recreate a PolylineElement from database
+			 */
+			public PolylineElement (long id) : base(id)
+			{
+				// fill x, y, timestamp, color
+				IDataReader reader = Db.QueryInit ("SELECT width, points FROM polyline_elements WHERE element_id='" + id + "'");
+				reader.Read ();
+				strength = reader.GetInt32 (0);
+				string pointsstring = reader.GetString (1);
+				if (!"".Equals (pointsstring)) {
+					String[] values = pointsstring.Split (new char[] {' ', ','});
+
+					foreach (String currentValue in values)
+						points.Add (Convert.ToInt32 (currentValue));
+				}
+				Db.QueryCleanup (reader);
 			}
 
 			protected override void PersistElementDetails ()
@@ -201,17 +261,9 @@ namespace backend
 			{
 				if (!(obj is PolylineElement))
 					return false;
-				PolylineElement tmp = (PolylineElement)obj;
+				if (myId != ((PolylineElement)obj).myId)
+					return false;
 
-				if (Color != tmp.Color)
-					return false;
-				if (strength != tmp.strength)
-					return false;
-				if (points.Count != tmp.points.Count)
-					return false;
-				for (int i = 0; i < points.Count; i++)
-					if (points [i] != tmp.points [i])
-						return false;
 				return true;
 			}
 		}

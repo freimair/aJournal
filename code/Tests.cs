@@ -32,11 +32,13 @@ namespace test
 		}
 
 		[Test]
-		public void PersistPolylineElement ()
+		public void RoundtripPolylineElement ()
 		{
 			PolylineElement DUT = new PolylineElement ();
 			DUT.Persist ();
 			DUT.Persist ();
+
+			Assert.Contains (DUT, NoteElement.Elements);
 		}
 	}
 
