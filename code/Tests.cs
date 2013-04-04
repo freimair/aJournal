@@ -25,6 +25,13 @@ namespace test
 		{
 			Database.Execute ("");
 		}
+
+		[Test]
+		public void DatabaseRoundtripTest ()
+		{
+			Tag DUT = Tag.Create ("tag1.tag11.tag111");
+			Assert.Contains (DUT, Tag.Tags);
+		}
 	}
 
 	[TestFixture()]

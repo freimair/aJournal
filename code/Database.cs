@@ -58,8 +58,12 @@ namespace backend
 		public static void QueryCleanup (IDataReader reader)
 		{
 			// clean up
-			reader.Close ();
-			reader = null;
+			try {
+				reader.Close ();
+			} catch (NullReferenceException) {
+			} finally {
+				reader = null;
+			}
 		}
 	}
 }
