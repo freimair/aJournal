@@ -7,10 +7,19 @@ namespace backend
 {
 	public class Database
 	{
+		static Database instance;
 		IDbConnection dbcon;
 		public static string connectionString = "";
 
-		public Database ()
+		static Database Instance {
+			get {
+				if (null == instance)
+					instance = new Database ();
+				return instance;
+			}
+		}
+
+		Database ()
 		{
 			if ("".Equals (connectionString))
 				connectionString = "URI=file:" + Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/aJournal.db";
@@ -24,18 +33,18 @@ namespace backend
 			dbcon = null;
 		}
 
-		public void Execute (string sql)
+		public static void Execute (string sql)
 		{
-			IDbCommand dbcmd = dbcon.CreateCommand ();
+			IDbCommand dbcmd = Instance.dbcon.CreateCommand ();
 			dbcmd.CommandText = sql;
 			dbcmd.ExecuteNonQuery ();
 			dbcmd.Dispose ();
 			dbcmd = null;
 		}
 
-		public IDataReader QueryInit (string sql)
+		public static IDataReader QueryInit (string sql)
 		{
-			IDbCommand dbcmd = dbcon.CreateCommand ();
+			IDbCommand dbcmd = Instance.dbcon.CreateCommand ();
 			dbcmd.CommandText = sql;
 
 			IDataReader reader = dbcmd.ExecuteReader ();
@@ -46,7 +55,7 @@ namespace backend
 			return reader;
 		}
 
-		public void QueryCleanup (IDataReader reader)
+		public static void QueryCleanup (IDataReader reader)
 		{
 			// clean up
 			reader.Close ();

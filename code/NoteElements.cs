@@ -18,23 +18,13 @@ namespace backend
 		{
 			//############### statics ###############
 
-			protected static Database db = new Database ();
-
-			protected static Database Db {
-				get {
-					if (null == db)
-						db = new Database ();
-					return db;
-				}
-			}
-
 			public static List<NoteElement> Elements {
 				get {
 					List<NoteElement> result = new List<NoteElement> ();
-					IDataReader reader = Db.QueryInit ("SELECT element_id, type FROM elements");
+					IDataReader reader = Database.QueryInit ("SELECT element_id, type FROM elements");
 					while (reader.Read())
 						result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
-					Db.QueryCleanup (reader);
+					Database.QueryCleanup (reader);
 
 					return result;
 				}
@@ -99,13 +89,13 @@ namespace backend
 				myId = id;
 
 				// fill x, y, timestamp, color
-				IDataReader reader = Db.QueryInit ("SELECT x, y, timestamp, color FROM elements WHERE element_id='" + id + "'");
+				IDataReader reader = Database.QueryInit ("SELECT x, y, timestamp, color FROM elements WHERE element_id='" + id + "'");
 				reader.Read ();
 				X = reader.GetInt64 (0);
 				Y = reader.GetInt64 (1);
 				Time = reader.GetString (2);
 				Color = reader.GetString (3);
-				Db.QueryCleanup (reader);
+				Database.QueryCleanup (reader);
 
 				// TODO fill tags
 			}
@@ -127,16 +117,16 @@ namespace backend
 						if (null == Time)
 							Time = DateTime.Now.ToString ("yyyMMddHHmmssff");
 						Color = "red";
-						Db.Execute ("INSERT INTO elements (type, x, y, timestamp, color) VALUES ('" + this.GetType () + "', '" + X + "', '" + Y + "', '" + Time + "' , '" + Color + "')");
-						reader = Db.QueryInit ("SELECT MAX(element_id) FROM elements");
+						Database.Execute ("INSERT INTO elements (type, x, y, timestamp, color) VALUES ('" + this.GetType () + "', '" + X + "', '" + Y + "', '" + Time + "' , '" + Color + "')");
+						reader = Database.QueryInit ("SELECT MAX(element_id) FROM elements");
 						reader.Read ();
 						myId = reader.GetInt64 (0);
-						Db.QueryCleanup (reader);
+						Database.QueryCleanup (reader);
 					} catch (Exception) {
 						if (null != reader)
-							Db.QueryCleanup (reader);
+							Database.QueryCleanup (reader);
 						// create table elements
-						Db.Execute ("CREATE TABLE elements (" +
+						Database.Execute ("CREATE TABLE elements (" +
 							"element_id INTEGER PRIMARY KEY ASC," +
 							"type varchar(255)," +
 							"x int," +
@@ -150,7 +140,7 @@ namespace backend
 				} else {
 					// we may have updated values
 					// TODO do we need to update the timestamp?
-					Db.Execute ("UPDATE elements SET x='" + X + "', y='" + Y + "', color='" + Color + "' WHERE element_id='" + myId + "'");
+					Database.Execute ("UPDATE elements SET x='" + X + "', y='" + Y + "', color='" + Color + "' WHERE element_id='" + myId + "'");
 				}
 			}
 
@@ -164,7 +154,7 @@ namespace backend
 
 			private void RemoveNoteElement ()
 			{
-				Db.Execute ("DELETE FROM elements WHERE element_id='" + myId + "'");
+				Database.Execute ("DELETE FROM elements WHERE element_id='" + myId + "'");
 			}
 
 			protected abstract void RemoveElementDetails ();
@@ -203,7 +193,7 @@ namespace backend
 			public PolylineElement (long id) : base(id)
 			{
 				// fill x, y, timestamp, color
-				IDataReader reader = Db.QueryInit ("SELECT width, points FROM polyline_elements WHERE element_id='" + id + "'");
+				IDataReader reader = Database.QueryInit ("SELECT width, points FROM polyline_elements WHERE element_id='" + id + "'");
 				reader.Read ();
 				strength = reader.GetInt32 (0);
 				string pointsstring = reader.GetString (1);
@@ -213,21 +203,21 @@ namespace backend
 					foreach (String currentValue in values)
 						points.Add (Convert.ToInt32 (currentValue));
 				}
-				Db.QueryCleanup (reader);
+				Database.QueryCleanup (reader);
 			}
 
 			protected override void PersistElementDetails ()
 			{
 				try {
 					// we have a new element here
-					Db.Execute ("INSERT INTO polyline_elements (element_id, width, points) VALUES ('" + myId + "', '" + strength + "', '" + GetSVGPointList () + "')");
+					Database.Execute ("INSERT INTO polyline_elements (element_id, width, points) VALUES ('" + myId + "', '" + strength + "', '" + GetSVGPointList () + "')");
 				} catch (SqliteException e) {
 					switch (e.ErrorCode) {
 					case SQLiteErrorCode.Constraint:
-						Db.Execute ("UPDATE polyline_elements SET width='" + strength + "', points='" + GetSVGPointList () + "' WHERE element_id='" + myId + "'");
+						Database.Execute ("UPDATE polyline_elements SET width='" + strength + "', points='" + GetSVGPointList () + "' WHERE element_id='" + myId + "'");
 						break;
 					case SQLiteErrorCode.Error:
-						Db.Execute ("CREATE TABLE polyline_elements (" +
+						Database.Execute ("CREATE TABLE polyline_elements (" +
 							"element_id INTEGER PRIMARY KEY," +
 							"width INTEGER," +
 							"points TEXT" +
@@ -241,7 +231,7 @@ namespace backend
 
 			protected override void RemoveElementDetails ()
 			{
-				Db.Execute ("DELETE FROM polyline_elements WHERE element_id='" + myId + "'");
+				Database.Execute ("DELETE FROM polyline_elements WHERE element_id='" + myId + "'");
 			}
 
 			public PolylineElement ()

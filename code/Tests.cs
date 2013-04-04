@@ -20,34 +20,15 @@ namespace test
 			Database.connectionString = "URI=file:test.db";
 		}
 
-		[TearDown]
-		public void Teardown ()
-		{
-		}
-
 		[Test]
 		public void OpenDatabaseConnection ()
 		{
-			new Database ();
-		}
-
-		[Test]
-		public void RoundtripPolylineElement ()
-		{
-			PolylineElement DUT = new PolylineElement ();
-			DUT.Persist ();
-			DUT.Persist ();
-
-			Assert.Contains (DUT, NoteElement.Elements);
-
-			DUT.Remove ();
-
-			Assert.IsEmpty (NoteElement.Elements);
+			Database.Execute ("");
 		}
 	}
 
 	[TestFixture()]
-	public class ModelTests
+	public class ModelTests : DatabaseTests
 	{
 		List<NoteElement> listA;
 		List<NoteElement> listB;
@@ -252,8 +233,22 @@ namespace test
 	}
 
 	[TestFixture]
-	public class NoteElementTests
+	public class NoteElementTests : DatabaseTests
 	{
+		[Test]
+		public void RoundtripPolylineElement ()
+		{
+			PolylineElement DUT = new PolylineElement ();
+			DUT.Persist ();
+			DUT.Persist ();
+
+			Assert.Contains (DUT, NoteElement.Elements);
+
+			DUT.Remove ();
+
+			Assert.IsEmpty (NoteElement.Elements);
+		}
+
 		[Test]
 		public void PolylineSvgRoundtrip ()
 		{
@@ -440,7 +435,7 @@ namespace test
 	}
 
 	[TestFixture]
-	public class TagTests
+	public class TagTests : DatabaseTests
 	{
 
 		[Test]
