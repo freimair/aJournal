@@ -17,7 +17,7 @@ namespace test
 		public void Setup ()
 		{
 			File.Delete ("test.db");
-			Database.connectionString = "URI=file:test.db";
+			Database.ConnectionString = "URI=file:test.db";
 		}
 
 //		[Test]

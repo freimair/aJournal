@@ -9,7 +9,11 @@ namespace backend
 	{
 		static Database instance;
 		IDbConnection dbcon;
-		public static string connectionString = "";
+		public static string ConnectionString {
+			set {
+				instance = new Database (value);
+			}
+		}
 
 		static Database Instance {
 			get {
@@ -19,12 +23,15 @@ namespace backend
 			}
 		}
 
-		Database ()
+		Database (string connectionString)
 		{
-			if ("".Equals (connectionString))
-				connectionString = "URI=file:" + Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/aJournal.db";
 			dbcon = (IDbConnection)new SqliteConnection (connectionString);
 			dbcon.Open ();
+		}
+
+		Database () : this("URI=file:" + Environment.GetFolderPath (Environment.SpecialFolder.Personal) + "/.aJournal/aJournal.db")
+		{
+
 		}
 
 		~Database ()
