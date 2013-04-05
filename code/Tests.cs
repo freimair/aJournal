@@ -20,18 +20,11 @@ namespace test
 			Database.connectionString = "URI=file:test.db";
 		}
 
-		[Test]
-		public void OpenDatabaseConnection ()
-		{
-			Database.Execute ("");
-		}
-
-		[Test]
-		public void DatabaseRoundtripTest ()
-		{
-			Tag DUT = Tag.Create ("tag1.tag11.tag111");
-			Assert.Contains (DUT, Tag.Tags);
-		}
+//		[Test]
+//		public void OpenDatabaseConnection ()
+//		{
+//			Database.Execute ("");
+//		}
 	}
 
 	[TestFixture()]

@@ -36,7 +36,7 @@ namespace backend
 
 					// find parent
 					if (path.Contains ("."))
-						newTag.Parent = Create (path.Substring (0, path.LastIndexOf (".")));
+						Create (path.Substring (0, path.LastIndexOf (".")));
 
 					tagCache.Add (path, newTag);
 					return newTag;
@@ -94,7 +94,7 @@ namespace backend
 
 			Tag (string name)
 			{
-				Name = name;
+				this.name = name;
 
 				// TODO mutex!
 				IDataReader reader = null;
@@ -133,18 +133,18 @@ namespace backend
 			public string Name {
 				get { return name; }
 				set {
+					tagCache.Remove (name);
 					name = value;
-//					updateCache ();
+					Database.Execute ("UPDATE tags SET name='" + name + "' WHERE tag_id='" + myId + "'");
+					tagCache.Add (name, this);
 				}
 			}
 
-			Tag parent;
-
 			public Tag Parent {
-				get { return parent; }
+				get { return tagCache [name.Substring (0, name.LastIndexOf ("."))]; }
 				set {
-					parent = value;
-					updateCache ();
+					Tag parent = value;
+					Name = parent.Name + "." + Name.Substring (Name.LastIndexOf (".") + 1);
 				}
 			}
 
@@ -157,12 +157,7 @@ namespace backend
 
 			public override string ToString ()
 			{
-				string result = name;
-				try {
-					result = parent.ToString () + "." + result;
-				} catch (NullReferenceException) {
-				}
-				return result;
+				return Name;
 			}
 
 //		public override bool Equals (object obj)
