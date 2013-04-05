@@ -95,7 +95,11 @@ namespace backend
 			Tag (string name)
 			{
 				this.name = name;
+				Persist ();
+			}
 
+			void Persist ()
+			{
 				// TODO mutex!
 				IDataReader reader = null;
 
@@ -110,8 +114,12 @@ namespace backend
 						Database.Execute ("UPDATE tags SET name='" + Name + "' WHERE tag_id='" + myId + "'");
 						break;
 					case SQLiteErrorCode.Error:
-						SetupDatabase ();
-						Database.Execute ("INSERT INTO tags (name) VALUES ('" + Name + "')");
+						Database.Execute ("CREATE TABLE tags (" +
+							"tag_id INTEGER PRIMARY KEY ASC," +
+							"name varchar(255)" +
+							")"
+						);
+						Persist ();
 						break;
 					}
 				} finally {
@@ -119,13 +127,14 @@ namespace backend
 				}
 			}
 
-			static void SetupDatabase ()
+			public void Remove ()
 			{
-				Database.Execute ("CREATE TABLE tags (" +
-					"tag_id INTEGER PRIMARY KEY ASC," +
-					"name varchar(255)" +
-					")"
-				);
+				try {
+					Database.Execute ("DELETE FROM tags WHERE tag_id='" + myId + "'");
+				} catch (Exception) {
+				} finally {
+					tagCache.Remove (name);
+				}
 			}
 
 			string name;

@@ -11,14 +11,18 @@ namespace test
 {
 
 	[TestFixture]
-	public class DatabaseTests
+	public abstract class DatabaseTests
 	{
 		[SetUp]
 		public void Setup ()
 		{
 			File.Delete ("test.db");
 			Database.ConnectionString = "URI=file:test.db";
+
+			FurtherSetup ();
 		}
+
+		public abstract void FurtherSetup ();
 
 //		[Test]
 //		public void OpenDatabaseConnection ()
@@ -32,6 +36,11 @@ namespace test
 	{
 		List<NoteElement> listA;
 		List<NoteElement> listB;
+
+		public override void FurtherSetup ()
+		{
+
+		}
 
 		[SetUp]
 		protected void SetUp ()
@@ -235,6 +244,11 @@ namespace test
 	[TestFixture]
 	public class NoteElementTests : DatabaseTests
 	{
+		public override void FurtherSetup ()
+		{
+
+		}
+
 		[Test]
 		public void RoundtripPolylineElement ()
 		{
@@ -437,6 +451,12 @@ namespace test
 	[TestFixture]
 	public class TagTests : DatabaseTests
 	{
+		public override void FurtherSetup ()
+		{
+			foreach (Tag current in Tag.Tags)
+				current.Remove ();
+			Tag.tagCache.Clear (); // FIXME find another way. this seems to be only necessary for testing
+		}
 
 		[Test]
 		public void SimpleTagTest ()
