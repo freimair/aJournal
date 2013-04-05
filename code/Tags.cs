@@ -12,19 +12,7 @@ namespace backend
 	{
 		public class Tag
 		{
-			static Dictionary<string, Tag> tagCache = new Dictionary<string, Tag> ();
-
-			static void updateCache ()
-			{
-				var buffer = new List<string> (tagCache.Keys);
-				foreach (string current in buffer) {
-					if (!current.Equals (tagCache [current].ToString ())) {
-						Tag tmp = tagCache [current];
-						tagCache.Remove (current);
-						tagCache.Add (tmp.ToString (), tmp);
-					}
-				}
-			}
+			public static Dictionary<string, Tag> tagCache = new Dictionary<string, Tag> ();
 
 			public static Tag Create (string path)
 			{
@@ -58,12 +46,8 @@ namespace backend
 							tagCache.Add (reader.GetString (1), new Tag (reader.GetInt64 (0)));
 						result.Add (tagCache [reader.GetString (1)]);
 					}
-				} catch (SqliteException e) {
-					switch (e.ErrorCode) {
-					case SQLiteErrorCode.Error:
-						SetupDatabase ();
-						break;
-					}
+				} catch (SqliteException) {
+					// in case no database exists we return an empty list
 				} finally {
 					Database.QueryCleanup (reader);
 				}
@@ -86,7 +70,7 @@ namespace backend
 					reader = Database.QueryInit ("SELECT tag_id, name FROM tags");
 					reader.Read ();
 					myId = reader.GetInt64 (0);
-					Name = reader.GetString (1);
+					name = reader.GetString (1);
 				} finally {
 					Database.QueryCleanup (reader);
 				}
@@ -140,20 +124,33 @@ namespace backend
 			string name;
 
 			public string Name {
-				get { return name; }
+				get {
+					return name;
+				}
 				set {
-					tagCache.Remove (name);
-					name = value;
-					Database.Execute ("UPDATE tags SET name='" + name + "' WHERE tag_id='" + myId + "'");
-					tagCache.Add (name, this);
+					string oldname = name;
+					IDataReader reader = Database.QueryInit ("SELECT name FROM tags WHERE name LIKE '" + oldname + "%'");
+					while (reader.Read ()) {
+						string current = reader.GetString (0);
+						string renamed = reader.GetString (0).Replace (oldname, value);
+
+						Database.Execute ("UPDATE tags SET name='" + renamed + "' WHERE name='" + current + "'");
+						Tag currentTag = tagCache [current];
+						tagCache.Remove (current);
+						currentTag.name = renamed;
+						tagCache.Add (renamed, currentTag);
+					}
+					Database.QueryCleanup (reader);
 				}
 			}
 
 			public Tag Parent {
-				get { return tagCache [name.Substring (0, name.LastIndexOf ("."))]; }
+				get { return tagCache [Name.Substring (0, Name.LastIndexOf ("."))]; }
 				set {
-					Tag parent = value;
-					Name = parent.Name + "." + Name.Substring (Name.LastIndexOf (".") + 1);
+					if (Name.Contains ("."))
+						Name = value.Name + "." + Name.Substring (Name.LastIndexOf ("."));
+					else
+						Name = value.Name + "." + Name;
 				}
 			}
 

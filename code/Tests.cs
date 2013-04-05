@@ -466,6 +466,13 @@ namespace test
 		}
 
 		[Test]
+		public void RoundTripTest ()
+		{
+			Tag DUT = Tag.Create ("tag1");
+			Assert.Contains (DUT, Tag.Tags);
+		}
+
+		[Test]
 		public void TagTreeTest ()
 		{
 			// setup testing entities
@@ -479,6 +486,9 @@ namespace test
 			tag2.Parent = tag1;
 
 			Assert.AreEqual ("tag1.tag2.tag3", tag3.ToString ());
+			Assert.Contains (tag1, Tag.Tags);
+			Assert.Contains (tag2, Tag.Tags);
+			Assert.Contains (tag3, Tag.Tags);
 		}
 
 		[Test]
@@ -487,6 +497,8 @@ namespace test
 			Tag DUT = Tag.Create ("tagname");
 			XmlDocument doc = new XmlDocument ();
 			Tag recreated = Tag.RecreateFromXml (DUT.ToXml (doc));
+
+			// TODO leaves a tag in the tag cache behind.
 
 			Assert.AreEqual (DUT, recreated);
 		}
