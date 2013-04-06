@@ -16,48 +16,6 @@ namespace backend
 	 */
 		public abstract class NoteElement
 		{
-			//############### statics ###############
-			public static List<NoteElement> GetElements (ElementFilter filter)
-			{
-				return Elements;
-			}
-
-			public static List<NoteElement> Elements {
-				get {
-					List<NoteElement> result = new List<NoteElement> ();
-					IDataReader reader = Database.QueryInit ("SELECT element_id, type FROM elements");
-					while (reader.Read())
-						result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
-					Database.QueryCleanup (reader);
-
-					return result;
-				}
-			}
-
-			static NoteElement RecreateFromDb (long id, string type)
-			{
-				return (NoteElement)Activator.CreateInstance (Type.GetType (type), id);
-			}
-
-			public static NoteElement RecreateFromXml (XmlNode node)
-			{
-				switch (node.Name) {
-				case "polyline":
-					return new PolylineElement (node);
-				case "text":
-				case "g":
-					return new TextElement (node);
-				case "image":
-					return new ImageElement (node);
-				case "desc":
-					return null;
-				default:
-					throw new Exception ("no matching drawable found");
-				}
-			}
-
-			//############### non-statics ###############
-
 			protected long myId;
 
 			public long X {
@@ -82,7 +40,29 @@ namespace backend
 
 			protected NoteElement ()
 			{
+			}
 
+			#region database roundtrip
+			public static List<NoteElement> GetElements (ElementFilter filter)
+			{
+				return Elements;
+			}
+
+			public static List<NoteElement> Elements {
+				get {
+					List<NoteElement> result = new List<NoteElement> ();
+					IDataReader reader = Database.QueryInit ("SELECT element_id, type FROM elements");
+					while (reader.Read())
+						result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
+					Database.QueryCleanup (reader);
+
+					return result;
+				}
+			}
+
+			static NoteElement RecreateFromDb (long id, string type)
+			{
+				return (NoteElement)Activator.CreateInstance (Type.GetType (type), id);
 			}
 
 			/**
@@ -162,9 +142,30 @@ namespace backend
 			}
 
 			protected abstract void RemoveElementDetails ();
+			#endregion
+
+			#region svg roundtrip
+			public static NoteElement RecreateFromXml (XmlNode node)
+			{
+				switch (node.Name) {
+				case "polyline":
+					return new PolylineElement (node);
+				case "text":
+				case "g":
+					return new TextElement (node);
+				case "image":
+					return new ImageElement (node);
+				case "desc":
+					return null;
+				default:
+					throw new Exception ("no matching drawable found");
+				}
+			}
 
 			public abstract XmlNode ToXml (XmlDocument document);
+			#endregion
 
+			#region comparison
 			public override bool Equals (object obj)
 			{
 				if (!(obj is NoteElement))
@@ -179,6 +180,7 @@ namespace backend
 			{
 				return Convert.ToInt32 (myId);
 			}
+			#endregion
 		}
 
 		public class PolylineElement : NoteElement
@@ -191,6 +193,12 @@ namespace backend
 				set { points = value; }
 			}
 
+			public PolylineElement ()
+			{
+				points = new List<int> ();
+			}
+
+			#region database roundtrip
 			/**
 			 * recreate a PolylineElement from database
 			 */
@@ -237,12 +245,9 @@ namespace backend
 			{
 				Database.Execute ("DELETE FROM polyline_elements WHERE element_id='" + myId + "'");
 			}
+			#endregion
 
-			public PolylineElement ()
-			{
-				points = new List<int> ();
-			}
-
+			#region svg roundtrip
 			public PolylineElement (XmlNode node) : this()
 			{
 				// parse points
@@ -283,6 +288,7 @@ namespace backend
 
 				return currentNode;
 			}
+			#endregion
 		}
 
 		public class TextElement : NoteElement
@@ -317,6 +323,18 @@ namespace backend
 			{
 			}
 
+			#region database roundtrip
+
+			protected override void PersistElementDetails ()
+			{
+			}
+
+			protected override void RemoveElementDetails ()
+			{
+			}
+			#endregion
+
+			#region svg roundtrip
 			public TextElement (XmlNode node)
 			{
 
@@ -467,16 +485,7 @@ namespace backend
 			{
 				return indent / FontSize / 2;
 			}
-
-			protected override void PersistElementDetails ()
-			{
-				throw new System.NotImplementedException ();
-			}
-
-			protected override void RemoveElementDetails ()
-			{
-				throw new System.NotImplementedException ();
-			}
+			#endregion
 		}
 
 		public class ImageElement : NoteElement
@@ -508,6 +517,19 @@ namespace backend
 			{
 			}
 
+			#region database roundtrip
+			protected override void PersistElementDetails ()
+			{
+				throw new System.NotImplementedException ();
+			}
+
+			protected override void RemoveElementDetails ()
+			{
+				throw new System.NotImplementedException ();
+			}
+			#endregion
+
+			#region svg roundtrip
 			public ImageElement (XmlNode node)
 			{
 				foreach (XmlAttribute current in node.Attributes) {
@@ -561,16 +583,7 @@ namespace backend
 
 				return currentNode;
 			}
-
-			protected override void PersistElementDetails ()
-			{
-				throw new System.NotImplementedException ();
-			}
-
-			protected override void RemoveElementDetails ()
-			{
-				throw new System.NotImplementedException ();
-			}
+			#endregion
 		}
 	}
 }
