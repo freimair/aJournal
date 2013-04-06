@@ -30,14 +30,14 @@ namespace ui_gtk_gnome
 
 		public abstract class UiNoteElement
 		{
-			public static UiNoteElement Recreate (Canvas canvas, Note note, NoteElement element)
+			public static UiNoteElement Recreate (Canvas canvas, NoteElement element)
 			{
 				if (element is PolylineElement)
-					return new UiLine (canvas, note, (PolylineElement)element);
+					return new UiLine (canvas, (PolylineElement)element);
 				if (element is TextElement)
-					return new UiText (canvas, note, (TextElement)element);
+					return new UiText (canvas, (TextElement)element);
 				if (element is ImageElement)
-					return new UiImage (canvas, note, (ImageElement)element);
+					return new UiImage (canvas, (ImageElement)element);
 				return null;
 			}
 
@@ -52,9 +52,8 @@ namespace ui_gtk_gnome
 		{
 			PolylineElement linemodel;
 			CanvasLine line;
-			Note myNote;
 
-			public UiLine (Canvas canvas, Note note, PolylineElement noteElement)
+			public UiLine (Canvas canvas, PolylineElement noteElement)
 			{
 				linemodel = noteElement;
 
@@ -62,12 +61,9 @@ namespace ui_gtk_gnome
 				line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
 			}
 
-			public UiLine (Canvas canvas, Note note)
+			public UiLine (Canvas canvas)
 			{
-				myNote = note;
-
 				linemodel = new PolylineElement ();
-				note.AddElement (linemodel);
 				Init (canvas);
 			}
 
@@ -110,7 +106,7 @@ namespace ui_gtk_gnome
 			public override void Destroy ()
 			{
 				line.Destroy ();
-				myNote.RemoveElement (linemodel);
+				linemodel.Remove ();
 			}
 		}
 
@@ -126,7 +122,6 @@ namespace ui_gtk_gnome
 				public static int Large = 20000;
 			}
 
-			Note myNote;
 			TextElement myText;
 			CanvasWidget canvasWidget;
 			TextView view;
@@ -134,12 +129,9 @@ namespace ui_gtk_gnome
 			bool controlModifierActive = false;
 			bool shiftModifierActive = false;
 
-			public UiText (Canvas canvas, Note note)
+			public UiText (Canvas canvas)
 			{
-				myNote = note;
-
 				myText = new TextElement ();
-				myNote.AddElement (myText);
 
 				Init (canvas);
 
@@ -194,9 +186,8 @@ namespace ui_gtk_gnome
 				view.ModifyFont (fontDescription);
 			}
 
-			public UiText (Canvas canvas, Note note, TextElement noteElement)
+			public UiText (Canvas canvas, TextElement noteElement)
 			{
-				myNote = note;
 				myText = noteElement;
 
 				Init (canvas);
@@ -242,7 +233,6 @@ namespace ui_gtk_gnome
 
 					myText.FontSize = Convert.ToInt32 (fontDescription.Size / 360);
 					myText.FontStrong = fontDescription.Weight == Weight.Bold;
-					myNote.Persist (); // no mouse_up here to persist
 				}
 
 				// track modifier keys
@@ -323,7 +313,6 @@ namespace ui_gtk_gnome
 				}
 
 				myText.Text = view.Buffer.Text;
-				myNote.Persist (); // no mouse_up here to persist
 			}
 
 			void Indent ()
@@ -382,8 +371,6 @@ namespace ui_gtk_gnome
 
 				myText.X += Convert.ToInt32 (diffx);
 				myText.Y += Convert.ToInt32 (diffy);
-
-				myNote.Persist (); // no mouse_up here to persist
 			}
 
 			public double Y {
@@ -396,8 +383,7 @@ namespace ui_gtk_gnome
 				if (null != itemize)
 					itemize.Destroy ();
 
-				myNote.RemoveElement (myText);
-				myNote.Persist ();
+				myText.Remove ();
 			}
 		}
 
@@ -406,15 +392,13 @@ namespace ui_gtk_gnome
 			CanvasPixbuf canvasPixbuf;
 			Pixbuf myPixbuf;
 			ImageElement myImage;
-			Note myNote;
 
-			UiImage (Note note)
+			UiImage ()
 			{
-				myNote = note;
 				myImage = new ImageElement ();
 			}
 
-			public UiImage (Canvas canvas, Note note, ImageElement imageElement) : this(note)
+			public UiImage (Canvas canvas, ImageElement imageElement) : this()
 			{
 				myImage = imageElement;
 
@@ -427,7 +411,7 @@ namespace ui_gtk_gnome
 				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
 			}
 
-			public UiImage (Canvas canvas, Note note, String path) : this(note)
+			public UiImage (Canvas canvas, String path) : this()
 			{
 				myImage.LoadFromFile (path);
 
@@ -439,7 +423,6 @@ namespace ui_gtk_gnome
 
 				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
 				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
-				myNote.AddElement (myImage);
 			}
 
 			public override BoundingBox BoundingBox ()
@@ -462,7 +445,7 @@ namespace ui_gtk_gnome
 			public override void Destroy ()
 			{
 				canvasPixbuf.Destroy ();
-				myNote.RemoveElement (myImage);
+				myImage.Remove ();
 			}
 		}
 	}

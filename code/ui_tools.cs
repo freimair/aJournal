@@ -12,7 +12,7 @@ namespace ui_gtk_gnome
 	{
 		public abstract class Tool
 		{
-			public abstract void Init (CanvasRect sheet, Note note, List<UiNoteElement> items);
+			public abstract void Init (CanvasRect sheet, List<UiNoteElement> items);
 
 			public abstract void Start (double x, double y);
 
@@ -26,75 +26,73 @@ namespace ui_gtk_gnome
 		public class VerticalSpaceTool : Tool
 		{
 			CanvasRect mySheet;
-			Note myNote;
 			List<UiNoteElement> myItems;
 			CanvasRect canvasVisualization;
 			List<UiNoteElement> affectedItems = new List<UiNoteElement> ();
 			double oldHeight;
 
-			public override void Init (CanvasRect sheet, Note note, List<UiNoteElement> items)
+			public override void Init (CanvasRect sheet, List<UiNoteElement> items)
 			{
 				mySheet = sheet;
-				myNote = note;
 				myItems = items;
 			}
 
 			public override void Start (double x, double y)
 			{
-				canvasVisualization = new CanvasRect (mySheet.Canvas.Root ());
-				canvasVisualization.X1 = 0;
-				canvasVisualization.X2 = myNote.Width;
-				canvasVisualization.Y1 = y;
-				canvasVisualization.Y2 = y;
-
-				oldHeight = mySheet.Y2;
-
-				canvasVisualization.FillColorRgba = 0x88888830; // 0xRRGGBBAA
-				canvasVisualization.OutlineColor = "black";
-
-				// fetch items to be moved
-				foreach (UiNoteElement current in myItems)
-					if (y < current.BoundingBox ().top)
-						affectedItems.Add (current);
+//				canvasVisualization = new CanvasRect (mySheet.Canvas.Root ());
+//				canvasVisualization.X1 = 0;
+//				canvasVisualization.X2 = UiNote.width;
+//				canvasVisualization.Y1 = y;
+//				canvasVisualization.Y2 = y;
+//
+//				oldHeight = mySheet.Y2;
+//
+//				canvasVisualization.FillColorRgba = 0x88888830; // 0xRRGGBBAA
+//				canvasVisualization.OutlineColor = "black";
+//
+//				// fetch items to be moved
+//				foreach (UiNoteElement current in myItems)
+//					if (y < current.BoundingBox ().top)
+//						affectedItems.Add (current);
 			}
 
 			public override void Continue (double x, double y)
 			{
-				try {
-					// memorize old y
-					double oldY = canvasVisualization.Y2;
-
-					canvasVisualization.Y2 = y;
-					// adjust sheet size
-					mySheet.Y2 = Convert.ToUInt32 (oldHeight + Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1));
-
-					// move affected items
-					foreach (UiNoteElement current in affectedItems)
-						// move by diffy
-						current.Move (0, y - oldY);
-				} catch (NullReferenceException) {
-				}
+//				try {
+//					// memorize old y
+//					double oldY = canvasVisualization.Y2;
+//
+//					canvasVisualization.Y2 = y;
+//					// adjust sheet size
+//					mySheet.Y2 = Convert.ToUInt32 (oldHeight + Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1));
+//
+//					// move affected items
+//					foreach (UiNoteElement current in affectedItems)
+//						// move by diffy
+//						current.Move (0, y - oldY);
+//				} catch (NullReferenceException) {
+//				}
 			}
 
 			public override void Complete (double x, double y)
 			{
-				try {
-					// adjust canvas size
-					myNote.Height += Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1);
-					mySheet.Canvas.HeightRequest = Convert.ToInt32 (mySheet.Canvas.PixelsPerUnit * myNote.Height);
-					mySheet.Canvas.SetScrollRegion (0.0, 0.0, myNote.Width, myNote.Height);
-
-					myNote.Persist ();
-
-					canvasVisualization.Destroy ();
-					canvasVisualization = null;
-				} catch (NullReferenceException) {
-				}
+//				try {
+//					// adjust canvas size
+//					myNote.Height += Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1);
+//					mySheet.Canvas.HeightRequest = Convert.ToInt32 (mySheet.Canvas.PixelsPerUnit * myNote.Height);
+//					mySheet.Canvas.SetScrollRegion (0.0, 0.0, myNote.Width, myNote.Height);
+//
+//					myNote.Persist ();
+//
+//					canvasVisualization.Destroy ();
+//					canvasVisualization = null;
+//				} catch (NullReferenceException) {
+//				}
 			}
 
 			public override void Reset ()
 			{
-				affectedItems.Clear ();
+//				affectedItems.Clear ();
 			}
 		}
 
@@ -140,7 +138,7 @@ namespace ui_gtk_gnome
 			List<UiNoteElement> elements;
 			Selection selection;
 
-			public override void Init (CanvasRect sheet, Note note, List<UiNoteElement> items)
+			public override void Init (CanvasRect sheet, List<UiNoteElement> items)
 			{
 				mySheet = sheet;
 				elements = items;
@@ -275,18 +273,16 @@ namespace ui_gtk_gnome
 			UiLine currentStroke;
 			CanvasRect mySheet;
 			List<UiNoteElement> elements;
-			Note myNote;
 
-			public override void Init (CanvasRect sheet, Note note, List<UiNoteElement> items)
+			public override void Init (CanvasRect sheet, List<UiNoteElement> items)
 			{
 				mySheet = sheet;
 				elements = items;
-				myNote = note;
 			}
 
 			public override void Start (double x, double y)
 			{
-				currentStroke = new UiLine (mySheet.Canvas, myNote);
+				currentStroke = new UiLine (mySheet.Canvas);
 			}
 
 			public override void Continue (double x, double y)
@@ -323,7 +319,7 @@ namespace ui_gtk_gnome
 		{
 			List<UiNoteElement> elements;
 
-			public override void Init (CanvasRect sheet, Note note, List<UiNoteElement> items)
+			public override void Init (CanvasRect sheet, List<UiNoteElement> items)
 			{
 				elements = items;
 			}
@@ -384,18 +380,16 @@ namespace ui_gtk_gnome
 			CanvasRect mySheet;
 			List<UiNoteElement> elements;
 			UiText myText;
-			Note myNote;
 
-			public override void Init (CanvasRect sheet, Note note, List<UiNoteElement> items)
+			public override void Init (CanvasRect sheet, List<UiNoteElement> items)
 			{
 				mySheet = sheet;
 				elements = items;
-				myNote = note;
 			}
 
 			public override void Start (double x, double y)
 			{
-				myText = new UiText (mySheet.Canvas, myNote);
+				myText = new UiText (mySheet.Canvas);
 				elements.Add (myText);
 
 				// place empty text on (x,y)
@@ -454,13 +448,11 @@ namespace ui_gtk_gnome
 			UiImage myImage;
 			List<UiNoteElement> elements;
 			CanvasRect mySheet;
-			Note myNote;
 
-			public override void Init (CanvasRect sheet, Note note, List<UiNoteElement> items)
+			public override void Init (CanvasRect sheet, List<UiNoteElement> items)
 			{
 				elements = items;
 				mySheet = sheet;
-				myNote = note;
 			}
 
 			public override void Start (double x, double y)
@@ -471,7 +463,7 @@ namespace ui_gtk_gnome
 				// FIXME Run() does not block. so the mouse up action is performed before we select an image.
 				// therefore, nothing gets persisted.
 				if (fc.Run () == (int)ResponseType.Accept) {
-					myImage = new UiImage (mySheet.Canvas, myNote, fc.Filename);
+					myImage = new UiImage (mySheet.Canvas, fc.Filename);
 					elements.Add (myImage);
 
 					myImage.Move (x, y);
@@ -479,9 +471,6 @@ namespace ui_gtk_gnome
 
 				//Don't forget to call Destroy() or the FileChooserDialog window won't get closed.
 				fc.Destroy ();
-
-				// TODO quick 'n' dirty fix for FIXME above
-				myNote.Persist ();
 			}
 
 			public override void Continue (double x, double y)
@@ -496,45 +485,5 @@ namespace ui_gtk_gnome
 			{
 			}
 		}
-
-//		public class ResizeDrawingAreaTool : Tool
-//		{
-////								if (ev.Y > canvasHeight - canvasHeight * 5 / 100 && ev.Y < canvasHeight) {
-////						GdkWindow.Cursor = new Gdk.Cursor (Gdk.CursorType.DoubleArrow);
-////						currentTool = new ResizeDrawingAreaTool (myCanvas, drawingArea);
-////					} else {
-////						GdkWindow.Cursor = new Gdk.Cursor (Gdk.CursorType.Arrow);
-////						currentTool = null;
-////					}
-//
-//			CanvasRect myDrawingArea;
-//			bool active = false;
-//
-//			public ResizeDrawingAreaTool (CanvasRect drawingArea)
-//			{
-//				myDrawingArea = drawingArea;
-//			}
-//
-//			public override void Start (double x, double y)
-//			{
-//				active = true;
-//			}
-//
-//			public override void Continue (double x, double y)
-//			{
-//				if (active)
-//					myDrawingArea.Y2 = y;
-//			}
-//
-//			public override void Complete (double x, double y)
-//			{
-//				active = false;
-//			}
-//
-//			public override void Reset ()
-//			{
-//				active = false;
-//			}
-//		}
 	}
 }
