@@ -237,10 +237,8 @@ namespace test
 
 		}
 
-		[Test]
-		public void RoundtripPolylineElement ()
+		public void RoundtripElement (NoteElement DUT)
 		{
-			PolylineElement DUT = new PolylineElement ();
 			DUT.Persist ();
 			DUT.Persist ();
 
@@ -252,17 +250,21 @@ namespace test
 		}
 
 		[Test]
+		public void RoundtripPolylineElement ()
+		{
+			RoundtripElement (new PolylineElement ());
+		}
+
+		[Test]
 		public void RoundtripTextElement ()
 		{
-			TextElement DUT = new TextElement ();
-			DUT.Persist ();
-			DUT.Persist ();
+			RoundtripElement (new TextElement ());
+		}
 
-			Assert.Contains (DUT, NoteElement.Elements);
-
-			DUT.Remove ();
-
-			Assert.IsEmpty (NoteElement.Elements);
+		[Test]
+		public void RoundtripImageElement ()
+		{
+			RoundtripElement (new ImageElement ());
 		}
 
 		[Test]

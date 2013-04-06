@@ -560,14 +560,57 @@ namespace backend
 			}
 
 			#region database roundtrip
+			/**
+			 * recreate an ImageElement from database
+			 */
+			public ImageElement (long id) : base(id)
+			{
+				// fill x, y, timestamp, color
+				IDataReader reader = Database.QueryInit ("SELECT width, height, type, image FROM image_elements WHERE element_id='" + id + "'");
+				reader.Read ();
+				Width = reader.GetInt32 (0);
+				Height = reader.GetInt32 (1);
+				type = reader.GetString (2);
+				image = reader.GetString (3);
+				Database.QueryCleanup (reader);
+			}
+
 			protected override void PersistElementDetails ()
 			{
-				throw new System.NotImplementedException ();
+				try {
+					// we have a new element here
+					Database.Execute ("INSERT INTO image_elements " +
+						"(element_id, width, height, type, image) VALUES " +
+						"('" + myId + "', '" + Width + "', '" + Height + "', '" + type + "', '" + image + "')"
+					);
+				} catch (SqliteException e) {
+					switch (e.ErrorCode) {
+					case SQLiteErrorCode.Constraint:
+						// do we need to update type and image?
+						Database.Execute ("UPDATE image_elements SET " +
+							"width='" + width +
+							"', height='" + Height + 
+							"' WHERE element_id='" + myId + "'"
+						);
+						break;
+					case SQLiteErrorCode.Error:
+						Database.Execute ("CREATE TABLE image_elements (" +
+							"element_id INTEGER PRIMARY KEY," +
+							"width INTEGER," +
+							"height INTEGER," +
+							"type VARCHAR(15)," +
+							"image TEXT" +
+							")"
+						);
+						PersistElementDetails ();
+						break;
+					}
+				}
 			}
 
 			protected override void RemoveElementDetails ()
 			{
-				throw new System.NotImplementedException ();
+				Database.Execute ("DELETE FROM image_elements WHERE element_id='" + myId + "'");
 			}
 			#endregion
 
