@@ -18,64 +18,46 @@ namespace ui_gtk_gnome
 		Canvas myCanvas;
 		CanvasRect drawingArea;
 		List<UiNoteElement> elements = new List<UiNoteElement> ();
-		Note myNote;
+
+		// TODO beware of the magic numbers
+		public static int width = 1500, height = 1500;
 
 		public UiNote ()
 		{
-			myNote = Note.Create ();
 			Init ();
-		}
-
-		public UiNote (Note note)
-		{
-			myNote = note;
-			Init ();
-
-			foreach (NoteElement current in note.GetElements())
-				elements.Add (UiNoteElement.Recreate (myCanvas, note, current));
+//			Draw ();
 		}
 
 		void Init ()
 		{
-			HBox header = new HBox ();
-			Label myLabel = new Label ();
-			myLabel.Text = myNote.ModificationTimestamp + " - ";
-			foreach (Tag current in myNote.GetTags())
-				myLabel.Text += current.ToString () + " ";
-			header.Add (myLabel);
-			Button myButton = new Button ("+");
-			myButton.TooltipText = "edit metadata";
-			myButton.Clicked += delegate(object o, EventArgs args) {
-				NoteSettings tmp = new NoteSettings (myNote);
-				if (ResponseType.Ok == (ResponseType)tmp.Run ()) {
-					// TODO provide setter for tags in backend
-					foreach (Tag tag in myNote.GetTags())
-						myNote.RemoveTag (tag);
-					foreach (Tag tag in tmp.Selection)
-						myNote.AddTag (tag);
-					myNote.Persist ();
-				}
-				tmp.Hide ();
-				myLabel.Text = myNote.ModificationTimestamp + " - ";
-				foreach (Tag current in myNote.GetTags())
-					myLabel.Text += current.ToString () + " ";
-			};
-			header.Add (myButton);
-			this.Add (header);
+//			myButton.Clicked += delegate(object o, EventArgs args) {
+//				NoteSettings tmp = new NoteSettings (myNote);
+//				if (ResponseType.Ok == (ResponseType)tmp.Run ()) {
+//					// TODO provide setter for tags in backend
+//					foreach (Tag tag in myNote.GetTags())
+//						myNote.RemoveTag (tag);
+//					foreach (Tag tag in tmp.Selection)
+//						myNote.AddTag (tag);
+//					myNote.Persist ();
+//				}
+//				tmp.Hide ();
+//				myLabel.Text = myNote.ModificationTimestamp + " - ";
+//				foreach (Tag current in myNote.GetTags())
+//					myLabel.Text += current.ToString () + " ";
+//			};
 
 			// add a canvas to the second column
 			myCanvas = Canvas.NewAa ();
-			myCanvas.SetScrollRegion (0.0, 0.0, myNote.Width, myNote.Height);
+			myCanvas.SetScrollRegion (0.0, 0.0, width, height);
 			this.Add (myCanvas);
 
 			// draw a filled rectangle to represent drawing area
 			drawingArea = new CanvasRect (myCanvas.Root ());
 			drawingArea.FillColor = "white";
-			drawingArea.OutlineColor = "black";
 			drawingArea.X1 = 0;
 			drawingArea.Y1 = 0;
-			drawingArea.X2 = myNote.Width;
-			drawingArea.Y2 = myNote.Height;
+			drawingArea.X2 = width;
+			drawingArea.Y2 = height;
 
 			// add mouse trackers
 			drawingArea.CanvasEvent += new Gnome.CanvasEventHandler (Event);
@@ -83,7 +65,7 @@ namespace ui_gtk_gnome
 
 		public int Width ()
 		{
-			return (int)Math.Round (myCanvas.PixelsPerUnit * myNote.Width);
+			return (int)Math.Round (myCanvas.PixelsPerUnit * width);
 		}
 
 		/**
@@ -91,7 +73,7 @@ namespace ui_gtk_gnome
 		 */
 		public void Scale (double factor)
 		{
-			int width = (int)Math.Round (myCanvas.PixelsPerUnit * factor * myNote.Width);
+			int width = (int)Math.Round (myCanvas.PixelsPerUnit * factor * UiNote.width);
 
 			Fit (width);
 		}
@@ -101,9 +83,9 @@ namespace ui_gtk_gnome
 		 */
 		public void Fit (int width)
 		{
-			myCanvas.PixelsPerUnit = ((double)width) / myNote.Width;
+			myCanvas.PixelsPerUnit = ((double)width) / UiNote.width;
 
-			myCanvas.SetSizeRequest (width, (int)Math.Round (myNote.Height * myCanvas.PixelsPerUnit));
+			myCanvas.SetSizeRequest (width, (int)Math.Round (UiNote.height * myCanvas.PixelsPerUnit));
 			myCanvas.UpdateNow ();
 		}
 
@@ -127,7 +109,7 @@ namespace ui_gtk_gnome
 				try {
 					switch (ev.Type) {
 					case EventType.ButtonPress:
-						aJournal.currentTool.Init (drawingArea, myNote, elements);
+						aJournal.currentTool.Init (drawingArea, Note.Create (), elements);
 						aJournal.currentTool.Reset ();
 						aJournal.currentTool.Start (ev.X, ev.Y);
 						break;
@@ -137,7 +119,6 @@ namespace ui_gtk_gnome
 					case EventType.ButtonRelease:
 						aJournal.currentTool.Complete (ev.X, ev.Y);
 						aJournal.currentTool.Reset ();
-						myNote.Persist ();
 						break;
 					}
 				} catch (NullReferenceException) {
@@ -440,6 +421,10 @@ namespace ui_gtk_gnome
 			myNotesContainer = new VBox (false, 0);
 			myContentContainer.Add (myNotesContainer);
 
+			UiNote notesWidget = new UiNote ();
+			myNotesContainer.Add (notesWidget);
+			notesWidget.Fit (400);
+
 			Filter_Changed (new List<Tag> ());
 
 			// indicate that there will somewhen be the option to add another notes area
@@ -453,22 +438,7 @@ namespace ui_gtk_gnome
 
 		void Filter_Changed (List<Tag> selection)
 		{
-			notes.Clear ();
-			foreach (Widget current in myNotesContainer.AllChildren)
-				myNotesContainer.Remove (current);
-
-			NoteFilter filter = new NoteFilter ();
-			filter.IncludedTags.AddRange (selection);
-
-			List<Note> noteList = Note.GetEntries (filter);
-			foreach (Note note in noteList) {
-				UiNote current = new UiNote (note);
-				notes.Add (current);
-
-				myNotesContainer.Add (current);
-				myNotesContainer.ShowAll ();
-				current.Fit (400);
-			}
+			// TODO notesWidget.UpdateFilter();
 		}
 
 		void SelectTool_Clicked (object obj, EventArgs args)
