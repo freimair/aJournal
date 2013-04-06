@@ -1,7 +1,11 @@
 using System;
 using System.IO;
 using System.Xml;
+using System.Data;
 using System.Collections.Generic;
+
+//TODO get rid of sqlite specificas
+using Mono.Data.Sqlite;
 
 namespace backend
 {
@@ -12,6 +16,135 @@ namespace backend
 	 */
 		public abstract class NoteElement
 		{
+			protected long myId;
+
+			public long X {
+				get;
+				set;
+			}
+
+			public long Y {
+				get;
+				set;
+			}
+
+			public string Time {
+				get;
+				set;
+			}
+
+			public string Color {
+				get;
+				set;
+			}
+
+			protected NoteElement ()
+			{
+			}
+
+			#region database roundtrip
+			public static List<NoteElement> GetElements (ElementFilter filter)
+			{
+				return Elements;
+			}
+
+			public static List<NoteElement> Elements {
+				get {
+					List<NoteElement> result = new List<NoteElement> ();
+					IDataReader reader = Database.QueryInit ("SELECT element_id, type FROM elements");
+					while (reader.Read())
+						result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
+					Database.QueryCleanup (reader);
+
+					return result;
+				}
+			}
+
+			static NoteElement RecreateFromDb (long id, string type)
+			{
+				return (NoteElement)Activator.CreateInstance (Type.GetType (type), id);
+			}
+
+			/**
+			 * recreate a NoteElement from database
+			 */
+			protected NoteElement (long id)
+			{
+				myId = id;
+
+				// fill x, y, timestamp, color
+				IDataReader reader = Database.QueryInit ("SELECT x, y, timestamp, color FROM elements WHERE element_id='" + id + "'");
+				reader.Read ();
+				X = reader.GetInt64 (0);
+				Y = reader.GetInt64 (1);
+				Time = reader.GetString (2);
+				Color = reader.GetString (3);
+				Database.QueryCleanup (reader);
+
+				// TODO fill tags
+			}
+
+			public void Persist ()
+			{
+				PersistNoteElement ();
+				PersistElementDetails ();
+			}
+
+			void PersistNoteElement ()
+			{
+				if (0 >= myId) {
+					// we have a new element here
+					// TODO mutex!
+					IDataReader reader = null;
+
+					try {
+						if (null == Time)
+							Time = DateTime.Now.ToString ("yyyMMddHHmmssff");
+						Color = "red";
+						Database.Execute ("INSERT INTO elements (type, x, y, timestamp, color) VALUES ('" + this.GetType () + "', '" + X + "', '" + Y + "', '" + Time + "' , '" + Color + "')");
+						reader = Database.QueryInit ("SELECT MAX(element_id) FROM elements");
+						reader.Read ();
+						myId = reader.GetInt64 (0);
+						Database.QueryCleanup (reader);
+					} catch (Exception) {
+						if (null != reader)
+							Database.QueryCleanup (reader);
+						// create table elements
+						Database.Execute ("CREATE TABLE elements (" +
+							"element_id INTEGER PRIMARY KEY ASC," +
+							"type varchar(255)," +
+							"x int," +
+							"y int," +
+							"timestamp varchar(15)," +
+							"color varchar(10)" +
+							")"
+						);
+						PersistNoteElement ();
+					}
+				} else {
+					// we may have updated values
+					// TODO do we need to update the timestamp?
+					Database.Execute ("UPDATE elements SET x='" + X + "', y='" + Y + "', color='" + Color + "' WHERE element_id='" + myId + "'");
+				}
+			}
+
+			protected abstract void PersistElementDetails ();
+
+			public void Remove ()
+			{
+				RemoveElementDetails ();
+				RemoveNoteElement ();
+			}
+
+			private void RemoveNoteElement ()
+			{
+				Database.Execute ("DELETE FROM elements WHERE element_id='" + myId + "'");
+			}
+
+			protected abstract void RemoveElementDetails ();
+			#endregion
+
+			#region svg roundtrip
 			public static NoteElement RecreateFromXml (XmlNode node)
 			{
 				switch (node.Name) {
@@ -30,11 +163,28 @@ namespace backend
 			}
 
 			public abstract XmlNode ToXml (XmlDocument document);
+			#endregion
+
+			#region comparison
+			public override bool Equals (object obj)
+			{
+				if (!(obj is NoteElement))
+					return false;
+				if (myId != ((NoteElement)obj).myId)
+					return false;
+
+				return true;
+			}
+
+			public override int GetHashCode ()
+			{
+				return Convert.ToInt32 (myId);
+			}
+			#endregion
 		}
 
 		public class PolylineElement : NoteElement
 		{
-			string color = "red";
 			int strength = 1;
 			private List<int> points;
 
@@ -48,6 +198,56 @@ namespace backend
 				points = new List<int> ();
 			}
 
+			#region database roundtrip
+			/**
+			 * recreate a PolylineElement from database
+			 */
+			public PolylineElement (long id) : base(id)
+			{
+				// fill x, y, timestamp, color
+				IDataReader reader = Database.QueryInit ("SELECT width, points FROM polyline_elements WHERE element_id='" + id + "'");
+				reader.Read ();
+				strength = reader.GetInt32 (0);
+				string pointsstring = reader.GetString (1);
+				if (!"".Equals (pointsstring)) {
+					String[] values = pointsstring.Split (new char[] {' ', ','});
+
+					foreach (String currentValue in values)
+						points.Add (Convert.ToInt32 (currentValue));
+				}
+				Database.QueryCleanup (reader);
+			}
+
+			protected override void PersistElementDetails ()
+			{
+				try {
+					// we have a new element here
+					Database.Execute ("INSERT INTO polyline_elements (element_id, width, points) VALUES ('" + myId + "', '" + strength + "', '" + GetSVGPointList () + "')");
+				} catch (SqliteException e) {
+					switch (e.ErrorCode) {
+					case SQLiteErrorCode.Constraint:
+						Database.Execute ("UPDATE polyline_elements SET width='" + strength + "', points='" + GetSVGPointList () + "' WHERE element_id='" + myId + "'");
+						break;
+					case SQLiteErrorCode.Error:
+						Database.Execute ("CREATE TABLE polyline_elements (" +
+							"element_id INTEGER PRIMARY KEY," +
+							"width INTEGER," +
+							"points TEXT" +
+							")"
+						);
+						PersistElementDetails ();
+						break;
+					}
+				}
+			}
+
+			protected override void RemoveElementDetails ()
+			{
+				Database.Execute ("DELETE FROM polyline_elements WHERE element_id='" + myId + "'");
+			}
+			#endregion
+
+			#region svg roundtrip
 			public PolylineElement (XmlNode node) : this()
 			{
 				// parse points
@@ -71,7 +271,7 @@ namespace backend
 				fillAttribute.Value = "none";
 
 				XmlAttribute strokeAttribute = document.CreateAttribute ("stroke");
-				strokeAttribute.Value = color;
+				strokeAttribute.Value = Color;
 
 				XmlAttribute strokeWidthAttribute = document.CreateAttribute ("stroke-width");
 				strokeWidthAttribute.Value = strength.ToString ();
@@ -88,24 +288,7 @@ namespace backend
 
 				return currentNode;
 			}
-
-			public override bool Equals (object obj)
-			{
-				if (!(obj is PolylineElement))
-					return false;
-				PolylineElement tmp = (PolylineElement)obj;
-
-				if (color != tmp.color)
-					return false;
-				if (strength != tmp.strength)
-					return false;
-				if (points.Count != tmp.points.Count)
-					return false;
-				for (int i = 0; i < points.Count; i++)
-					if (points [i] != tmp.points [i])
-						return false;
-				return true;
-			}
+			#endregion
 		}
 
 		public class TextElement : NoteElement
@@ -114,8 +297,6 @@ namespace backend
 			int indentationLevel = 0;
 			int size = 10;
 			bool strong = false;
-			string color = "red";
-			int x = 0, y = 0;
 
 			public string Text {
 				get{ return text;}
@@ -137,20 +318,65 @@ namespace backend
 				set{ strong = value;}
 			}
 
-			public int X {
-				get{ return x;}
-				set{ x = value;}
-			}
-
-			public int Y {
-				get{ return y;}
-				set{ y = value;}
-			}
-
 			public TextElement ()
 			{
 			}
 
+			#region database roundtrip
+			/**
+			 * recreate a TextElement from database
+			 */
+			public TextElement (long id) : base(id)
+			{
+				// fill x, y, timestamp, color
+				IDataReader reader = Database.QueryInit ("SELECT size, weight, indentation_level, text FROM text_elements WHERE element_id='" + id + "'");
+				reader.Read ();
+				FontSize = reader.GetInt32 (0);
+				FontStrong = reader.GetString (1).Equals ("bold");
+				IndentationLevel = reader.GetInt32 (2);
+				Text = reader.GetString (3);
+				Database.QueryCleanup (reader);
+			}
+
+			protected override void PersistElementDetails ()
+			{
+				try {
+					// we have a new element here
+					Database.Execute ("INSERT INTO text_elements " +
+						"(element_id, size, weight, indentation_level, text) VALUES " +
+						"('" + myId + "', '" + FontSize + "', '" + (FontStrong ? "bold" : "normal") + "', '" + IndentationLevel + "', '" + Text + "')"
+					);
+				} catch (SqliteException e) {
+					switch (e.ErrorCode) {
+					case SQLiteErrorCode.Constraint:
+						Database.Execute ("UPDATE text_elements SET " +
+							"size='" + FontSize +
+							"', weight='" + (FontStrong ? "bold" : "normal") + 
+							"' WHERE element_id='" + myId + "'"
+						);
+						break;
+					case SQLiteErrorCode.Error:
+						Database.Execute ("CREATE TABLE text_elements (" +
+							"element_id INTEGER PRIMARY KEY," +
+							"size INTEGER," +
+							"weight VARCHAR(10)," +
+							"indentation_level INTEGER," +
+							"text TEXT" +
+							")"
+						);
+						PersistElementDetails ();
+						break;
+					}
+				}
+			}
+
+			protected override void RemoveElementDetails ()
+			{
+				Database.Execute ("DELETE FROM text_elements WHERE element_id='" + myId + "'");
+			}
+			#endregion
+
+			#region svg roundtrip
 			public TextElement (XmlNode node)
 			{
 
@@ -178,7 +404,7 @@ namespace backend
 						Y = Convert.ToInt32 (current.Value) - FontSize;
 						break;
 					case "fill":
-						color = current.Value;
+						Color = current.Value;
 						break;
 					case "font-weight":
 						FontStrong = current.Value == "bold" ? true : false;
@@ -210,7 +436,7 @@ namespace backend
 				currentNode.Attributes.Append (a);
 
 				a = document.CreateAttribute ("fill");
-				a.Value = color;
+				a.Value = Color;
 				currentNode.Attributes.Append (a);
 
 				a = document.CreateAttribute ("font-size");
@@ -257,7 +483,7 @@ namespace backend
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("fill");
-						a.Value = color;
+						a.Value = Color;
 						bullet.Attributes.Append (a);
 					} else {
 						bullet = document.CreateElement ("rect");
@@ -279,7 +505,7 @@ namespace backend
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("fill");
-						a.Value = color;
+						a.Value = Color;
 						bullet.Attributes.Append (a);
 					}
 
@@ -301,45 +527,13 @@ namespace backend
 			{
 				return indent / FontSize / 2;
 			}
-
-			public override bool Equals (object obj)
-			{
-				if (!(obj is TextElement))
-					return false;
-				TextElement tmp = (TextElement)obj;
-				if (text != tmp.text)
-					return false;
-				if (indentationLevel != tmp.indentationLevel)
-					return false;
-				if (size != tmp.size)
-					return false;
-				if (strong != tmp.strong)
-					return false;
-				if (color != tmp.color)
-					return false;
-				if (x != tmp.x)
-					return false;
-				if (y != tmp.y)
-					return false;
-
-				return true;
-			}
+			#endregion
 		}
 
 		public class ImageElement : NoteElement
 		{
-			int x, y, width, height;
+			int width, height;
 			string type, image;
-
-			public int X {
-				get { return x;}
-				set { x = value;}
-			}
-
-			public int Y {
-				get { return y;}
-				set { y = value;}
-			}
 
 			public int Width {
 				get { return width;}
@@ -365,6 +559,62 @@ namespace backend
 			{
 			}
 
+			#region database roundtrip
+			/**
+			 * recreate an ImageElement from database
+			 */
+			public ImageElement (long id) : base(id)
+			{
+				// fill x, y, timestamp, color
+				IDataReader reader = Database.QueryInit ("SELECT width, height, type, image FROM image_elements WHERE element_id='" + id + "'");
+				reader.Read ();
+				Width = reader.GetInt32 (0);
+				Height = reader.GetInt32 (1);
+				type = reader.GetString (2);
+				image = reader.GetString (3);
+				Database.QueryCleanup (reader);
+			}
+
+			protected override void PersistElementDetails ()
+			{
+				try {
+					// we have a new element here
+					Database.Execute ("INSERT INTO image_elements " +
+						"(element_id, width, height, type, image) VALUES " +
+						"('" + myId + "', '" + Width + "', '" + Height + "', '" + type + "', '" + image + "')"
+					);
+				} catch (SqliteException e) {
+					switch (e.ErrorCode) {
+					case SQLiteErrorCode.Constraint:
+						// do we need to update type and image?
+						Database.Execute ("UPDATE image_elements SET " +
+							"width='" + width +
+							"', height='" + Height + 
+							"' WHERE element_id='" + myId + "'"
+						);
+						break;
+					case SQLiteErrorCode.Error:
+						Database.Execute ("CREATE TABLE image_elements (" +
+							"element_id INTEGER PRIMARY KEY," +
+							"width INTEGER," +
+							"height INTEGER," +
+							"type VARCHAR(15)," +
+							"image TEXT" +
+							")"
+						);
+						PersistElementDetails ();
+						break;
+					}
+				}
+			}
+
+			protected override void RemoveElementDetails ()
+			{
+				Database.Execute ("DELETE FROM image_elements WHERE element_id='" + myId + "'");
+			}
+			#endregion
+
+			#region svg roundtrip
 			public ImageElement (XmlNode node)
 			{
 				foreach (XmlAttribute current in node.Attributes) {
@@ -418,27 +668,7 @@ namespace backend
 
 				return currentNode;
 			}
-
-			public override bool Equals (object obj)
-			{
-				if (!(obj is ImageElement))
-					return false;
-				ImageElement tmp = (ImageElement)obj;
-				if (x != tmp.x)
-					return false;
-				if (y != tmp.y)
-					return false;
-				if (width != tmp.width)
-					return false;
-				if (height != tmp.height)
-					return false;
-				if (type != tmp.type)
-					return false;
-				if (image != tmp.image)
-					return false;
-
-				return true;
-			}
+			#endregion
 		}
 	}
 }

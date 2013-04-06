@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Xml;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -8,14 +9,29 @@ using backend.NoteElements;
 
 namespace test
 {
-	[TestFixture()]
-	public class ModelTests
+
+	[TestFixture]
+	public abstract class DatabaseTests
+	{
+		[SetUp]
+		public void Setup ()
+		{
+			File.Delete ("test.db");
+			Database.ConnectionString = "URI=file:test.db";
+
+			FurtherSetup ();
+		}
+
+		public abstract void FurtherSetup ();
+	}
+
+	[TestFixture]
+	public class ModelTests : DatabaseTests
 	{
 		List<NoteElement> listA;
 		List<NoteElement> listB;
 
-		[SetUp]
-		protected void SetUp ()
+		public override void FurtherSetup ()
 		{
 			// setup test data
 			listA = new List<NoteElement> ();
@@ -214,8 +230,43 @@ namespace test
 	}
 
 	[TestFixture]
-	public class NoteElementTests
+	public class NoteElementPersistenceTests : DatabaseTests
 	{
+		public override void FurtherSetup ()
+		{
+
+		}
+
+		public void RoundtripElement (NoteElement DUT)
+		{
+			DUT.Persist ();
+			DUT.Persist ();
+
+			Assert.Contains (DUT, NoteElement.Elements);
+
+			DUT.Remove ();
+
+			Assert.IsEmpty (NoteElement.Elements);
+		}
+
+		[Test]
+		public void RoundtripPolylineElement ()
+		{
+			RoundtripElement (new PolylineElement ());
+		}
+
+		[Test]
+		public void RoundtripTextElement ()
+		{
+			RoundtripElement (new TextElement ());
+		}
+
+		[Test]
+		public void RoundtripImageElement ()
+		{
+			RoundtripElement (new ImageElement ());
+		}
+
 		[Test]
 		public void PolylineSvgRoundtrip ()
 		{
@@ -402,14 +453,27 @@ namespace test
 	}
 
 	[TestFixture]
-	public class TagTests
+	public class TagTests : DatabaseTests
 	{
+		public override void FurtherSetup ()
+		{
+			foreach (Tag current in Tag.Tags)
+				current.Remove ();
+			Tag.tagCache.Clear (); // FIXME find another way. this seems to be only necessary for testing
+		}
 
 		[Test]
 		public void SimpleTagTest ()
 		{
 			Tag DUT = Tag.Create ("tag1");
 			Assert.AreEqual (DUT.Name, DUT.ToString ());
+		}
+
+		[Test]
+		public void RoundTripTest ()
+		{
+			Tag DUT = Tag.Create ("tag1");
+			Assert.Contains (DUT, Tag.Tags);
 		}
 
 		[Test]
@@ -426,6 +490,9 @@ namespace test
 			tag2.Parent = tag1;
 
 			Assert.AreEqual ("tag1.tag2.tag3", tag3.ToString ());
+			Assert.Contains (tag1, Tag.Tags);
+			Assert.Contains (tag2, Tag.Tags);
+			Assert.Contains (tag3, Tag.Tags);
 		}
 
 		[Test]
@@ -434,6 +501,8 @@ namespace test
 			Tag DUT = Tag.Create ("tagname");
 			XmlDocument doc = new XmlDocument ();
 			Tag recreated = Tag.RecreateFromXml (DUT.ToXml (doc));
+
+			// TODO leaves a tag in the tag cache behind.
 
 			Assert.AreEqual (DUT, recreated);
 		}

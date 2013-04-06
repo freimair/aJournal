@@ -63,6 +63,8 @@
       <Private>False</Private>
       <Package>gtk-sharp-2.0</Package>
     </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="Mono.Data.Sqlite" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -74,6 +76,8 @@
     <Compile Include="Tags.cs" />
     <Compile Include="Note.cs" />
     <Compile Include="NoteElements.cs" />
+    <Compile Include="Database.cs" />
+    <Compile Include="ElementFilter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rect-select.png">
