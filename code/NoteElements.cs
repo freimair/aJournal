@@ -297,7 +297,6 @@ namespace backend
 			int indentationLevel = 0;
 			int size = 10;
 			bool strong = false;
-			string color = "red";
 
 			public string Text {
 				get{ return text;}
@@ -324,13 +323,56 @@ namespace backend
 			}
 
 			#region database roundtrip
+			/**
+			 * recreate a TextElement from database
+			 */
+			public TextElement (long id) : base(id)
+			{
+				// fill x, y, timestamp, color
+				IDataReader reader = Database.QueryInit ("SELECT size, weight, indentation_level, text FROM text_elements WHERE element_id='" + id + "'");
+				reader.Read ();
+				FontSize = reader.GetInt32 (0);
+				FontStrong = reader.GetString (1).Equals ("bold");
+				IndentationLevel = reader.GetInt32 (2);
+				Text = reader.GetString (3);
+				Database.QueryCleanup (reader);
+			}
 
 			protected override void PersistElementDetails ()
 			{
+				try {
+					// we have a new element here
+					Database.Execute ("INSERT INTO text_elements " +
+						"(element_id, size, weight, indentation_level, text) VALUES " +
+						"('" + myId + "', '" + FontSize + "', '" + (FontStrong ? "bold" : "normal") + "', '" + IndentationLevel + "', '" + Text + "')"
+					);
+				} catch (SqliteException e) {
+					switch (e.ErrorCode) {
+					case SQLiteErrorCode.Constraint:
+						Database.Execute ("UPDATE text_elements SET " +
+							"size='" + FontSize +
+							"', weight='" + (FontStrong ? "bold" : "normal") + 
+							"' WHERE element_id='" + myId + "'"
+						);
+						break;
+					case SQLiteErrorCode.Error:
+						Database.Execute ("CREATE TABLE text_elements (" +
+							"element_id INTEGER PRIMARY KEY," +
+							"size INTEGER," +
+							"weight VARCHAR(10)," +
+							"indentation_level INTEGER," +
+							"text TEXT" +
+							")"
+						);
+						PersistElementDetails ();
+						break;
+					}
+				}
 			}
 
 			protected override void RemoveElementDetails ()
 			{
+				Database.Execute ("DELETE FROM text_elements WHERE element_id='" + myId + "'");
 			}
 			#endregion
 
@@ -362,7 +404,7 @@ namespace backend
 						Y = Convert.ToInt32 (current.Value) - FontSize;
 						break;
 					case "fill":
-						color = current.Value;
+						Color = current.Value;
 						break;
 					case "font-weight":
 						FontStrong = current.Value == "bold" ? true : false;
@@ -394,7 +436,7 @@ namespace backend
 				currentNode.Attributes.Append (a);
 
 				a = document.CreateAttribute ("fill");
-				a.Value = color;
+				a.Value = Color;
 				currentNode.Attributes.Append (a);
 
 				a = document.CreateAttribute ("font-size");
@@ -441,7 +483,7 @@ namespace backend
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("fill");
-						a.Value = color;
+						a.Value = Color;
 						bullet.Attributes.Append (a);
 					} else {
 						bullet = document.CreateElement ("rect");
@@ -463,7 +505,7 @@ namespace backend
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("fill");
-						a.Value = color;
+						a.Value = Color;
 						bullet.Attributes.Append (a);
 					}
 

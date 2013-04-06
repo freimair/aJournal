@@ -252,6 +252,20 @@ namespace test
 		}
 
 		[Test]
+		public void RoundtripTextElement ()
+		{
+			TextElement DUT = new TextElement ();
+			DUT.Persist ();
+			DUT.Persist ();
+
+			Assert.Contains (DUT, NoteElement.Elements);
+
+			DUT.Remove ();
+
+			Assert.IsEmpty (NoteElement.Elements);
+		}
+
+		[Test]
 		public void PolylineSvgRoundtrip ()
 		{
 			Note note = Note.Create ();
