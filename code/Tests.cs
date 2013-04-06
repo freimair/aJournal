@@ -23,27 +23,15 @@ namespace test
 		}
 
 		public abstract void FurtherSetup ();
-
-//		[Test]
-//		public void OpenDatabaseConnection ()
-//		{
-//			Database.Execute ("");
-//		}
 	}
 
-	[TestFixture()]
+	[TestFixture]
 	public class ModelTests : DatabaseTests
 	{
 		List<NoteElement> listA;
 		List<NoteElement> listB;
 
 		public override void FurtherSetup ()
-		{
-
-		}
-
-		[SetUp]
-		protected void SetUp ()
 		{
 			// setup test data
 			listA = new List<NoteElement> ();
@@ -242,7 +230,7 @@ namespace test
 	}
 
 	[TestFixture]
-	public class NoteElementTests : DatabaseTests
+	public class NoteElementPersistenceTests : DatabaseTests
 	{
 		public override void FurtherSetup ()
 		{
