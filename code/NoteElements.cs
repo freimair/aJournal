@@ -17,6 +17,10 @@ namespace backend
 		public abstract class NoteElement
 		{
 			//############### statics ###############
+			public static List<NoteElement> GetElements (ElementFilter filter)
+			{
+				return Elements;
+			}
 
 			public static List<NoteElement> Elements {
 				get {
