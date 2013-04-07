@@ -83,6 +83,11 @@ namespace ui_gtk_gnome
 					line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
 			}
 
+			public void Conclude ()
+			{
+				linemodel.Persist ();
+			}
+
 			public override BoundingBox BoundingBox ()
 			{
 				double cx1, cx2, cy1, cy2;
@@ -175,6 +180,9 @@ namespace ui_gtk_gnome
 
 				// handle TAB key and ENTER key
 				view.Buffer.Changed += TextView_TextChanged;
+				view.FocusOutEvent += delegate(object o, FocusOutEventArgs args) {
+					myText.Persist ();
+				};
 
 				aJournal.Scaled += Scaled;
 			}
@@ -423,6 +431,8 @@ namespace ui_gtk_gnome
 
 				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
 				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
+
+				myImage.Persist ();
 			}
 
 			public override BoundingBox BoundingBox ()

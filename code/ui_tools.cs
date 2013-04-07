@@ -297,6 +297,7 @@ namespace ui_gtk_gnome
 			public override void Complete (double x, double y)
 			{
 				currentStroke.Add (x, y);
+				currentStroke.Conclude ();
 
 				// add the final stroke to the list of elements
 				elements.Add (currentStroke);
