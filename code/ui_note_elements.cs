@@ -439,6 +439,13 @@ namespace ui_gtk_gnome
 				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
 				canvasPixbuf.X = myImage.X;
 				canvasPixbuf.Y = myImage.Y;
+
+				// fit image in remaining horizontal space if too large
+				if (myImage.X + myImage.Width > UiNote.width) {
+					double newWidth = (UiNote.width - myImage.X) * 0.9;
+					myImage.Height = Convert.ToInt32 (myImage.Height * newWidth / myImage.Width);
+					myImage.Width = Convert.ToInt32 (newWidth);
+				}
 				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
 
 				myImage.Persist ();
