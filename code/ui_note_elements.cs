@@ -419,7 +419,7 @@ namespace ui_gtk_gnome
 				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
 			}
 
-			public UiImage (Canvas canvas, String path) : this()
+			public UiImage (Canvas canvas, String path, double x, double y) : this()
 			{
 				myImage.LoadFromFile (path);
 
@@ -428,8 +428,12 @@ namespace ui_gtk_gnome
 
 				myImage.Width = myPixbuf.Width;
 				myImage.Height = myPixbuf.Height;
+				myImage.X = Convert.ToInt32 (x);
+				myImage.Y = Convert.ToInt32 (y);
 
 				canvasPixbuf = new CanvasPixbuf (canvas.Root ());
+				canvasPixbuf.X = myImage.X;
+				canvasPixbuf.Y = myImage.Y;
 				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
 
 				myImage.Persist ();

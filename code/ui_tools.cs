@@ -464,10 +464,8 @@ namespace ui_gtk_gnome
 				// FIXME Run() does not block. so the mouse up action is performed before we select an image.
 				// therefore, nothing gets persisted.
 				if (fc.Run () == (int)ResponseType.Accept) {
-					myImage = new UiImage (mySheet.Canvas, fc.Filename);
+					myImage = new UiImage (mySheet.Canvas, fc.Filename, x, y);
 					elements.Add (myImage);
-
-					myImage.Move (x, y);
 				}
 
 				//Don't forget to call Destroy() or the FileChooserDialog window won't get closed.

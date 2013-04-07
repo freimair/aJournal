@@ -204,6 +204,8 @@ namespace backend
 			 */
 			public PolylineElement (long id) : base(id)
 			{
+				points = new List<int> ();
+
 				// fill x, y, timestamp, color
 				IDataReader reader = Database.QueryInit ("SELECT width, points FROM polyline_elements WHERE element_id='" + id + "'");
 				reader.Read ();

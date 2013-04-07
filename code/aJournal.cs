@@ -25,7 +25,7 @@ namespace ui_gtk_gnome
 		public UiNote ()
 		{
 			Init ();
-//			Draw ();
+			Refill ();
 		}
 
 		void Init ()
@@ -61,6 +61,13 @@ namespace ui_gtk_gnome
 
 			// add mouse trackers
 			drawingArea.CanvasEvent += new Gnome.CanvasEventHandler (Event);
+		}
+
+		void Refill ()
+		{
+			foreach (NoteElement current in NoteElement.GetElements(null)) {
+				elements.Add (UiNoteElement.Recreate (myCanvas, current));
+			}
 		}
 
 		public int Width ()
@@ -118,7 +125,6 @@ namespace ui_gtk_gnome
 						break;
 					case EventType.ButtonRelease:
 						aJournal.currentTool.Complete (ev.X, ev.Y);
-						aJournal.currentTool.Reset ();
 						break;
 					}
 				} catch (NullReferenceException) {
