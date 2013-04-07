@@ -321,9 +321,9 @@ namespace ui_gtk_gnome
 	public class aJournal
 	{
 		TagTree myTreeView;
-		static List<UiNote> notes = new List<UiNote> ();
 		public static Gtk.Window win;
 		VBox myNotesContainer;
+		UiNote notesWidget;
 		// static because we only want one tool active in the whole app
 		public static Tool currentTool;
 		RadioToolButton penToolButton, selectionToolButton, eraserToolButton, textToolButton, imageToolButton, verticalSpaceToolButton;
@@ -427,16 +427,12 @@ namespace ui_gtk_gnome
 			myNotesContainer = new VBox (false, 0);
 			myContentContainer.Add (myNotesContainer);
 
-			UiNote notesWidget = new UiNote ();
+			notesWidget = new UiNote ();
 			myNotesContainer.Add (notesWidget);
 			notesWidget.Fit (400);
 
 			Filter_Changed (new List<Tag> ());
 
-			// indicate that there will somewhen be the option to add another notes area
-			Button addNotesButton = new Button (Gtk.Stock.Add);
-			addNotesButton.Clicked += AddNote;
-			myContentContainer.Add (addNotesButton);
 			win.ShowAll ();
 
 			myTreeView.Visible = false;
@@ -466,15 +462,6 @@ namespace ui_gtk_gnome
 				currentTool = new VerticalSpaceTool ();
 		}
 
-		void AddNote (object obj, EventArgs args)
-		{
-			UiNote note = new UiNote ();
-			notes.Add (note);
-			note.Fit (notes [0].Width ());
-			myNotesContainer.Add (note);
-			note.ShowAll ();
-		}
-
 		/**
 		 * callback for toggeling the tagtree visibility
 		 */
@@ -488,8 +475,7 @@ namespace ui_gtk_gnome
 		 */
 		void ZoomInButton_Clicked (object obj, EventArgs args)
 		{
-			foreach (UiNote note in notes)
-				note.Scale ((double)10 / 9);
+			notesWidget.Scale ((double)10 / 9);
 			if (null != Scaled)
 				Scaled ();
 		}
@@ -499,8 +485,7 @@ namespace ui_gtk_gnome
 		 */
 		void ZoomOutButton_Clicked (object obj, EventArgs args)
 		{
-			foreach (UiNote note in notes)
-				note.Scale ((double)9 / 10);
+			notesWidget.Scale ((double)9 / 10);
 			if (null != Scaled)
 				Scaled ();
 		}
@@ -510,8 +495,7 @@ namespace ui_gtk_gnome
 		 */
 		void ZoomFitButton_Clicked (object obj, EventArgs args)
 		{
-			foreach (UiNote note in notes)
-				note.Fit ();
+			notesWidget.Fit ();
 			if (null != Scaled)
 				Scaled ();
 		}
