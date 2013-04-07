@@ -144,6 +144,7 @@ namespace ui_gtk_gnome
 			CanvasRect mySheet;
 			List<UiNoteElement> elements;
 			Selection selection;
+			CanvasWidget toolbar;
 
 			public override void Init (CanvasRect sheet, List<UiNoteElement> items)
 			{
@@ -189,8 +190,32 @@ namespace ui_gtk_gnome
 
 				selection.SelectItemsWithin (selectionRect.X1, selectionRect.X2, selectionRect.Y1, selectionRect.Y2);
 
-				// TODO since this tool toolbar is suitable for every tool we might generalize the solution
+				if (0 == selection.items.Count) {
+					Reset ();
+					return;
+				}
 
+				// TODO since this tool toolbar is suitable for every tool we might generalize the solution
+				toolbar = new CanvasWidget (mySheet.Canvas.Root ());
+				Toolbar myToolbar = new Toolbar ();
+				ToolButton deleteButton = new ToolButton (Gtk.Stock.Delete);
+				deleteButton.TooltipText = "delete selected";
+				deleteButton.Clicked += delegate(object sender, EventArgs e) {
+					DeleteSelectedItems ();
+					Reset ();
+				};
+				myToolbar.Add (deleteButton);
+				myToolbar.ShowAll ();
+
+				toolbar.Widget = myToolbar;
+				toolbar.X = selectionRect.X1;
+
+				// autoresize the canvasWidget to match the textviews size
+				myToolbar.SizeRequested += delegate(object o, SizeRequestedArgs args) {
+					toolbar.Width = args.Requisition.Width / toolbar.Canvas.PixelsPerUnit + 50;
+					toolbar.Height = args.Requisition.Height / toolbar.Canvas.PixelsPerUnit;
+					toolbar.Y = selectionRect.Y1 - toolbar.Height - 10;
+				};
 			}
 
 			public override void Reset ()
@@ -198,6 +223,8 @@ namespace ui_gtk_gnome
 				try {
 					selectionRect.Destroy ();
 					selectionRect = null;
+					toolbar.Destroy ();
+					toolbar = null;
 					selection.unselect ();
 				} catch (NullReferenceException) {
 				}
@@ -263,6 +290,7 @@ namespace ui_gtk_gnome
 					foreach (UiNoteElement current in selection.items)
 						current.Move (diffx, diffy);
 					selectionRect.Move (diffx, diffy);
+					toolbar.Move (diffx, diffy);
 				}
 			}
 
@@ -270,17 +298,19 @@ namespace ui_gtk_gnome
 			{
 				switch (args.Key) {
 				case Gdk.Key.Delete: // delete selection
-					foreach (UiNoteElement current in selection.items) {
-						current.Destroy ();
-						elements.Remove (current);
-					}
-					selection.unselect ();
+					DeleteSelectedItems ();
 					Reset ();
 					break;
 				}
+			}
 
-				foreach (UiNoteElement current in selection.items)
-					current.EditComleted ();
+			void DeleteSelectedItems ()
+			{
+				foreach (UiNoteElement current in selection.items) {
+					current.Destroy ();
+					elements.Remove (current);
+				}
+				selection.unselect ();
 			}
 		}
 
