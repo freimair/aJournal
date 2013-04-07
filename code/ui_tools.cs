@@ -110,6 +110,19 @@ namespace ui_gtk_gnome
 
 				public void SelectItemsWithin (double x1, double x2, double y1, double y2)
 				{
+					// sort selection
+					if (x1 > x2) {
+						double tmp = x1;
+						x1 = x2;
+						x2 = tmp;
+					}
+
+					if (y1 > y2) {
+						double tmp = y1;
+						y1 = y2;
+						y2 = tmp;
+					}
+
 					foreach (UiNoteElement current in elements) {
 						BoundingBox box = current.BoundingBox ();
 						if (x1 < box.left && x2 > box.right && y1 < box.top && y2 > box.bottom)
