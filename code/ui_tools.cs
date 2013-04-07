@@ -249,6 +249,9 @@ namespace ui_gtk_gnome
 				case 3:	// right mouse button
 					break;
 				}
+
+				foreach (UiNoteElement current in selection.items)
+					current.EditComleted ();
 			}
 
 			void Selection_MouseMove (object obj, EventButton args)
@@ -278,6 +281,9 @@ namespace ui_gtk_gnome
 					Reset ();
 					break;
 				}
+
+				foreach (UiNoteElement current in selection.items)
+					current.EditComleted ();
 			}
 		}
 
@@ -310,7 +316,7 @@ namespace ui_gtk_gnome
 			public override void Complete (double x, double y)
 			{
 				currentStroke.Add (x, y);
-				currentStroke.Conclude ();
+				currentStroke.EditComleted ();
 
 				// add the final stroke to the list of elements
 				elements.Add (currentStroke);

@@ -44,7 +44,7 @@ namespace ui_gtk_gnome
 			public abstract BoundingBox BoundingBox ();
 
 			public abstract void Move (double diffx, double diffy);
-
+			public abstract void EditComleted ();
 			public abstract void Destroy ();
 		}
 
@@ -83,7 +83,7 @@ namespace ui_gtk_gnome
 					line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
 			}
 
-			public void Conclude ()
+			public override void EditComleted ()
 			{
 				linemodel.Persist ();
 			}
@@ -385,6 +385,11 @@ namespace ui_gtk_gnome
 				get{ return myText.Y;}
 			}
 
+			public override void EditComleted ()
+			{
+				myText.Persist ();
+			}
+
 			public override void Destroy ()
 			{
 				canvasWidget.Destroy ();
@@ -454,6 +459,11 @@ namespace ui_gtk_gnome
 				// the cavnvasPixbuf location is not updated by now so we have to do it manually
 				myImage.X += Convert.ToInt32 (diffx);
 				myImage.Y += Convert.ToInt32 (diffy);
+			}
+
+			public override void EditComleted ()
+			{
+				myImage.Persist ();
 			}
 
 			public override void Destroy ()
