@@ -39,60 +39,54 @@ namespace ui_gtk_gnome
 
 			public override void Start (double x, double y)
 			{
-//				canvasVisualization = new CanvasRect (mySheet.Canvas.Root ());
-//				canvasVisualization.X1 = 0;
-//				canvasVisualization.X2 = UiNote.width;
-//				canvasVisualization.Y1 = y;
-//				canvasVisualization.Y2 = y;
-//
-//				oldHeight = mySheet.Y2;
-//
-//				canvasVisualization.FillColorRgba = 0x88888830; // 0xRRGGBBAA
-//				canvasVisualization.OutlineColor = "black";
-//
-//				// fetch items to be moved
-//				foreach (UiNoteElement current in myItems)
-//					if (y < current.BoundingBox ().top)
-//						affectedItems.Add (current);
+				canvasVisualization = new CanvasRect (mySheet.Canvas.Root ());
+				canvasVisualization.X1 = 0;
+				canvasVisualization.X2 = UiNote.width;
+				canvasVisualization.Y1 = y;
+				canvasVisualization.Y2 = y;
+
+				oldHeight = mySheet.Y2;
+
+				canvasVisualization.FillColorRgba = 0x88888830; // 0xRRGGBBAA
+				canvasVisualization.OutlineColor = "black";
+
+				// fetch items to be moved
+				foreach (UiNoteElement current in myItems)
+					if (y < current.BoundingBox ().top)
+						affectedItems.Add (current);
 			}
 
 			public override void Continue (double x, double y)
 			{
-//				try {
-//					// memorize old y
-//					double oldY = canvasVisualization.Y2;
-//
-//					canvasVisualization.Y2 = y;
-//					// adjust sheet size
-//					mySheet.Y2 = Convert.ToUInt32 (oldHeight + Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1));
-//
-//					// move affected items
-//					foreach (UiNoteElement current in affectedItems)
-//						// move by diffy
-//						current.Move (0, y - oldY);
-//				} catch (NullReferenceException) {
-//				}
+				try {
+					// memorize old y
+					double oldY = canvasVisualization.Y2;
+
+					canvasVisualization.Y2 = y;
+
+					// move affected items
+					foreach (UiNoteElement current in affectedItems)
+						// move by diffy
+						current.Move (0, y - oldY);
+				} catch (NullReferenceException) {
+				}
 			}
 
 			public override void Complete (double x, double y)
 			{
-//				try {
-//					// adjust canvas size
-//					myNote.Height += Convert.ToInt32 (canvasVisualization.Y2 - canvasVisualization.Y1);
-//					mySheet.Canvas.HeightRequest = Convert.ToInt32 (mySheet.Canvas.PixelsPerUnit * myNote.Height);
-//					mySheet.Canvas.SetScrollRegion (0.0, 0.0, myNote.Width, myNote.Height);
-//
-//					myNote.Persist ();
-//
-//					canvasVisualization.Destroy ();
-//					canvasVisualization = null;
-//				} catch (NullReferenceException) {
-//				}
+				try {
+					canvasVisualization.Destroy ();
+					canvasVisualization = null;
+
+					foreach (UiNoteElement current in affectedItems)
+						current.EditComleted ();
+				} catch (NullReferenceException) {
+				}
 			}
 
 			public override void Reset ()
 			{
-//				affectedItems.Clear ();
+				affectedItems.Clear ();
 			}
 		}
 
@@ -194,6 +188,9 @@ namespace ui_gtk_gnome
 				selectionInProgress = false;
 
 				selection.SelectItemsWithin (selectionRect.X1, selectionRect.X2, selectionRect.Y1, selectionRect.Y2);
+
+				// TODO since this tool toolbar is suitable for every tool we might generalize the solution
+
 			}
 
 			public override void Reset ()
