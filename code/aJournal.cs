@@ -66,7 +66,9 @@ namespace ui_gtk_gnome
 		void Refill ()
 		{
 			foreach (NoteElement current in NoteElement.GetElements(null)) {
-				elements.Add (UiNoteElement.Recreate (myCanvas, current));
+				UiNoteElement tmp = UiNoteElement.Recreate (myCanvas, current);
+				AdjustSheetHeight (tmp.BoundingBox ().bottom);
+				elements.Add (tmp);
 			}
 		}
 
@@ -349,9 +351,6 @@ namespace ui_gtk_gnome
 			win = new Gtk.Window ("aJournal");
 			win.SetSizeRequest (600, 600);
 			win.DeleteEvent += new DeleteEventHandler (Window_Delete);
-			win.ResizeChecked += delegate(object sender, EventArgs e) {
-				notesWidget.Fit ();
-			};
 
 			// add row-like layout
 			VBox toolbarContentLayout = new VBox (false, 0);
