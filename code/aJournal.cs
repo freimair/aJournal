@@ -92,6 +92,16 @@ namespace ui_gtk_gnome
 		{
 			myCanvas.PixelsPerUnit = ((double)width) / UiNote.width;
 
+			// make sure we fill the height of the window
+			uint canvasWidth, canvasHeight;
+			myCanvas.GetSize (out canvasWidth, out canvasHeight);
+			int newHeight = Convert.ToInt32 (canvasHeight / myCanvas.PixelsPerUnit);
+			if (newHeight > UiNote.height) {
+				UiNote.height = newHeight;
+				drawingArea.Y2 = UiNote.height;
+				myCanvas.SetScrollRegion (drawingArea.X1, drawingArea.Y1, drawingArea.X2, drawingArea.Y2);
+			}
+
 			myCanvas.SetSizeRequest (width, (int)Math.Round (UiNote.height * myCanvas.PixelsPerUnit));
 			myCanvas.UpdateNow ();
 		}
@@ -322,7 +332,6 @@ namespace ui_gtk_gnome
 	{
 		TagTree myTreeView;
 		public static Gtk.Window win;
-		VBox myNotesContainer;
 		UiNote notesWidget;
 		// static because we only want one tool active in the whole app
 		public static Tool currentTool;
@@ -336,6 +345,9 @@ namespace ui_gtk_gnome
 			win = new Gtk.Window ("aJournal");
 			win.SetSizeRequest (600, 600);
 			win.DeleteEvent += new DeleteEventHandler (Window_Delete);
+			win.ResizeChecked += delegate(object sender, EventArgs e) {
+				notesWidget.Fit ();
+			};
 
 			// add row-like layout
 			VBox toolbarContentLayout = new VBox (false, 0);
@@ -421,21 +433,15 @@ namespace ui_gtk_gnome
 			Viewport myViewport = new Viewport ();
 			myScrolledNotesContainer.Add (myViewport);
 
-			VBox myContentContainer = new VBox (false, 0);
-			myViewport.Add (myContentContainer);
-
-			myNotesContainer = new VBox (false, 0);
-			myContentContainer.Add (myNotesContainer);
-
 			notesWidget = new UiNote ();
-			myNotesContainer.Add (notesWidget);
-			notesWidget.Fit (400);
+			myViewport.Add (notesWidget);
 
 			Filter_Changed (new List<Tag> ());
 
 			win.ShowAll ();
 
 			myTreeView.Visible = false;
+			notesWidget.Fit (400);
 		}
 
 		void Filter_Changed (List<Tag> selection)
