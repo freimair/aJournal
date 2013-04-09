@@ -92,18 +92,19 @@ namespace ui_gtk_gnome
 		{
 			myCanvas.PixelsPerUnit = ((double)width) / UiNote.width;
 
-			// make sure we fill the height of the window
-			uint canvasWidth, canvasHeight;
-			myCanvas.GetSize (out canvasWidth, out canvasHeight);
-			int newHeight = Convert.ToInt32 (canvasHeight / myCanvas.PixelsPerUnit);
-			if (newHeight > UiNote.height) {
-				UiNote.height = newHeight;
-				drawingArea.Y2 = UiNote.height;
-				myCanvas.SetScrollRegion (drawingArea.X1, drawingArea.Y1, drawingArea.X2, drawingArea.Y2);
-			}
-
 			myCanvas.SetSizeRequest (width, (int)Math.Round (UiNote.height * myCanvas.PixelsPerUnit));
 			myCanvas.UpdateNow ();
+		}
+
+		void AdjustSheetHeight (double lasty)
+		{
+			if (UiNote.height < lasty + UiNote.width) {
+				UiNote.height += Convert.ToInt32 (lasty) + UiNote.width - UiNote.height;
+				drawingArea.Y2 = UiNote.height;
+				myCanvas.SetScrollRegion (drawingArea.X1, drawingArea.Y1, drawingArea.X2, drawingArea.Y2);
+				myCanvas.HeightRequest = (int)Math.Round (UiNote.height * myCanvas.PixelsPerUnit);
+				myCanvas.UpdateNow ();
+			}
 		}
 
 		public void Fit ()
@@ -135,6 +136,9 @@ namespace ui_gtk_gnome
 						break;
 					case EventType.ButtonRelease:
 						aJournal.currentTool.Complete (ev.X, ev.Y);
+
+						// check if we have to extends the sheet
+						AdjustSheetHeight (ev.Y);
 						break;
 					}
 				} catch (NullReferenceException) {
