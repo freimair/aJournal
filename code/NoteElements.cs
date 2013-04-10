@@ -51,10 +51,16 @@ namespace backend
 			public static List<NoteElement> Elements {
 				get {
 					List<NoteElement> result = new List<NoteElement> ();
-					IDataReader reader = Database.QueryInit ("SELECT element_id, type FROM elements");
-					while (reader.Read())
-						result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
-					Database.QueryCleanup (reader);
+					IDataReader reader = null;
+					try {
+						reader = Database.QueryInit ("SELECT element_id, type FROM elements");
+						while (reader.Read())
+							result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
+					} catch (Exception) {
+
+					} finally {
+						Database.QueryCleanup (reader);
+					}
 
 					return result;
 				}
