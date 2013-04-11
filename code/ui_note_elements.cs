@@ -59,6 +59,7 @@ namespace ui_gtk_gnome
 
 				Init (canvas);
 				line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
+				line.Move (linemodel.X, linemodel.Y);
 			}
 
 			public UiLine (Canvas canvas)
@@ -76,8 +77,14 @@ namespace ui_gtk_gnome
 
 			public void Add (double x, double y)
 			{
-				linemodel.Points.Add (Convert.ToInt32 (x));
-				linemodel.Points.Add (Convert.ToInt32 (y));
+				if (0 == linemodel.X) {
+					linemodel.X = Convert.ToInt64 (x);
+					linemodel.Y = Convert.ToInt64 (y);
+					line.Move (x, y);
+				} else {
+					linemodel.Points.Add (Convert.ToInt32 (x) - Convert.ToInt32 (linemodel.X));
+					linemodel.Points.Add (Convert.ToInt32 (y) - Convert.ToInt32 (linemodel.Y));
+				}
 
 				if (linemodel.Points.Count > 2)
 					line.Points = new CanvasPoints (linemodel.Points.Select (element => Convert.ToDouble (element)).ToArray ());
@@ -97,6 +104,10 @@ namespace ui_gtk_gnome
 			}
 
 			public List<int> Points { get { return linemodel.Points; } }
+
+			public long XOffset { get { return linemodel.X; } }
+
+			public long YOffset { get { return linemodel.Y; } }
 
 			public override void Move (double diffx, double diffy)
 			{

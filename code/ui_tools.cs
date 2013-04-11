@@ -397,7 +397,7 @@ namespace ui_gtk_gnome
 
 						for (int i = 0; i < tmp.Points.Count; i += 2) {
 							int radius = 10; // TODO do we want a configurable eraser (and pen) radius?
-							int cx = tmp.Points [i], cy = tmp.Points [i + 1];
+							long cx = tmp.Points [i] + tmp.XOffset, cy = tmp.Points [i + 1] + tmp.YOffset;
 							if (x > cx - radius && y > cy - radius && x < cx + radius && y < cy + radius) {
 								// we have a match
 								tmp.Destroy (); // TODO make sure the line is destroyed in the backend as well
