@@ -44,7 +44,9 @@ namespace ui_gtk_gnome
 			public abstract BoundingBox BoundingBox ();
 
 			public abstract void Move (double diffx, double diffy);
+
 			public abstract void EditComleted ();
+
 			public abstract void Destroy ();
 		}
 
@@ -222,6 +224,25 @@ namespace ui_gtk_gnome
 				view.ModifyFont (fontDescription);
 
 				Indent ();
+			}
+
+			public bool IsH1 ()
+			{
+				return myText.FontSize == FontSize.Large / 360;
+			}
+
+			public bool IsH2 ()
+			{
+				return myText.FontSize == FontSize.Larger / 360;
+			}
+
+			public bool IsH3 ()
+			{
+				return myText.FontStrong && !(IsH1 () || IsH2 ());
+			}
+
+			public string Text {
+				get { return myText.Text; }
 			}
 
 			void TextView_KeyPress (object o, KeyPressEventArgs args)

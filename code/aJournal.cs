@@ -17,7 +17,7 @@ namespace ui_gtk_gnome
 	{
 		Canvas myCanvas;
 		CanvasRect drawingArea;
-		List<UiNoteElement> elements = new List<UiNoteElement> ();
+		public List<UiNoteElement> elements = new List<UiNoteElement> ();
 
 		// TODO beware of the magic numbers
 		public static int width = 1500, height = 1500;
@@ -221,6 +221,108 @@ namespace ui_gtk_gnome
 		}
 	}
 
+	class HeadingTree : VBox
+	{
+		TreeView myTreeView;
+		TreeStore tagList;
+		List<UiNoteElement> elements;
+
+		public delegate void SelectionChangedHandler (UiText heading);
+
+		public event SelectionChangedHandler SelectionChanged;
+
+		public HeadingTree (List<UiNoteElement> items)
+		{
+			elements = items;
+			ScrolledWindow myScrolledContainer = new ScrolledWindow ();
+
+			myTreeView = new TreeView ();
+			myTreeView.HeadersVisible = false;
+			myTreeView.EnableTreeLines = true;
+			myTreeView.SetSizeRequest (300, 200);
+
+
+			TreeViewColumn col = new TreeViewColumn ();
+			CellRendererText myCellRendererText = new CellRendererText ();
+			col.PackStart (myCellRendererText, true);
+
+			myTreeView.AppendColumn (col);
+//			myTreeView.CursorChanged += delegate(object sender, EventArgs e) {
+//				if (null != SelectionChanged)
+//					SelectionChanged (Selection);
+//			};
+
+			col.AddAttribute (myCellRendererText, "text", 1);
+
+			Fill (elements);
+			myTreeView.Model = tagList;
+
+			myScrolledContainer.Add (myTreeView);
+			this.Add (myScrolledContainer);
+		}
+
+		Dictionary<string, TreeIter> iters;
+
+		void Fill (List<UiNoteElement> preset)
+		{
+			tagList = new TreeStore (typeof(bool), typeof(string));
+
+			iters = new Dictionary<string, TreeIter> ();
+
+			foreach (UiNoteElement current in elements) {
+				if (current is UiText) {
+					UiText uiText = (UiText)current;
+					if (uiText.IsH1 ()) {
+						TreeIter candidate;
+						try {
+							candidate = tagList.AppendValues (false, uiText.Text);
+							iters.Add ("h1", candidate);
+						} catch (Exception) {
+							iters ["h1"] = candidate;
+						}
+					} else if (uiText.IsH2 ()) {
+						TreeIter candidate;
+						try {
+							candidate = tagList.AppendValues (iters ["h1"], false, uiText.Text);
+							iters.Add ("h2", candidate);
+						} catch (Exception) {
+							iters ["h2"] = candidate;
+						}
+					} else if (uiText.IsH3 ()) {
+						try {
+							tagList.AppendValues (iters ["h2"], false, uiText.Text);
+						} catch (Exception) {
+							tagList.AppendValues (iters ["h1"], false, uiText.Text);
+						}
+					}
+//					else if (uiText.IsH2 ())
+//						iters.Add ("h2", tagList.AppendValues (iters ["h1"], false, uiText.Text));
+//					else if (uiText.IsH3 ())
+//						tagList.AppendValues (iters ["h1"], false, uiText.Text);
+				}
+			}
+			myTreeView.Model = tagList;
+		}
+
+		public List<UiNoteElement> Selection {
+			get {
+				List<UiNoteElement> result = new List<UiNoteElement> ();
+//				TreeIter selectedIter;
+//				myTreeView.Selection.GetSelected (out selectedIter);
+//
+//				foreach (KeyValuePair<UiNoteElement, TreeIter> current in iters)
+//					if (selectedIter.Equals (current.Value))
+//						result.Add (current.Key);
+
+				return result;
+			}
+
+			set {
+				Fill (value);
+			}
+		}
+	}
+
 	class TagTree : VBox
 	{
 		TreeView myTreeView;
@@ -228,6 +330,7 @@ namespace ui_gtk_gnome
 		bool checkboxes;
 
 		public delegate void SelectionChangedHandler (List<Tag> tags);
+
 		public event SelectionChangedHandler SelectionChanged;
 
 		public TagTree (bool displayCheckboxes)
@@ -418,26 +521,33 @@ namespace ui_gtk_gnome
 			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
 
 			// add a column-like layout into the second row
-			HPaned taglistContentLayout = new HPaned ();
-			toolbarContentLayout.Add (taglistContentLayout);
+			HPaned sidebarLayout = new HPaned ();
+			toolbarContentLayout.Add (sidebarLayout);
 
-			// add an empty treeview to the first column
+			HBox sidebarContentLayout = new HBox ();
+			sidebarLayout.Add1 (sidebarContentLayout);
 
-			// create tag tree
-			myTreeView = new TagTree (true);
-			myTreeView.SelectionChanged += Filter_Changed;
-			taglistContentLayout.Add1 (myTreeView);
+
 
 			// add canvas container
 			ScrolledWindow myScrolledNotesContainer = new ScrolledWindow ();
 			myScrolledNotesContainer.SetPolicy (Gtk.PolicyType.Automatic, Gtk.PolicyType.Always);
-			taglistContentLayout.Add2 (myScrolledNotesContainer);
+			sidebarLayout.Add2 (myScrolledNotesContainer);
 
 			Viewport myViewport = new Viewport ();
 			myScrolledNotesContainer.Add (myViewport);
 
 			notesWidget = new UiNote ();
 			myViewport.Add (notesWidget);
+
+			// create tag tree
+			myTreeView = new TagTree (true);
+			myTreeView.SelectionChanged += Filter_Changed;
+			sidebarContentLayout.Add (myTreeView);
+
+			// create the heading tree
+			VBox myHeadingView = new HeadingTree (notesWidget.elements);
+			sidebarContentLayout.Add (myHeadingView);
 
 			Filter_Changed (new List<Tag> ());
 
