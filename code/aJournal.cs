@@ -309,6 +309,7 @@ namespace ui_gtk_gnome
 				}
 			}
 			myTreeView.Model = textList;
+			myTreeView.ExpandAll ();
 		}
 
 		public UiText Selection {
@@ -438,6 +439,10 @@ namespace ui_gtk_gnome
 	public class aJournal
 	{
 		TagTree myTreeView;
+
+		HeadingTree myHeadingView;
+
+
 		public static Gtk.Window win;
 		UiNote notesWidget;
 		ScrolledWindow myScrolledNotesContainer;
@@ -461,11 +466,19 @@ namespace ui_gtk_gnome
 			// create a toolbar
 			Toolbar myToolbar = new Toolbar ();
 			// and a toggle button to hide the treeview below
-			ToggleToolButton showTagTreeButton = new ToggleToolButton (Gtk.Stock.Index);
+			ToggleToolButton showTagTreeButton = new ToggleToolButton ();
+			showTagTreeButton.IconWidget = new Gtk.Image (new Pixbuf ("tag.png"));
 			showTagTreeButton.TooltipText = "toggle the taglist visibility";
 			showTagTreeButton.Active = false;
 			showTagTreeButton.Clicked += ShowTagTreeButton_Clicked;
 			myToolbar.Add (showTagTreeButton);
+			// and a toggle button to hide the heading tree below
+			ToggleToolButton showHeadingTreeButton = new ToggleToolButton (Gtk.Stock.Index);
+			showHeadingTreeButton.TooltipText = "toggle the headinglist visibility";
+			showHeadingTreeButton.Active = false;
+			showHeadingTreeButton.Clicked += ShowHeadingTreeButton_Clicked;
+			myToolbar.Add (showHeadingTreeButton);
+
 			// add zoom buttons
 			ToolButton zoomInButton = new ToolButton (Gtk.Stock.ZoomIn);
 			zoomInButton.TooltipText = "zoom in";
@@ -542,7 +555,7 @@ namespace ui_gtk_gnome
 			sidebarContentLayout.Add (myTreeView);
 
 			// create the heading tree
-			HeadingTree myHeadingView = new HeadingTree (notesWidget.elements);
+			myHeadingView = new HeadingTree (notesWidget.elements);
 			myHeadingView.SelectionChanged += HeadingSelection_Changed;
 			sidebarContentLayout.Add (myHeadingView);
 
@@ -551,6 +564,7 @@ namespace ui_gtk_gnome
 			win.ShowAll ();
 
 			myTreeView.Visible = false;
+			myHeadingView.Visible = false;
 			notesWidget.Fit (400);
 		}
 
@@ -589,6 +603,14 @@ namespace ui_gtk_gnome
 		void ShowTagTreeButton_Clicked (object obj, EventArgs args)
 		{
 			myTreeView.Visible = ((ToggleToolButton)obj).Active;
+		}
+
+		/**
+		 * callback for toggeling the tagtree visibility
+		 */
+		void ShowHeadingTreeButton_Clicked (object obj, EventArgs args)
+		{
+			myHeadingView.Visible = ((ToggleToolButton)obj).Active;
 		}
 
 		/**
