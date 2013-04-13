@@ -460,61 +460,58 @@ namespace ui_gtk_gnome
 
 			// create a toolbar
 			Toolbar myToolbar = new Toolbar ();
-			// with a very simple button
-			ToolButton myToolButton = new ToolButton (Gtk.Stock.About);
-			myToolbar.Insert (myToolButton, 0);
 			// and a toggle button to hide the treeview below
 			ToggleToolButton showTagTreeButton = new ToggleToolButton (Gtk.Stock.Index);
 			showTagTreeButton.TooltipText = "toggle the taglist visibility";
 			showTagTreeButton.Active = false;
 			showTagTreeButton.Clicked += ShowTagTreeButton_Clicked;
-			myToolbar.Insert (showTagTreeButton, 0);
+			myToolbar.Add (showTagTreeButton);
 			// add zoom buttons
 			ToolButton zoomInButton = new ToolButton (Gtk.Stock.ZoomIn);
 			zoomInButton.TooltipText = "zoom in";
 			zoomInButton.Clicked += ZoomInButton_Clicked;
-			myToolbar.Insert (zoomInButton, 1);
+			myToolbar.Add (zoomInButton);
 			ToolButton zoomOutButton = new ToolButton (Gtk.Stock.ZoomOut);
 			zoomOutButton.TooltipText = "zoom out";
 			zoomOutButton.Clicked += ZoomOutButton_Clicked;
-			myToolbar.Insert (zoomOutButton, 2);
+			myToolbar.Add (zoomOutButton);
 			ToolButton zoomFitButton = new ToolButton (Gtk.Stock.ZoomFit);
 			zoomFitButton.TooltipText = "zoom fit";
 			zoomFitButton.Clicked += ZoomFitButton_Clicked;
-			myToolbar.Insert (zoomFitButton, 3);
+			myToolbar.Add (zoomFitButton);
 
 			// add tool buttons
 			penToolButton = new RadioToolButton (new GLib.SList (IntPtr.Zero));
 			penToolButton.IconWidget = new Gtk.Image (new Pixbuf ("pencil.png"));
 			penToolButton.TooltipText = "Pen";
 			penToolButton.Clicked += SelectTool_Clicked;
-			myToolbar.Insert (penToolButton, 4);
+			myToolbar.Add (penToolButton);
 			// preselect pen
 			SelectTool_Clicked (penToolButton, null);
 			selectionToolButton = new RadioToolButton (penToolButton, Gtk.Stock.About);
 			selectionToolButton.IconWidget = new Gtk.Image (new Pixbuf ("rect-select.png"));
 			selectionToolButton.TooltipText = "Selection";
 			selectionToolButton.Clicked += SelectTool_Clicked;
-			myToolbar.Insert (selectionToolButton, 5);
+			myToolbar.Add (selectionToolButton);
 			eraserToolButton = new RadioToolButton (penToolButton, Gtk.Stock.About);
 			eraserToolButton.IconWidget = new Gtk.Image (new Pixbuf ("eraser.png"));
 			eraserToolButton.TooltipText = "Eraser";
 			eraserToolButton.Clicked += SelectTool_Clicked;
-			myToolbar.Insert (eraserToolButton, 6);
+			myToolbar.Add (eraserToolButton);
 			textToolButton = new RadioToolButton (penToolButton, Gtk.Stock.About);
 			textToolButton.IconWidget = new Gtk.Image (new Pixbuf ("text-tool.png"));
 			textToolButton.TooltipText = "Text";
 			textToolButton.Clicked += SelectTool_Clicked;
-			myToolbar.Insert (textToolButton, 7);
+			myToolbar.Add (textToolButton);
 			imageToolButton = new RadioToolButton (penToolButton, Gtk.Stock.OrientationPortrait);
 			imageToolButton.TooltipText = "Image";
 			imageToolButton.Clicked += SelectTool_Clicked;
-			myToolbar.Insert (imageToolButton, 8);
+			myToolbar.Add (imageToolButton);
 			verticalSpaceToolButton = new RadioToolButton (penToolButton);
 			verticalSpaceToolButton.IconWidget = new Gtk.Image (new Pixbuf ("stretch.png"));
 			verticalSpaceToolButton.TooltipText = "vertical space";
 			verticalSpaceToolButton.Clicked += SelectTool_Clicked;
-			myToolbar.Insert (verticalSpaceToolButton, 9);
+			myToolbar.Add (verticalSpaceToolButton);
 
 			// insert the toolbar into the layoutpen
 			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
