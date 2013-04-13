@@ -72,6 +72,11 @@ namespace ui_gtk_gnome
 			}
 		}
 
+		public double ScrollTo (UiText selected)
+		{
+			return selected.Y * myCanvas.PixelsPerUnit;
+		}
+
 		public int Width ()
 		{
 			return (int)Math.Round (myCanvas.PixelsPerUnit * width);
@@ -224,7 +229,7 @@ namespace ui_gtk_gnome
 	class HeadingTree : VBox
 	{
 		TreeView myTreeView;
-		TreeStore tagList;
+		TreeStore textList;
 		List<UiNoteElement> elements;
 
 		public delegate void SelectionChangedHandler (UiText heading);
@@ -247,25 +252,31 @@ namespace ui_gtk_gnome
 			col.PackStart (myCellRendererText, true);
 
 			myTreeView.AppendColumn (col);
-//			myTreeView.CursorChanged += delegate(object sender, EventArgs e) {
-//				if (null != SelectionChanged)
-//					SelectionChanged (Selection);
-//			};
+			myTreeView.CursorChanged += delegate(object sender, EventArgs e) {
+				if (null != SelectionChanged)
+					SelectionChanged (Selection);
+			};
 
-			col.AddAttribute (myCellRendererText, "text", 1);
+			col.SetCellDataFunc (myCellRendererText, new TreeCellDataFunc (RenderHeading));
 
-			Fill (elements);
-			myTreeView.Model = tagList;
+			Fill ();
+			myTreeView.Model = textList;
 
 			myScrolledContainer.Add (myTreeView);
 			this.Add (myScrolledContainer);
 		}
 
+		private void RenderHeading (Gtk.TreeViewColumn column, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+		{
+			UiText uiText = (UiText)model.GetValue (iter, 1);
+			(cell as Gtk.CellRendererText).Text = uiText.Text;
+		}
+
 		Dictionary<string, TreeIter> iters;
 
-		void Fill (List<UiNoteElement> preset)
+		void Fill ()
 		{
-			tagList = new TreeStore (typeof(bool), typeof(string));
+			textList = new TreeStore (typeof(bool), typeof(UiText));
 
 			iters = new Dictionary<string, TreeIter> ();
 
@@ -275,7 +286,7 @@ namespace ui_gtk_gnome
 					if (uiText.IsH1 ()) {
 						TreeIter candidate;
 						try {
-							candidate = tagList.AppendValues (false, uiText.Text);
+							candidate = textList.AppendValues (false, uiText);
 							iters.Add ("h1", candidate);
 						} catch (Exception) {
 							iters ["h1"] = candidate;
@@ -283,42 +294,29 @@ namespace ui_gtk_gnome
 					} else if (uiText.IsH2 ()) {
 						TreeIter candidate;
 						try {
-							candidate = tagList.AppendValues (iters ["h1"], false, uiText.Text);
+							candidate = textList.AppendValues (iters ["h1"], false, uiText);
 							iters.Add ("h2", candidate);
 						} catch (Exception) {
 							iters ["h2"] = candidate;
 						}
 					} else if (uiText.IsH3 ()) {
 						try {
-							tagList.AppendValues (iters ["h2"], false, uiText.Text);
+							textList.AppendValues (iters ["h2"], false, uiText);
 						} catch (Exception) {
-							tagList.AppendValues (iters ["h1"], false, uiText.Text);
+							textList.AppendValues (iters ["h1"], false, uiText);
 						}
 					}
-//					else if (uiText.IsH2 ())
-//						iters.Add ("h2", tagList.AppendValues (iters ["h1"], false, uiText.Text));
-//					else if (uiText.IsH3 ())
-//						tagList.AppendValues (iters ["h1"], false, uiText.Text);
 				}
 			}
-			myTreeView.Model = tagList;
+			myTreeView.Model = textList;
 		}
 
-		public List<UiNoteElement> Selection {
+		public UiText Selection {
 			get {
-				List<UiNoteElement> result = new List<UiNoteElement> ();
-//				TreeIter selectedIter;
-//				myTreeView.Selection.GetSelected (out selectedIter);
-//
-//				foreach (KeyValuePair<UiNoteElement, TreeIter> current in iters)
-//					if (selectedIter.Equals (current.Value))
-//						result.Add (current.Key);
+				TreeIter selectedIter;
+				myTreeView.Selection.GetSelected (out selectedIter);
 
-				return result;
-			}
-
-			set {
-				Fill (value);
+				return (UiText)textList.GetValue (selectedIter, 1);
 			}
 		}
 	}
@@ -442,6 +440,7 @@ namespace ui_gtk_gnome
 		TagTree myTreeView;
 		public static Gtk.Window win;
 		UiNote notesWidget;
+		ScrolledWindow myScrolledNotesContainer;
 		// static because we only want one tool active in the whole app
 		public static Tool currentTool;
 		RadioToolButton penToolButton, selectionToolButton, eraserToolButton, textToolButton, imageToolButton, verticalSpaceToolButton;
@@ -530,7 +529,7 @@ namespace ui_gtk_gnome
 
 
 			// add canvas container
-			ScrolledWindow myScrolledNotesContainer = new ScrolledWindow ();
+			myScrolledNotesContainer = new ScrolledWindow ();
 			myScrolledNotesContainer.SetPolicy (Gtk.PolicyType.Automatic, Gtk.PolicyType.Always);
 			sidebarLayout.Add2 (myScrolledNotesContainer);
 
@@ -546,7 +545,8 @@ namespace ui_gtk_gnome
 			sidebarContentLayout.Add (myTreeView);
 
 			// create the heading tree
-			VBox myHeadingView = new HeadingTree (notesWidget.elements);
+			HeadingTree myHeadingView = new HeadingTree (notesWidget.elements);
+			myHeadingView.SelectionChanged += HeadingSelection_Changed;
 			sidebarContentLayout.Add (myHeadingView);
 
 			Filter_Changed (new List<Tag> ());
@@ -560,6 +560,11 @@ namespace ui_gtk_gnome
 		void Filter_Changed (List<Tag> selection)
 		{
 			// TODO notesWidget.UpdateFilter();
+		}
+
+		void HeadingSelection_Changed (UiText selected)
+		{
+			myScrolledNotesContainer.Vadjustment.Value = notesWidget.ScrollTo (selected);
 		}
 
 		void SelectTool_Clicked (object obj, EventArgs args)
