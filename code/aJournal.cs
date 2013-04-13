@@ -30,22 +30,6 @@ namespace ui_gtk_gnome
 
 		void Init ()
 		{
-//			myButton.Clicked += delegate(object o, EventArgs args) {
-//				NoteSettings tmp = new NoteSettings (myNote);
-//				if (ResponseType.Ok == (ResponseType)tmp.Run ()) {
-//					// TODO provide setter for tags in backend
-//					foreach (Tag tag in myNote.GetTags())
-//						myNote.RemoveTag (tag);
-//					foreach (Tag tag in tmp.Selection)
-//						myNote.AddTag (tag);
-//					myNote.Persist ();
-//				}
-//				tmp.Hide ();
-//				myLabel.Text = myNote.ModificationTimestamp + " - ";
-//				foreach (Tag current in myNote.GetTags())
-//					myLabel.Text += current.ToString () + " ";
-//			};
-
 			// add a canvas to the second column
 			myCanvas = Canvas.NewAa ();
 			myCanvas.SetScrollRegion (0.0, 0.0, width, height);
@@ -154,28 +138,29 @@ namespace ui_gtk_gnome
 		}
 	}
 
-	class NoteSettings : Dialog
+	// TODO where to put this?
+	public class NoteSettings : Dialog
 	{
 		TagTree myTagTree;
 
-		public NoteSettings (Note myNote) : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
+		public NoteSettings () : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
 		{
 			myTagTree = new TagTree (true);
-			myTagTree.Selection = myNote.GetTags ();
+//			myTagTree.Selection = myNote.GetTags ();
 			myTagTree.ShowAll ();
 			VBox.Add (myTagTree);
 
 			Button newButton = new Button (Gtk.Stock.New);
 			newButton.Clicked += delegate(object sender, EventArgs e) {
-				CreateTagDialog dialog = new CreateTagDialog (myNote, this);
+				CreateTagDialog dialog = new CreateTagDialog (this);
 				if (ResponseType.Ok == (ResponseType)dialog.Run ()) {
-					Tag newTag = Tag.Create (dialog.TagName);
-					newTag.Parent = dialog.Parenttag;
-					myNote.AddTag (newTag);
-					myNote.Persist ();
-					myTagTree.Selection = myNote.GetTags ();
-					myNote.RemoveTag (newTag);
-					myNote.Persist ();
+//					Tag newTag = Tag.Create (dialog.TagName);
+//					newTag.Parent = dialog.Parenttag;
+//					myNote.AddTag (newTag);
+//					myNote.Persist ();
+//					myTagTree.Selection = myNote.GetTags ();
+//					myNote.RemoveTag (newTag);
+//					myNote.Persist ();
 				}
 				dialog.Hide ();
 			};
@@ -196,7 +181,7 @@ namespace ui_gtk_gnome
 		TagTree myTagTree;
 		Gtk.Entry nameEntry;
 
-		public CreateTagDialog (Note note, Gtk.Window parent) : base("Create Tag", parent, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
+		public CreateTagDialog (Gtk.Window parent) : base("Create Tag", parent, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
 		{
 			VBox.Add (new Label ("Parent:"));
 			myTagTree = new TagTree (false);
@@ -448,7 +433,7 @@ namespace ui_gtk_gnome
 		ScrolledWindow myScrolledNotesContainer;
 		// static because we only want one tool active in the whole app
 		public static Tool currentTool;
-		RadioToolButton penToolButton, selectionToolButton, eraserToolButton, textToolButton, imageToolButton, verticalSpaceToolButton;
+		RadioToolButton penToolButton, selectionToolButton, eraserToolButton, textToolButton, imageToolButton, verticalSpaceToolButton, tagToolButton;
 
 		// event fired when some zooming occurs
 		public static event ScaledEventHandler Scaled;
@@ -467,7 +452,7 @@ namespace ui_gtk_gnome
 			Toolbar myToolbar = new Toolbar ();
 			// and a toggle button to hide the treeview below
 			ToggleToolButton showTagTreeButton = new ToggleToolButton ();
-			showTagTreeButton.IconWidget = new Gtk.Image (new Pixbuf ("tag.png"));
+			showTagTreeButton.IconWidget = new Gtk.Image (new Pixbuf ("taglist.png"));
 			showTagTreeButton.TooltipText = "toggle the taglist visibility";
 			showTagTreeButton.Active = false;
 			showTagTreeButton.Clicked += ShowTagTreeButton_Clicked;
@@ -525,6 +510,12 @@ namespace ui_gtk_gnome
 			verticalSpaceToolButton.TooltipText = "vertical space";
 			verticalSpaceToolButton.Clicked += SelectTool_Clicked;
 			myToolbar.Add (verticalSpaceToolButton);
+			tagToolButton = new RadioToolButton (penToolButton);
+			tagToolButton.IconWidget = new Gtk.Image (new Pixbuf ("tag.png"));
+			tagToolButton.TooltipText = "tag items";
+			tagToolButton.Clicked += SelectTool_Clicked;
+			myToolbar.Add (tagToolButton);
+
 
 			// insert the toolbar into the layoutpen
 			toolbarContentLayout.PackStart (myToolbar, false, false, 0);
@@ -595,6 +586,8 @@ namespace ui_gtk_gnome
 				currentTool = new ImageTool ();
 			else if (obj == verticalSpaceToolButton)
 				currentTool = new VerticalSpaceTool ();
+			else if (obj == tagToolButton)
+				currentTool = new TagTool ();
 		}
 
 		/**

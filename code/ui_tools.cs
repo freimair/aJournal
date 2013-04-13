@@ -90,6 +90,31 @@ namespace ui_gtk_gnome
 			}
 		}
 
+
+		public class TagTool : SelectionTool
+		{
+			public override void Complete (double x, double y)
+			{
+				base.Complete (x, y);
+
+				NoteSettings tmp = new NoteSettings ();
+				if (ResponseType.Ok == (ResponseType)tmp.Run ()) {
+					// TODO provide setter for tags in backend
+//						foreach (Tag tag in myNote.GetTags())
+//							myNote.RemoveTag (tag);
+//						foreach (Tag tag in tmp.Selection)
+//							myNote.AddTag (tag);
+//						myNote.Persist ();
+				}
+				tmp.Hide ();
+				Reset ();
+//					myLabel.Text = myNote.ModificationTimestamp + " - ";
+//					foreach (Tag current in myNote.GetTags())
+//						myLabel.Text += current.ToString () + " ";
+
+			}
+		}
+
 		public class SelectionTool : Tool
 		{
 			class Selection
