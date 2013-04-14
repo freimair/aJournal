@@ -154,13 +154,12 @@ namespace ui_gtk_gnome
 			newButton.Clicked += delegate(object sender, EventArgs e) {
 				CreateTagDialog dialog = new CreateTagDialog (this);
 				if (ResponseType.Ok == (ResponseType)dialog.Run ()) {
-//					Tag newTag = Tag.Create (dialog.TagName);
-//					newTag.Parent = dialog.Parenttag;
+					Tag newTag = Tag.Create (dialog.TagName);
+					newTag.Parent = dialog.Parenttag;
+					myTagTree.Update ();
 //					myNote.AddTag (newTag);
-//					myNote.Persist ();
 //					myTagTree.Selection = myNote.GetTags ();
 //					myNote.RemoveTag (newTag);
-//					myNote.Persist ();
 				}
 				dialog.Hide ();
 			};
@@ -346,13 +345,19 @@ namespace ui_gtk_gnome
 
 			if (checkboxes)
 				col.AddAttribute (myCellRendererToggle, "active", 0);
-			col.AddAttribute (myCellRendererText, "text", 1);
+			col.SetCellDataFunc (myCellRendererText, new TreeCellDataFunc (RenderTag));
 
-			Fill (new List<Tag> ());
+			Update ();
 			myTreeView.Model = tagList;
 
 			myScrolledContainer.Add (myTreeView);
 			this.Add (myScrolledContainer);
+		}
+
+		private void RenderTag (Gtk.TreeViewColumn column, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+		{
+			Tag tag = (Tag)model.GetValue (iter, 1);
+			(cell as Gtk.CellRendererText).Text = tag.Name.Contains (".") ? tag.Name.Substring (tag.Name.LastIndexOf (".") + 1) : tag.Name;
 		}
 
 		void TreeItem_Toggle (object o, ToggledArgs args)
@@ -378,22 +383,30 @@ namespace ui_gtk_gnome
 
 		Dictionary<Tag, TreeIter> iters;
 
-		void Fill (List<Tag> preset)
-		{
-			tagList = new TreeStore (typeof(bool), typeof(string));
+		List<Tag> myPreset = new List<Tag> ();
 
-			Tag[] tags = Note.AllTags.ToArray ();
+		public void Fill (List<Tag> preset)
+		{
+			myPreset = preset;
+			tagList = new TreeStore (typeof(bool), typeof(Tag));
+
+			Tag[] tags = Tag.Tags.ToArray ();
 			Array.Sort (tags, new MyComparer ());
 
 			iters = new Dictionary<Tag, TreeIter> ();
 
 			foreach (Tag current in tags) {
 				if (null == current.Parent)
-					iters.Add (current, tagList.AppendValues (preset.Contains (current), current.Name));
+					iters.Add (current, tagList.AppendValues (myPreset.Contains (current), current));
 				else
-					iters.Add (current, tagList.AppendValues (iters [current.Parent], preset.Contains (current), current.Name));
+					iters.Add (current, tagList.AppendValues (iters [current.Parent], myPreset.Contains (current), current));
 			}
 			myTreeView.Model = tagList;
+		}
+
+		public void Update ()
+		{
+			Fill (myPreset);
 		}
 
 		public List<Tag> Selection {
@@ -407,9 +420,7 @@ namespace ui_gtk_gnome
 					TreeIter selectedIter;
 					myTreeView.Selection.GetSelected (out selectedIter);
 
-					foreach (KeyValuePair<Tag, TreeIter> current in iters)
-						if (selectedIter.Equals (current.Value))
-							result.Add (current.Key);
+					result.Add ((Tag)tagList.GetValue (selectedIter, 1));
 				}
 
 				return result;
