@@ -67,10 +67,10 @@ namespace backend
 				IDataReader reader = null;
 
 				try {
-					reader = Database.QueryInit ("SELECT tag_id, name FROM tags");
+					myId = id;
+					reader = Database.QueryInit ("SELECT name FROM tags WHERE tag_id = '" + myId + "'");
 					reader.Read ();
-					myId = reader.GetInt64 (0);
-					name = reader.GetString (1);
+					name = reader.GetString (0);
 				} finally {
 					Database.QueryCleanup (reader);
 				}
@@ -145,7 +145,14 @@ namespace backend
 			}
 
 			public Tag Parent {
-				get { return tagCache [Name.Substring (0, Name.LastIndexOf ("."))]; }
+				get { 
+					try {
+						return tagCache [Name.Substring (0, Name.LastIndexOf ("."))];
+					} catch (ArgumentOutOfRangeException) {
+						// no "." in the tag name -> no parent
+						return null;
+					}
+				}
 				set {
 					if (Name.Contains ("."))
 						Name = value.Name + "." + Name.Substring (Name.LastIndexOf ("."));
