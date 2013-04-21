@@ -143,10 +143,10 @@ namespace ui_gtk_gnome
 	{
 		TagTree myTagTree;
 
-		public NoteSettings () : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
+		public NoteSettings (HashSet<Tag> active) : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
 		{
 			myTagTree = new TagTree (true);
-//			myTagTree.Selection = myNote.GetTags ();
+			myTagTree.Selection = new List<Tag> (active);
 			myTagTree.ShowAll ();
 			VBox.Add (myTagTree);
 
@@ -157,9 +157,6 @@ namespace ui_gtk_gnome
 					Tag newTag = Tag.Create (dialog.TagName);
 					newTag.Parent = dialog.Parenttag;
 					myTagTree.Update ();
-//					myNote.AddTag (newTag);
-//					myTagTree.Selection = myNote.GetTags ();
-//					myNote.RemoveTag (newTag);
 				}
 				dialog.Hide ();
 			};
@@ -402,6 +399,7 @@ namespace ui_gtk_gnome
 					iters.Add (current, tagList.AppendValues (iters [current.Parent], myPreset.Contains (current), current));
 			}
 			myTreeView.Model = tagList;
+			myTreeView.ExpandAll ();
 		}
 
 		public void Update ()

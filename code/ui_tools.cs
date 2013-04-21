@@ -1,9 +1,12 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using Gnome;
 using Gtk;
 using Gdk;
 using backend;
+using backend.Tags;
+using backend.NoteElements;
 using ui_gtk_gnome.NoteElements;
 
 namespace ui_gtk_gnome
@@ -90,34 +93,27 @@ namespace ui_gtk_gnome
 			}
 		}
 
-
 		public class TagTool : SelectionTool
 		{
 			public override void Complete (double x, double y)
 			{
 				base.Complete (x, y);
 
-				NoteSettings tmp = new NoteSettings ();
+				HashSet<Tag> activeTags = new HashSet<Tag> (NoteElement.CommonTagsFor (new List<NoteElement> (selection.items.Select (element => element.Model))));
+
+				NoteSettings tmp = new NoteSettings (activeTags);
 				if (ResponseType.Ok == (ResponseType)tmp.Run ()) {
-					// TODO provide setter for tags in backend
-//						foreach (Tag tag in myNote.GetTags())
-//							myNote.RemoveTag (tag);
-//						foreach (Tag tag in tmp.Selection)
-//							myNote.AddTag (tag);
-//						myNote.Persist ();
+					foreach (UiNoteElement current in selection.items)
+						current.Model.Tags = tmp.Selection;
 				}
 				tmp.Hide ();
 				Reset ();
-//					myLabel.Text = myNote.ModificationTimestamp + " - ";
-//					foreach (Tag current in myNote.GetTags())
-//						myLabel.Text += current.ToString () + " ";
-
 			}
 		}
 
 		public class SelectionTool : Tool
 		{
-			class Selection
+			protected class Selection
 			{
 				public Selection (List<UiNoteElement> items)
 				{
@@ -168,7 +164,7 @@ namespace ui_gtk_gnome
 			double lastX, lastY;
 			CanvasRect mySheet;
 			List<UiNoteElement> elements;
-			Selection selection;
+			protected Selection selection;
 			CanvasWidget toolbar;
 
 			public override void Init (CanvasRect sheet, List<UiNoteElement> items)
