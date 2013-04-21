@@ -50,8 +50,11 @@ namespace backend
 					"LEFT JOIN element_tag_mapping ON elements.element_id=element_tag_mapping.element_id " +
 					"LEFT JOIN tags ON element_tag_mapping.tag_id=tags.tag_id";
 
+				// display only items newer then specified by filter
+				sql += " WHERE elements.timestamp >= '" + filter.NewerAs.ToString ("yyyMMddHHmmssff") + "'";
+
 				// include untagged items
-				sql += " WHERE element_tag_mapping.tag_id IS NULL";
+				sql += " AND (element_tag_mapping.tag_id IS NULL";
 
 				if (0 < filter.Tags.Count) {
 					sql += " OR ";
@@ -59,6 +62,7 @@ namespace backend
 						sql += "tags.name ='" + current.Name + "' AND ";
 					sql = sql.Substring (0, sql.Length - 5);
 				}
+				sql += ")";
 
 				List<NoteElement> result = new List<NoteElement> ();
 				IDataReader reader = null;

@@ -14,7 +14,12 @@ namespace backend
 		public ElementFilter ()
 		{
 			Tags = new List<Tag> ();
+			NewerAs = DateTime.MinValue;
 		}
 
+		public DateTime NewerAs {
+			get;
+			set;
+		}
 	}
 }
