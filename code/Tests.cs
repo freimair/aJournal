@@ -548,6 +548,7 @@ namespace test
 		public void ElementTagging ()
 		{
 			Tag tag = Tag.Create ("tag1");
+			Tag tag1 = Tag.Create ("tag2");
 
 			NoteElement element = new PolylineElement ();
 			element.Persist ();
@@ -555,10 +556,45 @@ namespace test
 			element.AddTag (tag);
 
 			Assert.Contains (tag, element.Tags);
+			Assert.AreEqual (1, element.Tags.Count);
 
 			element.RemoveTag (tag);
 
 			Assert.IsEmpty (element.Tags);
+		}
+
+		[Test]
+		public void MultiElementTagging ()
+		{
+			// setup
+			Tag[] tags = new Tag[5];
+			for (int i = 0; i < 5; i++)
+				tags [i] = Tag.Create ("tag" + i);
+
+			NoteElement[] elements = new NoteElement[3];
+			List<long> element_ids = new List<long> ();
+			for (int i = 0; i < 3; i++) {
+				elements [i] = new PolylineElement ();
+				elements [i].Persist ();
+				/*
+				 * nasty hack. we do not get the id out of the
+				 * NoteElement object. but since we have a fresh
+				 * database for testing the ids will most likely
+				 * start at 1
+				 */
+				element_ids.Add (i + 1);
+			}
+
+			// assign tags
+			for (int i = 0; i < elements.Length; i++)
+				for (int j = i; j < i + 3 && j < tags.Length; j++)
+					elements [i].AddTag (tags [j]);
+
+			foreach (Tag current in tags)
+				Assert.Contains (current, Tag.AllTagsFor (element_ids));
+
+			Assert.AreEqual (1, Tag.CommonTagsFor (element_ids).Count);
+			Assert.Contains (tags [2], Tag.CommonTagsFor (element_ids));
 		}
 	}
 }

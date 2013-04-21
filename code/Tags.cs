@@ -2,6 +2,7 @@ using System;
 using System.Xml;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 
 //TODO get rid of sqlite specificas
 using Mono.Data.Sqlite;
@@ -33,6 +34,27 @@ namespace backend
 
 			public static List<Tag> Tags {
 				get{ return Get ();}
+			}
+
+			public static List<Tag> AllTagsFor (List<long> element_ids)
+			{
+				List<Tag> result = new List<Tag> ();
+				foreach (long element_id in element_ids)
+					result.AddRange (TagsFor (element_id));
+				return new List<Tag> (result.Distinct ());
+			}
+
+			public static List<Tag> CommonTagsFor (List<long> element_ids)
+			{
+				List<Tag> result = null;
+				foreach (long element_id in element_ids) {
+					if (null == result) {
+						result = new List<Tag> ();
+						result.AddRange (TagsFor (element_id));
+					} else
+						result = new List<Tag> (result.Intersect (TagsFor (element_id)));
+				}
+				return result;
 			}
 
 			public static List<Tag> TagsFor (long element_id)

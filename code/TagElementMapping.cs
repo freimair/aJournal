@@ -44,30 +44,6 @@ namespace backend
 				return result;
 			}
 
-			public static List<long> GetAllTags (List<long> elements)
-			{
-				List<long> result = new List<long> ();
-
-				foreach (int currentTag in elements)
-					result.AddRange (GetTags (currentTag));
-
-				return result;
-			}
-
-			public static List<long> GetSharedTags (List<long> elements)
-			{
-				List<long> result = null;
-
-				foreach (int currentTag in elements) {
-					if (null == result) {
-						result = new List<long> ();
-						result.AddRange (GetTags (currentTag));
-					}
-					result.Intersect (GetTags (currentTag));
-				}
-				return result;
-			}
-
 			public static List<long> GetElements (long tag)
 			{
 				return Get (tag, "tag_id", "element_id");
