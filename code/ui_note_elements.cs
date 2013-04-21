@@ -50,6 +50,8 @@ namespace ui_gtk_gnome
 			public abstract void Destroy ();
 
 			public abstract NoteElement Model { get; }
+
+			public abstract void Hide ();
 		}
 
 		public class UiLine : UiNoteElement
@@ -131,6 +133,11 @@ namespace ui_gtk_gnome
 
 			public override NoteElement Model {
 				get { return linemodel;}
+			}
+
+			public override void Hide ()
+			{
+				line.Destroy ();
 			}
 		}
 
@@ -440,6 +447,13 @@ namespace ui_gtk_gnome
 			public override NoteElement Model {
 				get { return myText;}
 			}
+
+			public override void Hide ()
+			{
+				canvasWidget.Destroy ();
+				if (null != itemize)
+					itemize.Destroy ();
+			}
 		}
 
 		public class UiImage : UiNoteElement
@@ -523,6 +537,11 @@ namespace ui_gtk_gnome
 
 			public override NoteElement Model {
 				get { return myImage;}
+			}
+
+			public override void Hide ()
+			{
+				canvasPixbuf.Destroy ();
 			}
 		}
 	}

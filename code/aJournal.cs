@@ -47,9 +47,24 @@ namespace ui_gtk_gnome
 			drawingArea.CanvasEvent += new Gnome.CanvasEventHandler (Event);
 		}
 
+		ElementFilter filter = new ElementFilter ();
+
+		public List<Tag> TagFilter {
+			get {
+				return filter.Tags;
+			}
+			set {
+				filter.Tags = value;
+				Refill ();
+			}
+		}
+
 		void Refill ()
 		{
-			foreach (NoteElement current in NoteElement.GetElements(null)) {
+			foreach (UiNoteElement current in elements) 
+				current.Hide ();
+			elements.Clear ();
+			foreach (NoteElement current in NoteElement.GetElements(filter)) {
 				UiNoteElement tmp = UiNoteElement.Recreate (myCanvas, current);
 				AdjustSheetHeight (tmp.BoundingBox ().bottom);
 				elements.Add (tmp);
@@ -570,7 +585,7 @@ namespace ui_gtk_gnome
 
 		void Filter_Changed (List<Tag> selection)
 		{
-			// TODO notesWidget.UpdateFilter();
+			notesWidget.TagFilter = selection;
 		}
 
 		void HeadingSelection_Changed (UiText selected)
