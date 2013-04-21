@@ -578,6 +578,7 @@ namespace ui_gtk_gnome
 
 			win.ShowAll ();
 
+			myScrolledNotesContainer.Vadjustment.Value = myScrolledNotesContainer.Vadjustment.Upper;
 			myTreeView.Visible = false;
 			myHeadingView.Visible = false;
 			notesWidget.Fit (400);
