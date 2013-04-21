@@ -46,7 +46,31 @@ namespace backend
 			#region database roundtrip
 			public static List<NoteElement> GetElements (ElementFilter filter)
 			{
-				return Elements;
+				string sql = "SELECT elements.element_id, type FROM elements " +
+					"INNER JOIN element_tag_mapping ON elements.element_id=element_tag_mapping.element_id " +
+					"INNER JOIN tags ON element_tag_mapping.tag_id=tags.tag_id";
+
+
+				if (0 < filter.Tags.Count) {
+					sql += " WHERE ";
+					foreach (Tag current in filter.Tags)
+						sql += "tags.name ='" + current.Name + "' AND ";
+					sql = sql.Substring (0, sql.Length - 5);
+				}
+
+				List<NoteElement> result = new List<NoteElement> ();
+				IDataReader reader = null;
+				try {
+					reader = Database.QueryInit (sql);
+					while (reader.Read())
+						result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
+				} catch (Exception) {
+
+				} finally {
+					Database.QueryCleanup (reader);
+				}
+
+				return result;
 			}
 
 			public static List<NoteElement> Elements {

@@ -596,6 +596,38 @@ namespace test
 			Assert.AreEqual (1, Tag.CommonTagsFor (element_ids).Count);
 			Assert.Contains (tags [2], Tag.CommonTagsFor (element_ids));
 		}
+
+		[Test]
+		public void ElementFilter ()
+		{
+			Tag[] tags = new Tag[2];
+			NoteElement[] elements = new NoteElement[2];
+			for (int i = 0; i < 2; i++) {
+				tags [i] = Tag.Create ("tag" + i);
+				elements [i] = new PolylineElement ();
+				elements [i].Persist ();
+			}
+
+			elements [0].AddTag (tags [0]);
+			elements [1].AddTag (tags [0]);
+			elements [1].AddTag (tags [1]);
+
+			List<NoteElement> result;
+
+			ElementFilter filter = new ElementFilter ();
+
+			filter.Tags.Add (tags [0]);
+			result = NoteElement.GetElements (filter);
+			Assert.AreEqual (2, result.Count);
+			foreach (NoteElement current in elements)
+				Assert.Contains (current, result);
+
+			filter.Tags.Remove (tags [0]);
+			filter.Tags.Add (tags [1]);
+			result = NoteElement.GetElements (filter);
+			Assert.AreEqual (1, result.Count);
+			Assert.Contains (elements [1], result);
+		}
 	}
 }
 
