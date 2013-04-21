@@ -555,6 +555,10 @@ namespace test
 			element.AddTag (tag);
 
 			Assert.Contains (tag, element.Tags);
+
+			element.RemoveTag (tag);
+
+			Assert.IsEmpty (element.Tags);
 		}
 	}
 }
