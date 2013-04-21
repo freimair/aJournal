@@ -3,6 +3,7 @@ using System.IO;
 using System.Xml;
 using System.Data;
 using System.Collections.Generic;
+using backend.Tags;
 
 //TODO get rid of sqlite specificas
 using Mono.Data.Sqlite;
@@ -51,10 +52,16 @@ namespace backend
 			public static List<NoteElement> Elements {
 				get {
 					List<NoteElement> result = new List<NoteElement> ();
-					IDataReader reader = Database.QueryInit ("SELECT element_id, type FROM elements");
-					while (reader.Read())
-						result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
-					Database.QueryCleanup (reader);
+					IDataReader reader = null;
+					try {
+						reader = Database.QueryInit ("SELECT element_id, type FROM elements");
+						while (reader.Read())
+							result.Add (NoteElement.RecreateFromDb (reader.GetInt64 (0), reader.GetString (1)));
+					} catch (Exception) {
+
+					} finally {
+						Database.QueryCleanup (reader);
+					}
 
 					return result;
 				}
@@ -142,6 +149,52 @@ namespace backend
 			}
 
 			protected abstract void RemoveElementDetails ();
+			#endregion
+
+			#region tags
+			public List<Tag> Tags {
+				get { return Tag.TagsFor (myId);}
+				set {
+					ClearTags ();
+					foreach (Tag current in value)
+						AddTag (current);
+				}
+			}
+
+			public void AddTag (Tag tag)
+			{
+				tag.AssignTo (myId);
+			}
+
+			public void RemoveTag (Tag tag)
+			{
+				tag.RemoveFrom (myId);
+			}
+
+			public void ClearTags ()
+			{
+				foreach (Tag current in Tags)
+					RemoveTag (current);
+			}
+
+			static List<long> GetIds (List<NoteElement> elements)
+			{
+				List<long> ids = new List<long> ();
+				foreach (NoteElement element in elements)
+					ids.Add (element.myId);
+
+				return ids;
+			}
+
+			public static List<Tag> AllTagsFor (List<NoteElement> elements)
+			{
+				return Tag.AllTagsFor (GetIds (elements));
+			}
+
+			public static List<Tag> CommonTagsFor (List<NoteElement> elements)
+			{
+				return Tag.CommonTagsFor (GetIds (elements));
+			}
 			#endregion
 
 			#region svg roundtrip

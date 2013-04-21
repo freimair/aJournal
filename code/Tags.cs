@@ -2,6 +2,7 @@ using System;
 using System.Xml;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 
 //TODO get rid of sqlite specificas
 using Mono.Data.Sqlite;
@@ -35,6 +36,45 @@ namespace backend
 				get{ return Get ();}
 			}
 
+			public static List<Tag> AllTagsFor (List<long> element_ids)
+			{
+				List<Tag> result = new List<Tag> ();
+				foreach (long element_id in element_ids)
+					result.AddRange (TagsFor (element_id));
+				return new List<Tag> (result.Distinct ());
+			}
+
+			public static List<Tag> CommonTagsFor (List<long> element_ids)
+			{
+				List<Tag> result = null;
+				foreach (long element_id in element_ids) {
+					if (null == result) {
+						result = new List<Tag> ();
+						result.AddRange (TagsFor (element_id));
+					} else
+						result = new List<Tag> (result.Intersect (TagsFor (element_id)));
+				}
+				return result;
+			}
+
+			public static List<Tag> TagsFor (long element_id)
+			{
+				List<Tag> result = new List<Tag> ();
+				IDataReader reader = null;
+				try {
+					reader = Database.QueryInit ("SELECT tags.tag_id, name FROM tags INNER JOIN element_tag_mapping ON element_tag_mapping.tag_id=tags.tag_id WHERE element_id='" + element_id + "'");
+					while (reader.Read()) {
+						if (!tagCache.ContainsKey (reader.GetString (1)))
+							tagCache.Add (reader.GetString (1), new Tag (reader.GetInt64 (0)));
+						result.Add (tagCache [reader.GetString (1)]);
+					}
+				} catch (Exception) {
+				} finally {
+					Database.QueryCleanup (reader);
+				}
+				return result;
+			}
+
 			public static List<Tag> Get ()
 			{
 				IDataReader reader = null;
@@ -59,7 +99,7 @@ namespace backend
 				return Create (node.FirstChild.Value);
 			}
 
-			long myId;
+			public long myId;
 
 			Tag (long id)
 			{
@@ -67,10 +107,10 @@ namespace backend
 				IDataReader reader = null;
 
 				try {
-					reader = Database.QueryInit ("SELECT tag_id, name FROM tags");
+					myId = id;
+					reader = Database.QueryInit ("SELECT name FROM tags WHERE tag_id = '" + myId + "'");
 					reader.Read ();
-					myId = reader.GetInt64 (0);
-					name = reader.GetString (1);
+					name = reader.GetString (0);
 				} finally {
 					Database.QueryCleanup (reader);
 				}
@@ -80,6 +120,16 @@ namespace backend
 			{
 				this.name = name;
 				Persist ();
+			}
+
+			public void AssignTo (long element_id)
+			{
+				TagElementMapping.Link (element_id, myId);
+			}
+
+			public void RemoveFrom (long element_id)
+			{
+				TagElementMapping.Unlink (element_id, myId);
 			}
 
 			void Persist ()
@@ -145,7 +195,14 @@ namespace backend
 			}
 
 			public Tag Parent {
-				get { return tagCache [Name.Substring (0, Name.LastIndexOf ("."))]; }
+				get { 
+					try {
+						return tagCache [Name.Substring (0, Name.LastIndexOf ("."))];
+					} catch (ArgumentOutOfRangeException) {
+						// no "." in the tag name -> no parent
+						return null;
+					}
+				}
 				set {
 					if (Name.Contains ("."))
 						Name = value.Name + "." + Name.Substring (Name.LastIndexOf ("."));

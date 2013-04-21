@@ -78,6 +78,7 @@
     <Compile Include="NoteElements.cs" />
     <Compile Include="Database.cs" />
     <Compile Include="ElementFilter.cs" />
+    <Compile Include="TagElementMapping.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rect-select.png">
