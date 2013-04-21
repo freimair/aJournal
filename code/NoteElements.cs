@@ -176,6 +176,25 @@ namespace backend
 				foreach (Tag current in Tags)
 					RemoveTag (current);
 			}
+
+			static List<long> GetIds (List<NoteElement> elements)
+			{
+				List<long> ids = new List<long> ();
+				foreach (NoteElement element in elements)
+					ids.Add (element.myId);
+
+				return ids;
+			}
+
+			public static List<Tag> AllTagsFor (List<NoteElement> elements)
+			{
+				return Tag.AllTagsFor (GetIds (elements));
+			}
+
+			public static List<Tag> CommonTagsFor (List<NoteElement> elements)
+			{
+				return Tag.CommonTagsFor (GetIds (elements));
+			}
 			#endregion
 
 			#region svg roundtrip
