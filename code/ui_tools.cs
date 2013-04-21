@@ -101,7 +101,7 @@ namespace ui_gtk_gnome
 
 				List<Tag> activeTags = NoteElement.CommonTagsFor (new List<NoteElement> (selection.items.Select (element => element.Model)));
 
-				NoteSettings tmp = new NoteSettings (activeTags);
+				TagDialog tmp = new TagDialog (activeTags);
 				if (ResponseType.Ok == (ResponseType)tmp.Run ()) {
 					// remove removed tags from NoteElements
 					foreach (Tag currentTag in activeTags)

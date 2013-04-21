@@ -139,11 +139,11 @@ namespace ui_gtk_gnome
 	}
 
 	// TODO where to put this?
-	public class NoteSettings : Dialog
+	public class TagDialog : Dialog
 	{
 		TagTree myTagTree;
 
-		public NoteSettings (List<Tag> active) : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
+		public TagDialog (List<Tag> active) : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
 		{
 			myTagTree = new TagTree (true);
 			myTagTree.Selection = active;
