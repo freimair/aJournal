@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Xml;
+using System.Threading;
 using System.Collections.Generic;
 using NUnit.Framework;
 using backend;
@@ -595,6 +596,66 @@ namespace test
 
 			Assert.AreEqual (1, Tag.CommonTagsFor (element_ids).Count);
 			Assert.Contains (tags [2], Tag.CommonTagsFor (element_ids));
+		}
+
+		[Test]
+		public void ElementTagFilter ()
+		{
+			Tag[] tags = new Tag[3];
+			NoteElement[] elements = new NoteElement[3];
+			for (int i = 0; i < 3; i++) {
+				tags [i] = Tag.Create ("tag" + i);
+				elements [i] = new PolylineElement ();
+				elements [i].Persist ();
+			}
+
+			elements [0].AddTag (tags [0]);
+			elements [1].AddTag (tags [0]);
+			elements [1].AddTag (tags [1]);
+
+			List<NoteElement> result;
+
+			ElementFilter filter = new ElementFilter ();
+			result = NoteElement.GetElements (filter);
+			Assert.AreEqual (1, result.Count);
+			Assert.Contains (elements [2], result);
+
+			filter.Tags.Add (tags [0]);
+			result = NoteElement.GetElements (filter);
+			Assert.AreEqual (3, result.Count);
+			foreach (NoteElement current in elements)
+				Assert.Contains (current, result);
+
+			filter.Tags.Remove (tags [0]);
+			filter.Tags.Add (tags [1]);
+			result = NoteElement.GetElements (filter);
+			Assert.AreEqual (2, result.Count);
+			Assert.Contains (elements [1], result);
+			Assert.Contains (elements [2], result);
+		}
+
+		[Test]
+		public void ElementTimeFilter ()
+		{
+			// setup
+			NoteElement element1 = new PolylineElement ();
+			element1.Persist ();
+			Thread.Sleep (100);
+			ElementFilter filter = new ElementFilter ();
+			filter.NewerAs = DateTime.Now;
+
+			Thread.Sleep (200);
+			NoteElement element2 = new PolylineElement ();
+			element2.Persist ();
+
+			// create dummy tag
+			Tag tag = Tag.Create ("dummy");
+			element1.AddTag (tag);
+
+
+			List<NoteElement> result = NoteElement.GetElements (filter);
+			Assert.AreEqual (1, result.Count);
+			Assert.Contains (element2, result);
 		}
 	}
 }
