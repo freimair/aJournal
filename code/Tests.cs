@@ -600,9 +600,9 @@ namespace test
 		[Test]
 		public void ElementFilter ()
 		{
-			Tag[] tags = new Tag[2];
-			NoteElement[] elements = new NoteElement[2];
-			for (int i = 0; i < 2; i++) {
+			Tag[] tags = new Tag[3];
+			NoteElement[] elements = new NoteElement[3];
+			for (int i = 0; i < 3; i++) {
 				tags [i] = Tag.Create ("tag" + i);
 				elements [i] = new PolylineElement ();
 				elements [i].Persist ();
@@ -615,18 +615,22 @@ namespace test
 			List<NoteElement> result;
 
 			ElementFilter filter = new ElementFilter ();
+			result = NoteElement.GetElements (filter);
+			Assert.AreEqual (1, result.Count);
+			Assert.Contains (elements [2], result);
 
 			filter.Tags.Add (tags [0]);
 			result = NoteElement.GetElements (filter);
-			Assert.AreEqual (2, result.Count);
+			Assert.AreEqual (3, result.Count);
 			foreach (NoteElement current in elements)
 				Assert.Contains (current, result);
 
 			filter.Tags.Remove (tags [0]);
 			filter.Tags.Add (tags [1]);
 			result = NoteElement.GetElements (filter);
-			Assert.AreEqual (1, result.Count);
+			Assert.AreEqual (2, result.Count);
 			Assert.Contains (elements [1], result);
+			Assert.Contains (elements [2], result);
 		}
 	}
 }

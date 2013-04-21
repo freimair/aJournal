@@ -47,12 +47,14 @@ namespace backend
 			public static List<NoteElement> GetElements (ElementFilter filter)
 			{
 				string sql = "SELECT elements.element_id, type FROM elements " +
-					"INNER JOIN element_tag_mapping ON elements.element_id=element_tag_mapping.element_id " +
-					"INNER JOIN tags ON element_tag_mapping.tag_id=tags.tag_id";
+					"LEFT JOIN element_tag_mapping ON elements.element_id=element_tag_mapping.element_id " +
+					"LEFT JOIN tags ON element_tag_mapping.tag_id=tags.tag_id";
 
+				// include untagged items
+				sql += " WHERE element_tag_mapping.tag_id IS NULL";
 
 				if (0 < filter.Tags.Count) {
-					sql += " WHERE ";
+					sql += " OR ";
 					foreach (Tag current in filter.Tags)
 						sql += "tags.name ='" + current.Name + "' AND ";
 					sql = sql.Substring (0, sql.Length - 5);
