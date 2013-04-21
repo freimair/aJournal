@@ -534,6 +534,28 @@ namespace test
 			Assert.AreEqual (tags [0], recreated);
 		}
 	}
+	[TestFixture]
+	public class TaggingTest : DatabaseTests
+	{
+		public override void FurtherSetup ()
+		{
+			foreach (Tag current in Tag.Tags)
+				current.Remove ();
+			Tag.tagCache.Clear (); // FIXME find another way. this seems to be only necessary for testing
+		}
 
+		[Test]
+		public void ElementTagging ()
+		{
+			Tag tag = Tag.Create ("tag1");
+
+			NoteElement element = new PolylineElement ();
+			element.Persist ();
+
+			element.AddTag (tag);
+
+			Assert.Contains (tag, element.Tags);
+		}
+	}
 }
 

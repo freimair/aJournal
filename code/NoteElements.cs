@@ -3,6 +3,7 @@ using System.IO;
 using System.Xml;
 using System.Data;
 using System.Collections.Generic;
+using backend.Tags;
 
 //TODO get rid of sqlite specificas
 using Mono.Data.Sqlite;
@@ -148,6 +149,33 @@ namespace backend
 			}
 
 			protected abstract void RemoveElementDetails ();
+			#endregion
+
+			#region tags
+			public List<Tag> Tags {
+				get { return Tag.TagsFor (myId);}
+				set {
+					ClearTags ();
+					foreach (Tag current in value)
+						AddTag (current);
+				}
+			}
+
+			public void AddTag (Tag tag)
+			{
+				tag.AssignTo (myId);
+			}
+
+			public void RemoveTag (Tag tag)
+			{
+				tag.RemoveFrom (myId);
+			}
+
+			public void ClearTags ()
+			{
+				foreach (Tag current in Tags)
+					RemoveTag (current);
+			}
 			#endregion
 
 			#region svg roundtrip

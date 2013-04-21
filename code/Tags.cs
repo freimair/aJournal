@@ -35,6 +35,24 @@ namespace backend
 				get{ return Get ();}
 			}
 
+			public static List<Tag> TagsFor (long element_id)
+			{
+				List<Tag> result = new List<Tag> ();
+				IDataReader reader = null;
+				try {
+					reader = Database.QueryInit ("SELECT tags.tag_id, name FROM tags INNER JOIN element_tag_mapping ON element_tag_mapping.tag_id=tags.tag_id WHERE element_id='" + element_id + "'");
+					while (reader.Read()) {
+						if (!tagCache.ContainsKey (reader.GetString (1)))
+							tagCache.Add (reader.GetString (1), new Tag (reader.GetInt64 (0)));
+						result.Add (tagCache [reader.GetString (1)]);
+					}
+				} catch (Exception) {
+				} finally {
+					Database.QueryCleanup (reader);
+				}
+				return result;
+			}
+
 			public static List<Tag> Get ()
 			{
 				IDataReader reader = null;
@@ -59,7 +77,7 @@ namespace backend
 				return Create (node.FirstChild.Value);
 			}
 
-			long myId;
+			public long myId;
 
 			Tag (long id)
 			{
@@ -80,6 +98,16 @@ namespace backend
 			{
 				this.name = name;
 				Persist ();
+			}
+
+			public void AssignTo (long element_id)
+			{
+				TagElementMapping.Link (element_id, myId);
+			}
+
+			public void RemoveFrom (long element_id)
+			{
+				TagElementMapping.Unlink (element_id, myId);
 			}
 
 			void Persist ()
