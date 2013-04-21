@@ -143,10 +143,10 @@ namespace ui_gtk_gnome
 	{
 		TagTree myTagTree;
 
-		public NoteSettings (HashSet<Tag> active) : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
+		public NoteSettings (List<Tag> active) : base("edit Note Metadata", aJournal.win, DialogFlags.Modal | DialogFlags.DestroyWithParent, ButtonsType.OkCancel)
 		{
 			myTagTree = new TagTree (true);
-			myTagTree.Selection = new List<Tag> (active);
+			myTagTree.Selection = active;
 			myTagTree.ShowAll ();
 			VBox.Add (myTagTree);
 

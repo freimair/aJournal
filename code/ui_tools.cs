@@ -99,12 +99,23 @@ namespace ui_gtk_gnome
 			{
 				base.Complete (x, y);
 
-				HashSet<Tag> activeTags = new HashSet<Tag> (NoteElement.CommonTagsFor (new List<NoteElement> (selection.items.Select (element => element.Model))));
+				List<Tag> activeTags = NoteElement.CommonTagsFor (new List<NoteElement> (selection.items.Select (element => element.Model)));
 
 				NoteSettings tmp = new NoteSettings (activeTags);
 				if (ResponseType.Ok == (ResponseType)tmp.Run ()) {
-					foreach (UiNoteElement current in selection.items)
-						current.Model.Tags = tmp.Selection;
+					// remove removed tags from NoteElements
+					foreach (Tag currentTag in activeTags)
+						if (!tmp.Selection.Contains (currentTag))
+							foreach (UiNoteElement currentNoteElement in selection.items)
+								currentNoteElement.Model.RemoveTag (currentTag);
+
+					// add new tags
+					foreach (Tag currentTag in tmp.Selection) {
+						if (!activeTags.Contains (currentTag))
+							foreach (UiNoteElement currentNoteElement in selection.items)
+								if (!currentNoteElement.Model.Tags.Contains (currentTag))
+									currentNoteElement.Model.AddTag (currentTag);
+					}
 				}
 				tmp.Hide ();
 				Reset ();
