@@ -25,7 +25,6 @@ namespace ui_gtk_gnome
 		public UiNote ()
 		{
 			Init ();
-			Refill ();
 		}
 
 		void Init ()
@@ -566,6 +565,7 @@ namespace ui_gtk_gnome
 
 			// create tag tree
 			myTreeView = new TagTree (true);
+			myTreeView.Selection = Tag.Tags;
 			myTreeView.SelectionChanged += Filter_Changed;
 			sidebarContentLayout.Add (myTreeView);
 
@@ -574,7 +574,7 @@ namespace ui_gtk_gnome
 			myHeadingView.SelectionChanged += HeadingSelection_Changed;
 			sidebarContentLayout.Add (myHeadingView);
 
-			Filter_Changed (new List<Tag> ());
+			Filter_Changed (Tag.Tags);
 
 			win.ShowAll ();
 
