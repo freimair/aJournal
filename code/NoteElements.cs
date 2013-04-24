@@ -56,12 +56,9 @@ namespace backend
 				// include untagged items
 				sql += " AND (element_tag_mapping.tag_id IS NULL";
 
-				if (0 < filter.Tags.Count) {
-					sql += " OR ";
+				if (0 < filter.Tags.Count)
 					foreach (Tag current in filter.Tags)
-						sql += "tags.name ='" + current.Name + "' AND ";
-					sql = sql.Substring (0, sql.Length - 5);
-				}
+						sql += " OR tags.name ='" + current.Name + "'";
 				sql += ")";
 
 				List<NoteElement> result = new List<NoteElement> ();
