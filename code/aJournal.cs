@@ -25,6 +25,7 @@ namespace ui_gtk_gnome
 		public UiNote ()
 		{
 			Init ();
+			Refill ();
 		}
 
 		void Init ()
