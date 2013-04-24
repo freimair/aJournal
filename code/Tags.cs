@@ -204,10 +204,12 @@ namespace backend
 					}
 				}
 				set {
-					if (Name.Contains ("."))
-						Name = value.Name + "." + Name.Substring (Name.LastIndexOf ("."));
-					else
-						Name = value.Name + "." + Name;
+					if (null != value) { // we remove the parent by assigning null - null breaks the code below
+						if (Name.Contains ("."))
+							Name = value.Name + "." + Name.Substring (Name.LastIndexOf ("."));
+						else
+							Name = value.Name + "." + Name;
+					}
 				}
 			}
 
