@@ -237,6 +237,25 @@ namespace ui_gtk_gnome
 					Reset ();
 				};
 				myToolbar.Add (deleteButton);
+
+				ToolButton enlargeButton = new ToolButton (Gtk.Stock.ZoomIn);
+				enlargeButton.TooltipText = "enlarge selected";
+				enlargeButton.Clicked += delegate(object sender, EventArgs e) {
+					foreach (UiNoteElement current in selection.items)
+						if (current is UiImage)
+							((UiImage)current).Resize (1.1);
+				};
+				myToolbar.Add (enlargeButton);
+
+				ToolButton shrinkButton = new ToolButton (Gtk.Stock.ZoomOut);
+				shrinkButton.TooltipText = "shrink selected";
+				shrinkButton.Clicked += delegate(object sender, EventArgs e) {
+					foreach (UiNoteElement current in selection.items)
+						if (current is UiImage)
+							((UiImage)current).Resize (0.9);
+				};
+				myToolbar.Add (shrinkButton);
+
 				myToolbar.ShowAll ();
 
 				toolbar.Widget = myToolbar;
@@ -244,7 +263,7 @@ namespace ui_gtk_gnome
 
 				// autoresize the canvasWidget to match the textviews size
 				myToolbar.SizeRequested += delegate(object o, SizeRequestedArgs args) {
-					toolbar.Width = args.Requisition.Width / toolbar.Canvas.PixelsPerUnit + 50;
+					toolbar.Width = (args.Requisition.Width / toolbar.Canvas.PixelsPerUnit + 30) * 3;
 					toolbar.Height = args.Requisition.Height / toolbar.Canvas.PixelsPerUnit;
 					toolbar.Y = selectionRect.Y1 - toolbar.Height - 10;
 				};

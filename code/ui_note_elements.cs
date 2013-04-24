@@ -515,6 +515,14 @@ namespace ui_gtk_gnome
 				return new BoundingBox (cx1, cy1, cx2, cy2);
 			}
 
+			public void Resize (double scale)
+			{
+				myImage.Width = Convert.ToInt32 (myImage.Width * scale);
+				myImage.Height = Convert.ToInt32 (myImage.Height * scale);
+
+				canvasPixbuf.Pixbuf = myPixbuf.ScaleSimple (myImage.Width, myImage.Height, InterpType.Bilinear);
+			}
+
 			public override void Move (double diffx, double diffy)
 			{
 				canvasPixbuf.Move (diffx, diffy);
