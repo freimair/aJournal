@@ -55,7 +55,6 @@
   <ItemGroup>
     <Compile Include="Tests.cs" />
     <Compile Include="Tags.cs" />
-    <Compile Include="Note.cs" />
     <Compile Include="NoteElements.cs" />
     <Compile Include="Database.cs" />
     <Compile Include="ElementFilter.cs" />
