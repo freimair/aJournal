@@ -16,7 +16,7 @@ namespace backend
 			{
 				try {
 					Database.Execute ("INSERT INTO element_tag_mapping (element_id, tag_id) VALUES ('" + element + "', '" + tag + "')");
-				} catch (Exception e) {
+				} catch (Exception) {
 					InitDatabase ();
 					Link (element, tag);
 				}
@@ -48,7 +48,6 @@ namespace backend
 			{
 				return Get (tag, "tag_id", "element_id");
 			}
-
 
 			public static List<long> GetTags (long element)
 			{

@@ -146,12 +146,6 @@ namespace ui_gtk_gnome
 		 */
 		public class UiText : UiNoteElement
 		{
-			public class FontSize
-			{
-				public static int Normal = 10000;
-				public static int Larger = 15000;
-				public static int Large = 20000;
-			}
 
 			TextElement myText;
 			CanvasWidget canvasWidget;
@@ -165,10 +159,6 @@ namespace ui_gtk_gnome
 				myText = new TextElement ();
 
 				Init (canvas);
-
-				FontDescription fontDescription = view.Style.FontDescription;
-				myText.FontSize = Convert.ToInt32 (fontDescription.Size / 360);
-				myText.FontStrong = fontDescription.Weight == Weight.Bold;
 			}
 
 			void Init (Canvas canvas)
@@ -178,10 +168,7 @@ namespace ui_gtk_gnome
 				// use Gtk TextView widget for text input
 				view = new TextView ();
 				// reset text style
-				FontDescription fontDescription = view.Style.FontDescription;
-				fontDescription.Size = FontSize.Normal;
-				fontDescription.Weight = Weight.Normal;
-				view.ModifyFont (fontDescription);
+				Scaled ();
 
 				// do further configuration
 				view.CursorVisible = true;
@@ -213,11 +200,40 @@ namespace ui_gtk_gnome
 				aJournal.Scaled += Scaled;
 			}
 
+			void Update ()
+			{
+				Scaled ();
+				Indent ();
+			}
+
 			void Scaled ()
 			{
 				FontDescription fontDescription = view.Style.FontDescription;
-				fontDescription.Size = Convert.ToInt32 (myText.FontSize * 360 * canvasWidget.Canvas.PixelsPerUnit * 3.3);
+				fontDescription.AbsoluteSize = 1000 * GetFontSizeFromStyle (myText.Style);
+				fontDescription.Weight = GetFontWeightFromStyle (myText.Style);
 				view.ModifyFont (fontDescription);
+			}
+
+			int[] fontSize = new int[] {2, 2, 3, 4};
+
+			int GetStyleFromFontSize (int fontSize, bool fontWeight)
+			{
+				throw new NotImplementedException ();
+			}
+
+			int GetFontSizeFromStyle (uint style)
+			{
+				return GetFontSizeFromStyle (style, true);
+			}
+
+			int GetFontSizeFromStyle (uint style, bool scaled)
+			{
+				return Convert.ToInt32 (fontSize [style] * 20 * (scaled ? canvasWidget.Canvas.PixelsPerUnit : 1));
+			}
+
+			Pango.Weight GetFontWeightFromStyle (uint style)
+			{
+				return myText.Style == 0 ? Weight.Normal : Weight.Bold;
 			}
 
 			public UiText (Canvas canvas, TextElement noteElement)
@@ -231,27 +247,22 @@ namespace ui_gtk_gnome
 				canvasWidget.X = myText.X;
 				canvasWidget.Y = myText.Y;
 
-				FontDescription fontDescription = view.Style.FontDescription;
-				fontDescription.Size = Convert.ToInt32 (myText.FontSize * 360);
-				fontDescription.Weight = myText.FontStrong ? Weight.Bold : Weight.Normal;
-				view.ModifyFont (fontDescription);
-
-				Indent ();
+				Update ();
 			}
 
 			public bool IsH1 ()
 			{
-				return myText.FontSize == FontSize.Large / 360;
+				return myText.Style == 3;
 			}
 
 			public bool IsH2 ()
 			{
-				return myText.FontSize == FontSize.Larger / 360;
+				return myText.Style == 2;
 			}
 
 			public bool IsH3 ()
 			{
-				return myText.FontStrong && !(IsH1 () || IsH2 ());
+				return myText.Style == 1;
 			}
 
 			public string Text {
@@ -262,30 +273,22 @@ namespace ui_gtk_gnome
 			{
 				EventKey ev = new EventKey (args.Event.Handle);
 				if (controlModifierActive) {
-					FontDescription fontDescription = view.Style.FontDescription;
 					switch (ev.Key) {
 					case Gdk.Key.Key_0: // standard
-						fontDescription.Size = FontSize.Normal;
-						fontDescription.Weight = Weight.Normal;
+						myText.Style = 0;
 						break;
 					case Gdk.Key.Key_1: // h1
-						fontDescription.Size = FontSize.Large;
-						fontDescription.Weight = Weight.Bold;
+						myText.Style = 3;
 						break;
 					case Gdk.Key.Key_2: // h2
-						fontDescription.Size = FontSize.Larger;
-						fontDescription.Weight = Weight.Bold;
+						myText.Style = 2;
 						break;
 					case Gdk.Key.Key_3: // h3
-						fontDescription.Size = FontSize.Normal;
-						fontDescription.Weight = Weight.Bold;
+						myText.Style = 1;
 						break;
 					}
 
-					view.ModifyFont (fontDescription);
-
-					myText.FontSize = Convert.ToInt32 (fontDescription.Size / 360);
-					myText.FontStrong = fontDescription.Weight == Weight.Bold;
+					Update ();
 				}
 
 				// track modifier keys
@@ -343,7 +346,7 @@ namespace ui_gtk_gnome
 
 					// trigger new textbox
 					aJournal.currentTool.Reset ();
-					aJournal.currentTool.Start (myText.X, myText.Y + myText.FontSize * 2 + 30);
+					aJournal.currentTool.Start (myText.X, myText.Y + GetFontSizeFromStyle (myText.Style) * 2 + 30);
 				}
 
 				// itemize
@@ -383,18 +386,18 @@ namespace ui_gtk_gnome
 						itemize = new CanvasRect (canvasWidget.Canvas.Root ());
 
 					// move to appropriate position
-					double offsetx = myText.X + (myText.IndentationLevel - 1) * myText.FontSize * 2 * 1.5;
+					double offsetx = myText.X + (myText.IndentationLevel - 1) * GetFontSizeFromStyle (myText.Style, false) * 2;
 					double offsety = myText.Y;
 
-					itemize.X1 = offsetx + myText.FontSize * 2 / 3;
-					itemize.X2 = offsetx + 2 * myText.FontSize * 2 / 3;
-					itemize.Y1 = offsety + myText.FontSize * 2 / 3;
-					itemize.Y2 = offsety + 2 * myText.FontSize * 2 / 3;
+					itemize.X1 = offsetx + GetFontSizeFromStyle (myText.Style, false) * 1 / 3;
+					itemize.X2 = offsetx + GetFontSizeFromStyle (myText.Style, false) * 2 / 3;
+					itemize.Y1 = offsety + GetFontSizeFromStyle (myText.Style, false) * 1 / 3;
+					itemize.Y2 = offsety + GetFontSizeFromStyle (myText.Style, false) * 2 / 3;
 					itemize.FillColor = "black";
 				}
 
 				// indent text
-				canvasWidget.X = myText.X + myText.IndentationLevel * myText.FontSize * 2 * 1.5;
+				canvasWidget.X = myText.X + myText.IndentationLevel * GetFontSizeFromStyle (myText.Style, false) * 2;
 			}
 
 			public bool Empty {

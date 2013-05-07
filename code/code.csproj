@@ -74,7 +74,6 @@
     <Compile Include="ui_tools.cs" />
     <Compile Include="ui_note_elements.cs" />
     <Compile Include="Tags.cs" />
-    <Compile Include="Note.cs" />
     <Compile Include="NoteElements.cs" />
     <Compile Include="Database.cs" />
     <Compile Include="ElementFilter.cs" />

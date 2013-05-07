@@ -56,12 +56,9 @@ namespace backend
 				// include untagged items
 				sql += " AND (element_tag_mapping.tag_id IS NULL";
 
-				if (0 < filter.Tags.Count) {
-					sql += " OR ";
+				if (0 < filter.Tags.Count)
 					foreach (Tag current in filter.Tags)
-						sql += "tags.name ='" + current.Name + "' AND ";
-					sql = sql.Substring (0, sql.Length - 5);
-				}
+						sql += " OR tags.name ='" + current.Name + "'";
 				sql += ")";
 
 				List<NoteElement> result = new List<NoteElement> ();
@@ -380,8 +377,7 @@ namespace backend
 		{
 			string text = "";
 			int indentationLevel = 0;
-			int size = 10;
-			bool strong = false;
+			uint style = 0; // 0 - p, 1 - h3, 2 - h2, 3 - h1 for example
 
 			public string Text {
 				get{ return text;}
@@ -393,14 +389,11 @@ namespace backend
 				set{ indentationLevel = value;}
 			}
 
-			public int FontSize {
-				get{ return size;}
-				set{ size = value;}
-			}
-
-			public bool FontStrong {
-				get{ return strong;}
-				set{ strong = value;}
+			public uint Style {
+				get{ return style;}
+				set {
+					style = value;
+				}
 			}
 
 			public TextElement ()
@@ -416,8 +409,7 @@ namespace backend
 				// fill x, y, timestamp, color
 				IDataReader reader = Database.QueryInit ("SELECT size, weight, indentation_level, text FROM text_elements WHERE element_id='" + id + "'");
 				reader.Read ();
-				FontSize = reader.GetInt32 (0);
-				FontStrong = reader.GetString (1).Equals ("bold");
+				Style = Convert.ToUInt32 (reader.GetInt32 (0));
 				IndentationLevel = reader.GetInt32 (2);
 				Text = reader.GetString (3);
 				Database.QueryCleanup (reader);
@@ -428,15 +420,14 @@ namespace backend
 				try {
 					// we have a new element here
 					Database.Execute ("INSERT INTO text_elements " +
-						"(element_id, size, weight, indentation_level, text) VALUES " +
-						"('" + myId + "', '" + FontSize + "', '" + (FontStrong ? "bold" : "normal") + "', '" + IndentationLevel + "', '" + Text + "')"
+						"(element_id, size, indentation_level, text) VALUES " +
+						"('" + myId + "', '" + Style + "', '" + IndentationLevel + "', '" + Text + "')"
 					);
 				} catch (SqliteException e) {
 					switch (e.ErrorCode) {
 					case SQLiteErrorCode.Constraint:
 						Database.Execute ("UPDATE text_elements SET " +
-							"size='" + FontSize +
-							"', weight='" + (FontStrong ? "bold" : "normal") + 
+							"size='" + Style +
 							"' WHERE element_id='" + myId + "'"
 						);
 						break;
@@ -444,7 +435,6 @@ namespace backend
 						Database.Execute ("CREATE TABLE text_elements (" +
 							"element_id INTEGER PRIMARY KEY," +
 							"size INTEGER," +
-							"weight VARCHAR(10)," +
 							"indentation_level INTEGER," +
 							"text TEXT" +
 							")"
@@ -476,7 +466,7 @@ namespace backend
 				// first, find fontsize first!
 				foreach (XmlAttribute current in textNode.Attributes)
 					if ("font-size".Equals (current.Name)) {
-						FontSize = Convert.ToInt32 (current.Value);
+						Style = GetStyleFromSvgEncoding (Convert.ToInt32 (current.Value)); // TODO beware of the magic number
 						break;
 					}
 
@@ -486,13 +476,13 @@ namespace backend
 						X = Convert.ToInt32 (current.Value);
 						break;
 					case "y":
-						Y = Convert.ToInt32 (current.Value) - FontSize;
+						Y = Convert.ToInt32 (current.Value) - GetSvgFontSize (Style); // TODO beware of the magic number
 						break;
 					case "fill":
 						Color = current.Value;
 						break;
 					case "font-weight":
-						FontStrong = current.Value == "bold" ? true : false;
+						Style = GetStyleFromSvgEncoding (GetSvgFontSize (Style), current.Value);
 						break;
 					case "transform":
 						int indent = Convert.ToInt32 (current.Value.Replace ("translate(", "").Replace (")", ""));
@@ -501,6 +491,28 @@ namespace backend
 					}
 				}
 				Text = textNode.InnerText;
+			}
+
+			uint GetStyleFromSvgEncoding (int fontSize)
+			{
+				return GetStyleFromSvgEncoding (fontSize, "normal");
+			}
+
+			uint GetStyleFromSvgEncoding (int fontSize, string fontWeight)
+			{
+				if (fontWeight.Equals ("bold"))
+					return Convert.ToUInt32 (fontSize / 10);
+				return 0;
+			}
+
+			int GetSvgFontSize (uint style)
+			{
+				return Convert.ToInt32 (style > 0 ? style * 10 : 10);
+			}
+
+			string GetSvgFontWeight (uint style)
+			{
+				return style >= 0 ? "bold" : "normal";
 			}
 
 			/**
@@ -517,7 +529,7 @@ namespace backend
 				currentNode.Attributes.Append (a);
 
 				a = document.CreateAttribute ("y");
-				a.Value = Convert.ToString (Y + FontSize);
+				a.Value = Convert.ToString (Y + GetSvgFontSize (Style));
 				currentNode.Attributes.Append (a);
 
 				a = document.CreateAttribute ("fill");
@@ -525,11 +537,11 @@ namespace backend
 				currentNode.Attributes.Append (a);
 
 				a = document.CreateAttribute ("font-size");
-				a.Value = Convert.ToString (FontSize);
+				a.Value = Convert.ToString (GetSvgFontSize (Style));
 				currentNode.Attributes.Append (a);
 
 				a = document.CreateAttribute ("font-weight");
-				a.Value = strong ? "bold" : "normal";
+				a.Value = GetSvgFontWeight (Style);
 				currentNode.Attributes.Append (a);
 
 				a = document.CreateAttribute ("font-family");
@@ -560,11 +572,11 @@ namespace backend
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("cy");
-						a.Value = Convert.ToString (Y + FontSize * 3 / 4);
+						a.Value = Convert.ToString (Y + GetSvgFontSize (Style) * 3 / 4);
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("r");
-						a.Value = Convert.ToString (FontSize / 4);
+						a.Value = Convert.ToString (GetSvgFontSize (Style) / 4);
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("fill");
@@ -578,15 +590,15 @@ namespace backend
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("y");
-						a.Value = Convert.ToString (Y + FontSize * 4 / 8);
+						a.Value = Convert.ToString (Y + GetSvgFontSize (Style) * 4 / 8);
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("width");
-						a.Value = Convert.ToString (FontSize / 2);
+						a.Value = Convert.ToString (GetSvgFontSize (Style) / 2);
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("height");
-						a.Value = Convert.ToString (FontSize / 2);
+						a.Value = Convert.ToString (GetSvgFontSize (Style) / 2);
 						bullet.Attributes.Append (a);
 
 						a = document.CreateAttribute ("fill");
@@ -605,12 +617,12 @@ namespace backend
 
 			int indent (double offset)
 			{
-				return Convert.ToInt32 ((((double)indentationLevel) * 2 + offset) * FontSize);
+				return Convert.ToInt32 ((((double)indentationLevel) * 2 + offset) * GetSvgFontSize (Style));
 			}
 
 			int ParseIndent (int indent)
 			{
-				return indent / FontSize / 2;
+				return indent / GetSvgFontSize (Style) / 2;
 			}
 			#endregion
 		}
