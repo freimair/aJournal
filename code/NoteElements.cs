@@ -407,11 +407,11 @@ namespace backend
 			public TextElement (long id) : base(id)
 			{
 				// fill x, y, timestamp, color
-				IDataReader reader = Database.QueryInit ("SELECT size, weight, indentation_level, text FROM text_elements WHERE element_id='" + id + "'");
+				IDataReader reader = Database.QueryInit ("SELECT size, indentation_level, text FROM text_elements WHERE element_id='" + id + "'");
 				reader.Read ();
 				Style = Convert.ToUInt32 (reader.GetInt32 (0));
-				IndentationLevel = reader.GetInt32 (2);
-				Text = reader.GetString (3);
+				IndentationLevel = reader.GetInt32 (1);
+				Text = reader.GetString (2);
 				Database.QueryCleanup (reader);
 			}
 
