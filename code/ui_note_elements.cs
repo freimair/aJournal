@@ -151,6 +151,7 @@ namespace ui_gtk_gnome
 			CanvasWidget canvasWidget;
 			TextView view;
 			CanvasRE itemize;
+			Canvas myCanvas;
 			bool controlModifierActive = false;
 			bool shiftModifierActive = false;
 
@@ -159,16 +160,19 @@ namespace ui_gtk_gnome
 				myText = new TextElement ();
 
 				Init (canvas);
+
+				Update ();
 			}
 
 			void Init (Canvas canvas)
 			{
 				canvasWidget = new CanvasWidget (canvas.Root ());
+				myCanvas = canvas;
 
 				// use Gtk TextView widget for text input
 				view = new TextView ();
 				// reset text style
-				Scaled ();
+//				Scaled ();
 
 				// do further configuration
 				view.CursorVisible = true;
@@ -228,7 +232,7 @@ namespace ui_gtk_gnome
 
 			int GetFontSizeFromStyle (uint style, bool scaled)
 			{
-				return Convert.ToInt32 (fontSize [style] * 20 * (scaled ? canvasWidget.Canvas.PixelsPerUnit : 1));
+				return Convert.ToInt32 (fontSize [style] * 20 * (scaled ? myCanvas.PixelsPerUnit : 1));
 			}
 
 			Pango.Weight GetFontWeightFromStyle (uint style)

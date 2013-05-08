@@ -299,7 +299,11 @@ namespace ui_gtk_gnome
 						try {
 							textList.AppendValues (iters ["h2"], false, uiText);
 						} catch (Exception) {
-							textList.AppendValues (iters ["h1"], false, uiText);
+							try {
+								textList.AppendValues (iters ["h1"], false, uiText);
+							} catch (Exception) {
+								textList.AppendValues (false, uiText);
+							}
 						}
 					}
 				}
@@ -394,7 +398,6 @@ namespace ui_gtk_gnome
 		}
 
 		Dictionary<Tag, TreeIter> iters;
-
 		List<Tag> myPreset = new List<Tag> ();
 
 		public void Fill (List<Tag> preset)
@@ -448,10 +451,7 @@ namespace ui_gtk_gnome
 	public class aJournal
 	{
 		TagTree myTreeView;
-
 		HeadingTree myHeadingView;
-
-
 		public static Gtk.Window win;
 		UiNote notesWidget;
 		ScrolledWindow myScrolledNotesContainer;
@@ -583,6 +583,8 @@ namespace ui_gtk_gnome
 			myTreeView.Visible = false;
 			myHeadingView.Visible = false;
 			notesWidget.Fit (400);
+			if (null != Scaled)
+				Scaled ();
 		}
 
 		void Filter_Changed (List<Tag> selection)
