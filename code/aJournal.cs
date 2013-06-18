@@ -17,6 +17,7 @@ namespace ui_gtk_gnome
 	{
 		Canvas myCanvas;
 		CanvasRect drawingArea;
+		CanvasRect overlay;
 		public List<UiNoteElement> elements = new List<UiNoteElement> ();
 
 		// TODO beware of the magic numbers
@@ -43,8 +44,15 @@ namespace ui_gtk_gnome
 			drawingArea.X2 = width;
 			drawingArea.Y2 = height;
 
+			overlay = new CanvasRect (myCanvas.Root ());
+			overlay.FillColorRgba = 0x44FF4400;
+			overlay.X1 = 0;
+			overlay.Y1 = 0;
+			overlay.X2 = width;
+			overlay.Y2 = height;
+
 			// add mouse trackers
-			drawingArea.CanvasEvent += new Gnome.CanvasEventHandler (Event);
+			overlay.CanvasEvent += new Gnome.CanvasEventHandler (Event);
 		}
 
 		ElementFilter filter = new ElementFilter ();
@@ -107,6 +115,7 @@ namespace ui_gtk_gnome
 			if (UiNote.height < lasty + UiNote.width) {
 				UiNote.height += Convert.ToInt32 (lasty) + UiNote.width - UiNote.height;
 				drawingArea.Y2 = UiNote.height;
+				overlay.Y2 = drawingArea.Y2;
 				myCanvas.SetScrollRegion (drawingArea.X1, drawingArea.Y1, drawingArea.X2, drawingArea.Y2);
 				myCanvas.HeightRequest = (int)Math.Round (UiNote.height * myCanvas.PixelsPerUnit);
 				myCanvas.UpdateNow ();
@@ -150,6 +159,10 @@ namespace ui_gtk_gnome
 				} catch (NullReferenceException) {
 				}
 			}
+
+			// raise overlay to top whenever a mouse input ended. That
+			// way the receiving overlay layer is always on top. Is it?
+			overlay.RaiseToTop ();
 		}
 	}
 
