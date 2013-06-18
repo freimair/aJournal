@@ -415,6 +415,7 @@ namespace ui_gtk_gnome
 
 		public class EraserTool : Tool
 		{
+			bool active = false;
 			List<UiNoteElement> elements;
 
 			public override void Init (CanvasRect sheet, List<UiNoteElement> items)
@@ -424,16 +425,18 @@ namespace ui_gtk_gnome
 
 			public override void Start (double x, double y)
 			{
-				Do (x, y);
+				active = true;
 			}
 
 			public override void Continue (double x, double y)
 			{
-				Do (x, y);
+				if (active)
+					Do (x, y);
 			}
 
 			public override void Complete (double x, double y)
 			{
+				active = false;
 			}
 
 			void Do (double x, double y)
