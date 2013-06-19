@@ -77,6 +77,7 @@ namespace ui_gtk_gnome
 				AdjustSheetHeight (tmp.BoundingBox ().bottom);
 				elements.Add (tmp);
 			}
+			overlay.RaiseToTop ();
 		}
 
 		public double ScrollTo (UiText selected)
@@ -145,6 +146,7 @@ namespace ui_gtk_gnome
 						aJournal.currentTool.Init (drawingArea, elements);
 						aJournal.currentTool.Reset ();
 						aJournal.currentTool.Start (ev.X, ev.Y);
+						overlay.RaiseToTop ();
 						break;
 					case EventType.MotionNotify:
 						aJournal.currentTool.Continue (ev.X, ev.Y);
@@ -159,10 +161,6 @@ namespace ui_gtk_gnome
 				} catch (NullReferenceException) {
 				}
 			}
-
-			// raise overlay to top whenever a mouse input ended. That
-			// way the receiving overlay layer is always on top. Is it?
-			overlay.RaiseToTop ();
 		}
 	}
 

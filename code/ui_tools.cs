@@ -216,6 +216,8 @@ namespace ui_gtk_gnome
 				// enable key event recognition
 				selectionRect.GrabFocus ();
 
+				selectionRect.RaiseToTop ();
+
 				selectionRect.CanvasEvent += new Gnome.CanvasEventHandler (Selection_Event);
 
 				selectionInProgress = false;
